@@ -168,8 +168,13 @@ export async function POST(req: NextRequest) {
             }
           }
         } catch (err) {
-          console.error('Anthropic stream error:', err)
-          controller.error(err)
+          const status = (err as { status?: number })?.status
+          const message = (err as { error?: { error?: { message?: string } } })?.error?.error?.message ?? ''
+          console.warn('Anthropic stream error, falling back to demo:', status, message)
+          // フォールバック: デモテキストをストリーミング
+          for await (const chunk of demoStream(lead.company_name ?? '企業名未設定', tone)) {
+            controller.enqueue(encoder.encode(chunk))
+          }
         } finally {
           controller.close()
         }
