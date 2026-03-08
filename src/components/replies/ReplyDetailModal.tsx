@@ -1,0 +1,413 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  X,
+  ExternalLink,
+  Sparkles,
+  Loader2,
+  Copy,
+  Check,
+  Handshake,
+  Pencil,
+  ChevronDown,
+  Trash2,
+  RefreshCw,
+} from 'lucide-react'
+import clsx from 'clsx'
+import type { Reply, Sentiment } from '@/types/replies'
+import { SENTIMENT_CONFIG, SENTIMENTS } from '@/types/replies'
+import {
+  markAsRead,
+  updateSentiment,
+  saveAiResponse,
+  deleteReply,
+} from '@/app/dashboard/replies/actions'
+
+interface ReplyDetailModalProps {
+  reply: Reply
+  onClose: () => void
+  onUpdated: (id: string, changes: Partial<Reply>) => void
+  onDeleted: (id: string) => void
+}
+
+export default function ReplyDetailModal({
+  reply,
+  onClose,
+  onUpdated,
+  onDeleted,
+}: ReplyDetailModalProps) {
+  const router = useRouter()
+  const [aiResponse, setAiResponse] = useState(reply.ai_response ?? '')
+  const [sentiment, setSentiment] = useState<Sentiment>(reply.sentiment)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [isSavingResponse, setIsSavingResponse] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
+  const [showSentimentMenu, setShowSentimentMenu] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [error, setError] = useState('')
+
+  const cfg = SENTIMENT_CONFIG[sentiment]
+  const lead = reply.lead
+
+  // Mark as read on open (fire-and-forget)
+  const [markedRead] = useState(() => {
+    if (!reply.is_read) {
+      markAsRead(reply.id).then(() => {
+        onUpdated(reply.id, { is_read: true })
+      })
+    }
+    return true
+  })
+  void markedRead
+
+  // ── AI response generation ──────────────────
+  const handleGenerateResponse = async () => {
+    setIsGenerating(true)
+    setError('')
+    try {
+      const res = await fetch('/api/classify-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: reply.content,
+          company_name: lead?.company_name,
+          contact_name: lead?.contact_name,
+        }),
+      })
+      const data = (await res.json()) as {
+        sentiment?: Sentiment
+        ai_response?: string
+        error?: string
+      }
+      if (data.error) {
+        setError(data.error)
+        return
+      }
+      if (data.ai_response) setAiResponse(data.ai_response)
+      if (data.sentiment) {
+        setSentiment(data.sentiment)
+        await updateSentiment(reply.id, data.sentiment)
+        onUpdated(reply.id, { sentiment: data.sentiment })
+      }
+      // Save generated response
+      if (data.ai_response) {
+        setIsSavingResponse(true)
+        await saveAiResponse(reply.id, data.ai_response)
+        onUpdated(reply.id, { ai_response: data.ai_response })
+        setIsSavingResponse(false)
+      }
+    } catch {
+      setError('返信文案の生成に失敗しました')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  // ── Save edited AI response ──────────────────
+  const handleSaveResponse = async () => {
+    setIsSavingResponse(true)
+    await saveAiResponse(reply.id, aiResponse)
+    onUpdated(reply.id, { ai_response: aiResponse })
+    setIsSavingResponse(false)
+  }
+
+  // ── Copy to clipboard ──────────────────────
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(aiResponse)
+    setIsCopied(true)
+    setTimeout(() => setIsCopied(false), 2000)
+  }
+
+  // ── Update sentiment ───────────────────────
+  const handleSentimentChange = async (s: Sentiment) => {
+    setSentiment(s)
+    setShowSentimentMenu(false)
+    await updateSentiment(reply.id, s)
+    onUpdated(reply.id, { sentiment: s })
+  }
+
+  // ── Delete ─────────────────────────────────
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    const { error: err } = await deleteReply(reply.id)
+    setIsDeleting(false)
+    if (!err) {
+      onDeleted(reply.id)
+      onClose()
+    }
+  }
+
+  // ── Go to deals ────────────────────────────
+  const handleGoToDeals = () => {
+    if (lead) {
+      router.push(`/dashboard/deals?leadId=${reply.lead_id}`)
+    }
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-2xl bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center text-sm font-bold text-gray-300 border border-gray-700 flex-shrink-0">
+              {lead?.company_name?.charAt(0) ?? '?'}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-white truncate">
+                  {lead?.company_name ?? '不明な会社'}
+                </h2>
+                {lead?.website_url && (
+                  <a
+                    href={lead.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-600 hover:text-gray-400 transition-colors flex-shrink-0"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </div>
+              {lead?.contact_name && (
+                <p className="text-xs text-gray-500">{lead.contact_name}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Delete */}
+            {confirmDelete ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-lg transition-colors"
+                >
+                  {isDeleting ? '削除中...' : '削除'}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs rounded-lg transition-colors"
+                >
+                  キャンセル
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="p-1.5 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="overflow-y-auto flex-1 p-5 space-y-5">
+
+          {/* Sentiment + date row */}
+          <div className="flex items-center justify-between gap-3">
+            {/* Sentiment selector */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSentimentMenu(v => !v)}
+                className={clsx(
+                  'flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all',
+                  cfg.bg,
+                  cfg.border,
+                  cfg.color
+                )}
+              >
+                <span className={clsx('w-1.5 h-1.5 rounded-full', cfg.dot)} />
+                {cfg.emoji} {cfg.label}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+
+              {showSentimentMenu && (
+                <div className="absolute top-full left-0 mt-1 w-44 bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-10 overflow-hidden">
+                  {SENTIMENTS.map(s => {
+                    const c = SENTIMENT_CONFIG[s]
+                    return (
+                      <button
+                        key={s}
+                        onClick={() => handleSentimentChange(s)}
+                        className={clsx(
+                          'w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors',
+                          s === sentiment
+                            ? clsx(c.bg, c.color, 'font-semibold')
+                            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                        )}
+                      >
+                        <span>{c.emoji}</span>
+                        <span>{c.label}</span>
+                        <span className="ml-auto text-[10px] text-gray-600">{c.description.slice(0, 10)}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600">
+                {new Date(reply.created_at).toLocaleString('ja-JP', {
+                  year: 'numeric', month: 'short', day: 'numeric',
+                  hour: '2-digit', minute: '2-digit',
+                })}
+              </span>
+              {/* 商談管理へ (only for 興味あり) */}
+              {sentiment === '興味あり' && reply.lead_id && (
+                <button
+                  onClick={handleGoToDeals}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors"
+                >
+                  <Handshake className="w-3.5 h-3.5" />
+                  商談管理へ
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Sentiment description */}
+          <div className={clsx('flex items-center gap-2 px-3 py-2 rounded-lg border text-xs', cfg.bg, cfg.border, cfg.color)}>
+            <span className="text-base">{cfg.emoji}</span>
+            <span>{cfg.description}</span>
+          </div>
+
+          {/* Reply content */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              返信内容
+            </h3>
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
+              <pre className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed font-sans">
+                {reply.content}
+              </pre>
+            </div>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
+              {error}
+            </div>
+          )}
+
+          {/* AI response section */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                AI 返信文案
+              </h3>
+              <div className="flex items-center gap-2">
+                {aiResponse && (
+                  <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    {isCopied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">コピー済み</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        コピー
+                      </>
+                    )}
+                  </button>
+                )}
+                <button
+                  onClick={handleGenerateResponse}
+                  disabled={isGenerating}
+                  className={clsx(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                    aiResponse
+                      ? 'bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700'
+                      : 'bg-violet-600 hover:bg-violet-500 text-white'
+                  )}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : aiResponse ? (
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5" />
+                  )}
+                  {isGenerating ? '生成中...' : aiResponse ? '再生成' : 'AIで生成'}
+                </button>
+              </div>
+            </div>
+
+            {aiResponse ? (
+              <div className="space-y-2">
+                <div className="relative">
+                  <textarea
+                    value={aiResponse}
+                    onChange={e => setAiResponse(e.target.value)}
+                    rows={6}
+                    className="w-full bg-gray-800/60 border border-gray-700/50 rounded-xl px-4 py-3 text-sm text-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent leading-relaxed"
+                  />
+                  <div className="absolute bottom-2 right-2 flex items-center gap-1 text-gray-600">
+                    <Pencil className="w-3 h-3" />
+                    <span className="text-[10px]">編集可</span>
+                  </div>
+                </div>
+                {aiResponse !== (reply.ai_response ?? '') && (
+                  <button
+                    onClick={handleSaveResponse}
+                    disabled={isSavingResponse}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white text-xs font-semibold rounded-lg transition-colors"
+                  >
+                    {isSavingResponse ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5" />
+                    )}
+                    変更を保存
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div
+                onClick={handleGenerateResponse}
+                className="flex flex-col items-center justify-center gap-3 py-8 bg-gray-800/30 border border-dashed border-gray-700 rounded-xl cursor-pointer hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
+                    <p className="text-xs text-gray-500">AIが返信文案を生成しています...</p>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-6 h-6 text-gray-600 group-hover:text-violet-400 transition-colors" />
+                    <p className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">
+                      クリックしてAI返信文案を生成
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
