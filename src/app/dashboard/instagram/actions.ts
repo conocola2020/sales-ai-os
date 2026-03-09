@@ -167,6 +167,68 @@ export async function saveDmAndMarkSent(
 }
 
 // ──────────────────────────────────────────
+// Bulk create targets (CSV import)
+// ──────────────────────────────────────────
+export async function bulkCreateTargets(
+  items: InstagramTargetInsert[]
+): Promise<{ count: number; error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { count: 0, error: '認証が必要です' }
+
+  const rows = items.map(item => ({
+    user_id: user.id,
+    username: item.username.replace(/^@/, '').trim(),
+    display_name: item.display_name ?? null,
+    bio: item.bio ?? null,
+    industry: item.industry ?? null,
+    follower_count: item.follower_count ?? null,
+    engagement_rate: item.engagement_rate ?? null,
+    following: false,
+    liked: false,
+    dm_sent: false,
+    dm_content: null,
+    dm_replied: false,
+    liked_back: false,
+    followed_back: false,
+    status: '未対応' as const,
+    notes: item.notes ?? null,
+  }))
+
+  const CHUNK = 500
+  let inserted = 0
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const { error } = await supabase.from('instagram_targets').insert(rows.slice(i, i + CHUNK))
+    if (error) return { count: inserted, error: error.message }
+    inserted += Math.min(CHUNK, rows.length - i)
+  }
+
+  revalidatePath('/dashboard/instagram')
+  return { count: inserted, error: null }
+}
+
+// ──────────────────────────────────────────
+// Bulk delete targets
+// ──────────────────────────────────────────
+export async function bulkDeleteTargets(
+  ids: string[]
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: '認証が必要です' }
+
+  const { error } = await supabase
+    .from('instagram_targets')
+    .delete()
+    .in('id', ids)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/instagram')
+  return { error: null }
+}
+
+// ──────────────────────────────────────────
 // Get statistics
 // ──────────────────────────────────────────
 export async function getTargetStats(): Promise<{

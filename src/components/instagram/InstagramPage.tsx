@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import {
   Plus, Search, Users, MessageCircle, Heart, TrendingUp,
-  UserCheck, ChevronDown, ChevronUp, Filter,
+  UserCheck, ChevronDown, ChevronUp, Filter, Upload, Download,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { InstagramTarget, InstagramStatus, InstagramStats } from '@/types/instagram'
@@ -12,6 +12,7 @@ import { toggleFlag } from '@/app/dashboard/instagram/actions'
 import TargetCard from './TargetCard'
 import TargetFormModal from './TargetFormModal'
 import DmModal from './DmModal'
+import CsvImportModal from './CsvImportModal'
 
 // ──────────────────────────────────────────
 // Props
@@ -73,6 +74,7 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
   const [formTarget, setFormTarget] = useState<InstagramTarget | null | undefined>(undefined)
   // undefined = closed, null = create new, InstagramTarget = edit existing
   const [dmTarget, setDmTarget] = useState<InstagramTarget | null>(null)
+  const [showCsvImport, setShowCsvImport] = useState(false)
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -167,13 +169,44 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
       <div className="px-6 py-5 border-b border-gray-800 shrink-0">
         <div className="flex items-center justify-between mb-1">
           <h1 className="text-xl font-semibold text-white">Instagram 半自動化</h1>
-          <button
-            onClick={() => setFormTarget(null)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            ターゲット追加
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowCsvImport(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              CSVインポート
+            </button>
+            <button
+              onClick={async () => {
+                const res = await fetch('/api/export', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ type: 'instagram', format: 'csv' }),
+                })
+                if (res.ok) {
+                  const blob = await res.blob()
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `instagram_${new Date().toISOString().slice(0, 10)}.csv`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              エクスポート
+            </button>
+            <button
+              onClick={() => setFormTarget(null)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              ターゲット追加
+            </button>
+          </div>
         </div>
         <p className="text-sm text-gray-500">Instagramアカウントへのアプローチを管理する</p>
       </div>
@@ -391,6 +424,17 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
           onUpdated={updated => {
             updateLocal(updated)
             setDmTarget(updated)
+          }}
+        />
+      )}
+
+      {/* CSV Import modal */}
+      {showCsvImport && (
+        <CsvImportModal
+          onClose={() => setShowCsvImport(false)}
+          onImported={() => {
+            setShowCsvImport(false)
+            window.location.reload()
           }}
         />
       )}

@@ -3,7 +3,7 @@
 import { useState, useMemo, useTransition } from 'react'
 import {
   Search, Filter, ChevronUp, ChevronDown, ChevronsUpDown,
-  Upload, Plus, Trash2, ExternalLink, Loader2,
+  Upload, Download, Plus, Trash2, ExternalLink, Loader2,
   Building2, CheckSquare, Square, Globe, Mail, Phone
 } from 'lucide-react'
 import StatusBadge from './StatusBadge'
@@ -190,6 +190,31 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
             >
               <Upload className="w-4 h-4" />
               CSVインポート
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'leads', format: 'csv' }),
+                  })
+                  if (!res.ok) throw new Error('Export failed')
+                  const blob = await res.blob()
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `leads_${new Date().toISOString().slice(0, 10)}.csv`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                } catch {
+                  setToast({ msg: 'エクスポートに失敗しました', type: 'error' })
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 text-sm font-medium rounded-xl transition-all"
+            >
+              <Download className="w-4 h-4" />
+              エクスポート
             </button>
             <button
               onClick={() => setShowAdd(true)}
