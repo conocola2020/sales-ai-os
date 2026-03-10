@@ -4,11 +4,13 @@ import { useState, useCallback } from 'react'
 import { Sparkles, Loader2, AlertCircle, Info } from 'lucide-react'
 import LeadSelector from './LeadSelector'
 import ToneSelector from './ToneSelector'
+import TemplateSelector from './TemplateSelector'
 import MessageEditor from './MessageEditor'
 import HistoryPanel from './HistoryPanel'
 import { saveMessage } from '@/app/dashboard/compose/actions'
 import type { Lead } from '@/types/leads'
 import type { Message, Tone } from '@/types/messages'
+import type { MessageTemplate } from '@/types/settings'
 import clsx from 'clsx'
 
 interface ComposePageProps {
@@ -16,11 +18,21 @@ interface ComposePageProps {
   initialMessages: Message[]
   isDemo: boolean
   initialLeadId?: string
+  templates: MessageTemplate[]
 }
 
-export default function ComposePage({ leads, initialMessages, isDemo, initialLeadId = '' }: ComposePageProps) {
+export default function ComposePage({
+  leads,
+  initialMessages,
+  isDemo,
+  initialLeadId = '',
+  templates,
+}: ComposePageProps) {
   const [selectedLeadId, setSelectedLeadId] = useState(initialLeadId)
   const [tone, setTone] = useState<Tone>('丁寧')
+  const [selectedTemplateId, setSelectedTemplateId] = useState(
+    templates.find(t => t.is_default)?.id ?? templates[0]?.id ?? ''
+  )
   const [customInstructions, setCustomInstructions] = useState('')
   const [generatedMessage, setGeneratedMessage] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
@@ -44,7 +56,12 @@ export default function ComposePage({ leads, initialMessages, isDemo, initialLea
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId: selectedLeadId, tone, customInstructions }),
+        body: JSON.stringify({
+          leadId: selectedLeadId,
+          tone,
+          customInstructions,
+          templateId: selectedTemplateId || undefined,
+        }),
       })
 
       if (!res.ok) {
@@ -70,7 +87,7 @@ export default function ComposePage({ leads, initialMessages, isDemo, initialLea
     } finally {
       setIsStreaming(false)
     }
-  }, [selectedLeadId, tone, customInstructions])
+  }, [selectedLeadId, tone, customInstructions, selectedTemplateId])
 
   const handleSave = async () => {
     if (!generatedMessage) return
@@ -110,7 +127,9 @@ export default function ComposePage({ leads, initialMessages, isDemo, initialLea
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
         <div>
           <h1 className="text-lg font-semibold text-white">文面生成AI</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Claude AIがリード情報を分析し、最適な営業メッセージを生成します</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            HP分析 + 弊社情報をもとに、パーソナライズされた営業メッセージを生成
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-500/10 border border-violet-500/20 rounded-lg text-xs font-medium text-violet-400">
@@ -125,7 +144,8 @@ export default function ComposePage({ leads, initialMessages, isDemo, initialLea
         <div className="mx-6 mt-4 flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
           <Info className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-amber-400">
-            <span className="font-semibold">デモモード:</span> ANTHROPIC_API_KEY が未設定です。.env.local に設定するとリアルな生成が可能になります。現在はサンプル文面を表示します。
+            <span className="font-semibold">デモモード:</span> ANTHROPIC_API_KEY
+            が未設定です。.env.local に設定するとリアルな生成が可能になります。
           </p>
         </div>
       )}
@@ -135,21 +155,31 @@ export default function ComposePage({ leads, initialMessages, isDemo, initialLea
         <div className="mx-6 mt-4 flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
           <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
           <p className="text-xs text-red-400">{error}</p>
-          <button onClick={() => setError('')} className="ml-auto text-red-500 hover:text-red-300 text-xs">✕</button>
+          <button
+            onClick={() => setError('')}
+            className="ml-auto text-red-500 hover:text-red-300 text-xs"
+          >
+            ✕
+          </button>
         </div>
       )}
 
       {/* Main content */}
       <div className="flex-1 min-h-0 grid grid-cols-[1fr_320px] gap-0 overflow-hidden">
-
         {/* Left: Compose area */}
         <div className="flex flex-col overflow-y-auto p-6 space-y-5 border-r border-gray-800">
-
           {/* Lead Selector */}
           <LeadSelector
             leads={leads}
             selectedLeadId={selectedLeadId}
             onSelect={setSelectedLeadId}
+          />
+
+          {/* Template Selector */}
+          <TemplateSelector
+            templates={templates}
+            selectedId={selectedTemplateId}
+            onChange={setSelectedTemplateId}
           />
 
           {/* Tone Selector */}
@@ -183,7 +213,7 @@ export default function ComposePage({ leads, initialMessages, isDemo, initialLea
             {isStreaming ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                生成中...
+                HP分析＆生成中...
               </>
             ) : (
               <>
