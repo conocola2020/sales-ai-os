@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import type { Tone } from '@/types/messages'
 import type { UserSettings, MessageTemplate } from '@/types/settings'
+import { DEFAULT_USER_SETTINGS } from '@/types/settings'
 import { fetchHpContent } from '@/lib/hp-fetcher'
 
 // ---------------------------------------------------------------------------
@@ -366,6 +367,11 @@ export async function POST(req: NextRequest) {
           .maybeSingle()
         if (tplData) template = tplData as MessageTemplate
       }
+    }
+
+    // DBに弊社情報がない場合はデフォルト値をフォールバック
+    if (!settings) {
+      settings = DEFAULT_USER_SETTINGS as unknown as UserSettings
     }
 
     // HP自動取得（分析データがない場合）
