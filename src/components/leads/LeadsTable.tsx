@@ -106,15 +106,24 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
     })
   }
 
-  // ── Bulk delete (チャンク分割で大量削除対応) ─────────────────
+  // ── Bulk delete (APIルート経由で大量削除対応) ─────────────────
   const handleBulkDelete = () => {
     if (!selected.size || !confirm(`${selected.size}件を削除しますか？`)) return
     startTransition(async () => {
       const ids = [...selected]
-      const CHUNK = 50
+      // 200件ずつAPIに送信
+      const CHUNK = 200
       for (let i = 0; i < ids.length; i += CHUNK) {
-        const { error } = await deleteLeads(ids.slice(i, i + CHUNK))
-        if (error) { showToast(error, 'error'); return }
+        const res = await fetch('/api/leads/bulk-delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: ids.slice(i, i + CHUNK) }),
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          showToast(data.error || '削除エラー', 'error')
+          return
+        }
       }
       setLeads((prev) => prev.filter((l) => !selected.has(l.id)))
       setSelected(new Set())
