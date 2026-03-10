@@ -106,15 +106,19 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
     })
   }
 
-  // ── Bulk delete ────────────────────────────────────────────
+  // ── Bulk delete (チャンク分割で大量削除対応) ─────────────────
   const handleBulkDelete = () => {
     if (!selected.size || !confirm(`${selected.size}件を削除しますか？`)) return
     startTransition(async () => {
-      const { error } = await deleteLeads([...selected])
-      if (error) { showToast(error, 'error'); return }
+      const ids = [...selected]
+      const CHUNK = 50
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const { error } = await deleteLeads(ids.slice(i, i + CHUNK))
+        if (error) { showToast(error, 'error'); return }
+      }
       setLeads((prev) => prev.filter((l) => !selected.has(l.id)))
       setSelected(new Set())
-      showToast(`${selected.size}件を削除しました`, 'success')
+      showToast(`${ids.length}件を削除しました`, 'success')
     })
   }
 

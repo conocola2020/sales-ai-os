@@ -104,8 +104,14 @@ export async function deleteLead(id: string): Promise<{ error: string | null }> 
 
 export async function deleteLeads(ids: string[]): Promise<{ error: string | null }> {
   const supabase = await createClient()
-  const { error } = await supabase.from('leads').delete().in('id', ids)
-  if (error) return { error: error.message }
+
+  // チャンク分割で大量削除に対応
+  const CHUNK = 100
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const { error } = await supabase.from('leads').delete().in('id', ids.slice(i, i + CHUNK))
+    if (error) return { error: error.message }
+  }
+
   revalidatePath('/dashboard/leads')
   return { error: null }
 }
