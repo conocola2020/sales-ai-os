@@ -9,13 +9,26 @@ import type { Lead, LeadInsert, LeadUpdate } from '@/types/leads'
 // ──────────────────────────────────────────
 export async function getLeads(): Promise<{ data: Lead[]; error: string | null }> {
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('leads')
-    .select('*')
-    .order('created_at', { ascending: false })
 
-  if (error) return { data: [], error: error.message }
-  return { data: data as Lead[], error: null }
+  // Supabaseのデフォルト制限は1000件。全件取得するためページネーション
+  const all: Lead[] = []
+  const PAGE = 1000
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE - 1)
+
+    if (error) return { data: all, error: error.message }
+    if (!data || data.length === 0) break
+    all.push(...(data as Lead[]))
+    if (data.length < PAGE) break
+    from += PAGE
+  }
+
+  return { data: all, error: null }
 }
 
 // ──────────────────────────────────────────
