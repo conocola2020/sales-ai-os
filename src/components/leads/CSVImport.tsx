@@ -118,26 +118,19 @@ export default function CSVImport({ onClose, onSuccess }: CSVImportProps) {
     setLoading(true)
     setError('')
     try {
-      // 100件ずつAPIに送信
-      const CHUNK = 100
+      // 50件ずつサーバーアクションに送信（ペイロードサイズ制限回避）
+      const CHUNK = 50
       let total = 0
-      const totalChunks = Math.ceil(preview.length / CHUNK)
       for (let i = 0; i < preview.length; i += CHUNK) {
-        const chunkNum = Math.floor(i / CHUNK) + 1
-        setProgress(`${total}/${preview.length}件 処理中... (${chunkNum}/${totalChunks})`)
-        const res = await fetch('/api/leads/bulk-import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ leads: preview.slice(i, i + CHUNK) }),
-        })
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-          setError(`インポートエラー (${total}件目付近): ${data.error}`)
+        setProgress(`${total}/${preview.length}件`)
+        const chunk = preview.slice(i, i + CHUNK)
+        const { count, error } = await bulkCreateLeads(chunk)
+        if (error) {
+          setError(`インポートエラー (${total}件目付近): ${error}`)
           setLoading(false)
           return
         }
-        const data = await res.json()
-        total += data.count
+        total += count
       }
       setLoading(false)
       setProgress('')
