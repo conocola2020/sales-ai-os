@@ -114,10 +114,26 @@ export default function CSVImport({ onClose, onSuccess }: CSVImportProps) {
   const handleImport = async () => {
     if (!preview.length) return
     setLoading(true)
-    const { count, error } = await bulkCreateLeads(preview)
-    setLoading(false)
-    if (error) { setError(`インポートエラー: ${error}`); return }
-    onSuccess(count)
+    try {
+      // 500件ずつAPIに送信
+      const CHUNK = 500
+      let total = 0
+      for (let i = 0; i < preview.length; i += CHUNK) {
+        const res = await fetch('/api/leads/bulk-import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ leads: preview.slice(i, i + CHUNK) }),
+        })
+        const data = await res.json()
+        if (!res.ok) { setError(`インポートエラー: ${data.error}`); setLoading(false); return }
+        total += data.count
+      }
+      setLoading(false)
+      onSuccess(total)
+    } catch (e: any) {
+      setLoading(false)
+      setError(`インポートエラー: ${e.message}`)
+    }
   }
 
   const downloadSample = () => {
