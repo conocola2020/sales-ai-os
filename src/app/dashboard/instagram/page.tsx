@@ -1,6 +1,8 @@
 import { getTargets, getTargetStats } from './actions'
 import InstagramPageComponent from '@/components/instagram/InstagramPage'
 
+export const dynamic = 'force-dynamic'
+
 export default async function InstagramPage() {
   const [targetsResult, statsResult] = await Promise.all([
     getTargets(),

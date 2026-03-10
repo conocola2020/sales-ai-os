@@ -2,6 +2,8 @@ import CompaniesPage from '@/components/companies/CompaniesPage'
 import { getAnalyses } from '@/app/dashboard/companies/actions'
 import { getLeads } from '@/app/dashboard/leads/actions'
 
+export const dynamic = 'force-dynamic'
+
 export default async function CompaniesPageRoute() {
   const [analysesResult, leadsResult] = await Promise.all([
     getAnalyses(),

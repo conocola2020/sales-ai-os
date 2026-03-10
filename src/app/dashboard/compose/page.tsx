@@ -3,6 +3,8 @@ import { getLeads } from '@/app/dashboard/leads/actions'
 import { getMessages } from './actions'
 import { getTemplates, seedDefaultTemplates } from '@/app/dashboard/settings/actions'
 
+export const dynamic = 'force-dynamic'
+
 interface Props {
   searchParams: Promise<{ leadId?: string }>
 }

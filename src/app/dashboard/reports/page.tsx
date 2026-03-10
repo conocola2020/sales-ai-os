@@ -5,6 +5,8 @@ import { getReplyStats } from '@/app/dashboard/replies/actions'
 import { getDealStats } from '@/app/dashboard/deals/actions'
 import { getTargetStats } from '@/app/dashboard/instagram/actions'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ReportsPage() {
   const [leadsResult, sendResult, replyResult, dealResult, igResult] = await Promise.all([
     getLeads(),
