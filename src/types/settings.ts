@@ -99,7 +99,7 @@ export const DEFAULT_TEMPLATES: Omit<MessageTemplateInsert, 'sort_order'>[] = [
 // -------------------------------------------------------
 
 export const DEFAULT_USER_SETTINGS: UserSettingsInsert = {
-  company_name: '株式会社コーノコーラ',
+  company_name: '株式会社CONOCOLA',
   representative: '河野大地',
   representative_title: '代表取締役',
   company_email: 'conocola2020@gmail.com',
