@@ -111,27 +111,40 @@ export default function CSVImport({ onClose, onSuccess }: CSVImportProps) {
     else setError('CSVファイルのみアップロード可能です')
   }
 
+  const [progress, setProgress] = useState('')
+
   const handleImport = async () => {
     if (!preview.length) return
     setLoading(true)
+    setError('')
     try {
-      // 500件ずつAPIに送信
-      const CHUNK = 500
+      // 100件ずつAPIに送信
+      const CHUNK = 100
       let total = 0
+      const totalChunks = Math.ceil(preview.length / CHUNK)
       for (let i = 0; i < preview.length; i += CHUNK) {
+        const chunkNum = Math.floor(i / CHUNK) + 1
+        setProgress(`${total}/${preview.length}件 処理中... (${chunkNum}/${totalChunks})`)
         const res = await fetch('/api/leads/bulk-import', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ leads: preview.slice(i, i + CHUNK) }),
         })
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+          setError(`インポートエラー (${total}件目付近): ${data.error}`)
+          setLoading(false)
+          return
+        }
         const data = await res.json()
-        if (!res.ok) { setError(`インポートエラー: ${data.error}`); setLoading(false); return }
         total += data.count
       }
       setLoading(false)
+      setProgress('')
       onSuccess(total)
     } catch (e: any) {
       setLoading(false)
+      setProgress('')
       setError(`インポートエラー: ${e.message}`)
     }
   }
@@ -278,7 +291,7 @@ export default function CSVImport({ onClose, onSuccess }: CSVImportProps) {
               className="flex items-center gap-2 px-5 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              {loading ? 'インポート中...' : `${preview.length}件インポート`}
+              {loading ? (progress || 'インポート中...') : `${preview.length}件インポート`}
             </button>
           </div>
         </div>
