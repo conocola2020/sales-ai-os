@@ -32,7 +32,7 @@ const navItems = [
   {
     section: '営業フロー',
     items: [
-      { label: '返信管理', href: '/dashboard/replies', icon: MessageSquare, badge: '3' },
+      { label: '返信管理', href: '/dashboard/replies', icon: MessageSquare, badge: null },
       { label: '商談管理', href: '/dashboard/deals', icon: Handshake, badge: null },
     ],
   },
