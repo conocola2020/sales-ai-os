@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       .from('send_queue')
       .select(`
         id, send_method, status, form_url,
-        lead:lead_id (company_name, website_url)
+        lead:lead_id (company_name, website_url, company_url)
       `)
       .eq('id', queueItemId)
       .eq('user_id', user.id)

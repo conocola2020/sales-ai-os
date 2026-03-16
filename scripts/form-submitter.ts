@@ -130,6 +130,7 @@ interface QueueItem {
     contact_name: string | null
     email: string | null
     website_url: string | null
+    company_url: string | null
     phone?: string | null
   }
 }
@@ -420,9 +421,9 @@ async function submitForm(
   let screenshotBase64: string | null = null
 
   try {
-    const baseUrl = item.lead.website_url
+    const baseUrl = item.lead.company_url || item.lead.website_url
     if (!baseUrl) {
-      return { success: false, formUrl: null, screenshotBase64: null, error: 'WebサイトURLが未設定です' }
+      return { success: false, formUrl: null, screenshotBase64: null, error: '企業HP URLが未設定です' }
     }
 
     console.log(`\n📧 ${item.lead.company_name} (${baseUrl})`)
@@ -544,7 +545,7 @@ async function getFormQueueItems(): Promise<QueueItem[]> {
     .from('send_queue')
     .select(`
       id, user_id, lead_id, message_content, send_method, form_url,
-      lead:lead_id (company_name, contact_name, email, website_url, phone)
+      lead:lead_id (company_name, contact_name, email, website_url, company_url, phone)
     `)
     .eq('send_method', 'form')
     .eq('status', '確認待ち')

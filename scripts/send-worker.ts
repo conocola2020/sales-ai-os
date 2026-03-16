@@ -34,6 +34,7 @@ interface QueueItem {
     contact_name: string | null
     email: string | null
     website_url: string | null
+    company_url: string | null
   }
 }
 
@@ -91,9 +92,9 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
     const page = await context.newPage()
 
     try {
-      const baseUrl = item.lead.website_url
+      const baseUrl = item.lead.company_url || item.lead.website_url
       if (!baseUrl) {
-        return { success: false, error: 'WebサイトURLが未設定です' }
+        return { success: false, error: '企業HP URLが未設定です' }
       }
 
       // 問い合わせページ探索
@@ -310,7 +311,7 @@ async function pollAndProcess() {
         .from('send_queue')
         .select(`
           id, user_id, lead_id, message_content, send_method, form_url,
-          lead:lead_id (company_name, contact_name, email, website_url)
+          lead:lead_id (company_name, contact_name, email, website_url, company_url)
         `)
         .eq('status', '確認待ち')
         .order('created_at', { ascending: true })

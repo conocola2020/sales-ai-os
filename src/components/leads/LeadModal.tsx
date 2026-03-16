@@ -60,6 +60,7 @@ export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadM
         email: form.email,
         phone: form.phone,
         website_url: form.website_url,
+        company_url: form.company_url,
         industry: form.industry,
         status: form.status,
         notes: form.notes,
@@ -176,17 +177,38 @@ export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadM
             </Field>
           </div>
 
-          <Field label="WebサイトURL" icon={<Globe className="w-3 h-3" />}>
+          <Field label="掲載URL（サウナイキタイ等）" icon={<Globe className="w-3 h-3" />}>
             <div className="flex gap-2">
               <input
                 value={form.website_url ?? ''}
                 onChange={(e) => set('website_url', e.target.value)}
                 className={inputCls}
-                placeholder="https://example.com"
+                placeholder="https://sauna-ikitai.com/saunas/..."
               />
               {form.website_url && (
                 <a
                   href={form.website_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-shrink-0 w-10 flex items-center justify-center bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4 text-gray-400" />
+                </a>
+              )}
+            </div>
+          </Field>
+
+          <Field label="企業HP URL（フォーム送信先）" icon={<Building2 className="w-3 h-3" />}>
+            <div className="flex gap-2">
+              <input
+                value={form.company_url ?? ''}
+                onChange={(e) => set('company_url', e.target.value)}
+                className={inputCls}
+                placeholder="https://company-example.com"
+              />
+              {form.company_url && (
+                <a
+                  href={form.company_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-shrink-0 w-10 flex items-center justify-center bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 transition-colors"

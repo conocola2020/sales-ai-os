@@ -22,6 +22,8 @@ const HEADER_MAP: Record<string, keyof LeadInsert> = {
   phone:        'phone',
   'URL':        'website_url',
   website_url:  'website_url',
+  '企業HP':     'company_url',
+  company_url:  'company_url',
   '業種':       'industry',
   industry:     'industry',
   'ステータス': 'status',

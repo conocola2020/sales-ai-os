@@ -8,6 +8,7 @@ export interface Lead {
   email: string | null
   phone: string | null
   website_url: string | null
+  company_url: string | null
   industry: string | null
   status: LeadStatus
   notes: string | null

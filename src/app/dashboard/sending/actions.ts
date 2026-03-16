@@ -11,6 +11,7 @@ const LEAD_SELECT = `
     contact_name,
     email,
     website_url,
+    company_url,
     industry,
     status
   )
