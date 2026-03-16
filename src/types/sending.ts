@@ -6,6 +6,7 @@ export interface SendQueueItem {
   user_id: string
   lead_id: string
   message_content: string
+  subject: string | null
   send_method: SendMethod
   status: SendStatus
   form_url: string | null
@@ -29,7 +30,7 @@ export interface SendQueueItem {
 }
 
 export type SendQueueInsert = Pick<SendQueueItem, 'lead_id' | 'message_content'> &
-  Partial<Pick<SendQueueItem, 'scheduled_at' | 'send_method'>>
+  Partial<Pick<SendQueueItem, 'subject' | 'scheduled_at' | 'send_method'>>
 
 export const SEND_STATUSES: SendStatus[] = ['待機中', '確認待ち', '送信済み', '失敗', 'form_not_found']
 

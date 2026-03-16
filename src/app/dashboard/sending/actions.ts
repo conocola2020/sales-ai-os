@@ -80,6 +80,7 @@ export async function addToQueue(
       user_id: user.id,
       lead_id: item.lead_id,
       message_content: item.message_content,
+      subject: item.subject ?? null,
       send_method: sendMethod,
       scheduled_at: item.scheduled_at ?? null,
       status: '待機中',

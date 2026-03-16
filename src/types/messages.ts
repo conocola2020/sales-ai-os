@@ -2,6 +2,7 @@ export interface Message {
   id: string
   user_id: string
   lead_id: string | null
+  subject: string | null
   content: string
   tone: string
   created_at: string
@@ -14,6 +15,7 @@ export interface Message {
 
 export type MessageInsert = {
   lead_id?: string | null
+  subject?: string | null
   content: string
   tone: string
 }

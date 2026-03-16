@@ -1,9 +1,11 @@
 'use client'
 
-import { Copy, Save, RefreshCw, Check, Loader2 } from 'lucide-react'
+import { Copy, Save, RefreshCw, Check, Loader2, Send } from 'lucide-react'
 import clsx from 'clsx'
 
 interface MessageEditorProps {
+  subject?: string
+  onSubjectChange?: (value: string) => void
   value: string
   onChange: (value: string) => void
   isStreaming: boolean
@@ -11,11 +13,14 @@ interface MessageEditorProps {
   onSave: () => void
   onCopy: () => void
   onRegenerate: () => void
+  onAddToQueue?: () => void
   copied: boolean
   canRegenerate: boolean
 }
 
 export default function MessageEditor({
+  subject = '',
+  onSubjectChange,
   value,
   onChange,
   isStreaming,
@@ -23,6 +28,7 @@ export default function MessageEditor({
   onSave,
   onCopy,
   onRegenerate,
+  onAddToQueue,
   copied,
   canRegenerate,
 }: MessageEditorProps) {
@@ -36,15 +42,37 @@ export default function MessageEditor({
           生成メッセージ
           {isStreaming && (
             <span className="ml-2 text-violet-400 text-xs font-normal animate-pulse">
-              ✨ 生成中...
+              ✨ HP分析＆生成中...
             </span>
           )}
         </label>
         {!isEmpty && (
-          <span className="text-xs text-gray-600">{charCount.toLocaleString()} 文字</span>
+          <span className="text-xs text-gray-600">
+            {subject ? `件名 ${subject.length}字 / ` : ''}本文 {charCount.toLocaleString()}字
+          </span>
         )}
       </div>
 
+      {/* Subject input */}
+      {onSubjectChange && (subject || value || isStreaming) && (
+        <div className="mb-2">
+          <input
+            type="text"
+            value={subject}
+            onChange={e => onSubjectChange(e.target.value)}
+            disabled={isStreaming}
+            placeholder="件名"
+            className={clsx(
+              'w-full rounded-lg border px-3 py-2 text-sm font-medium transition-all',
+              'bg-gray-800/80 text-white placeholder-gray-600',
+              'focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent',
+              isStreaming ? 'border-violet-500/50' : 'border-gray-700 hover:border-gray-600'
+            )}
+          />
+        </div>
+      )}
+
+      {/* Body textarea */}
       <div className="relative flex-1 min-h-0">
         <textarea
           value={value}
@@ -62,7 +90,6 @@ export default function MessageEditor({
               : 'border-gray-700/50'
           )}
         />
-        {/* Streaming cursor */}
         {isStreaming && (
           <span className="inline-block w-0.5 h-4 bg-violet-400 animate-pulse absolute bottom-4 right-4" />
         )}
@@ -93,6 +120,17 @@ export default function MessageEditor({
             <RefreshCw className={clsx('w-3.5 h-3.5', isStreaming && 'animate-spin')} />
             再生成
           </button>
+
+          {onAddToQueue && (
+            <button
+              onClick={onAddToQueue}
+              disabled={isStreaming || !value}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Send className="w-3.5 h-3.5" />
+              キューに追加
+            </button>
+          )}
 
           <div className="flex-1" />
 
