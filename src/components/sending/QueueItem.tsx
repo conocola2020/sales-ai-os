@@ -166,12 +166,35 @@ export default function QueueItem({
       {expanded && (
         <div className="border-t border-gray-800 p-4 space-y-4">
           {/* Error message */}
-          {item.status === '失敗' && item.error_message && (
-            <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-medium text-red-400 mb-0.5">エラー詳細</p>
-                <p className="text-xs text-red-300/80">{item.error_message}</p>
+          {(item.status === '失敗' || item.status === 'form_not_found') && item.error_message && (
+            <div className={clsx(
+              'flex items-start gap-2 p-3 rounded-lg',
+              item.status === 'form_not_found'
+                ? 'bg-amber-500/10 border border-amber-500/20'
+                : 'bg-red-500/10 border border-red-500/20'
+            )}>
+              <AlertCircle className={clsx(
+                'w-4 h-4 flex-shrink-0 mt-0.5',
+                item.status === 'form_not_found' ? 'text-amber-400' : 'text-red-400'
+              )} />
+              <div className="flex-1">
+                <p className={clsx(
+                  'text-xs font-medium mb-0.5',
+                  item.status === 'form_not_found' ? 'text-amber-400' : 'text-red-400'
+                )}>
+                  {item.status === 'form_not_found' ? 'フォーム未検出' : 'エラー詳細'}
+                </p>
+                <p className={clsx(
+                  'text-xs',
+                  item.status === 'form_not_found' ? 'text-amber-300/80' : 'text-red-300/80'
+                )}>
+                  {item.error_message}
+                </p>
+                {item.retry_count !== undefined && item.retry_count > 0 && (
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    リトライ回数: {item.retry_count}/3
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -257,8 +280,8 @@ export default function QueueItem({
               </button>
             )}
 
-            {/* 失敗 → リトライ */}
-            {item.status === '失敗' && (
+            {/* 失敗/form_not_found → リトライ */}
+            {(item.status === '失敗' || item.status === 'form_not_found') && (
               <button
                 onClick={handleRetry}
                 disabled={loading}
