@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Send, ExternalLink, Building2, AlertCircle, CheckCircle2, Loader2, Mail } from 'lucide-react'
+import { X, Send, ExternalLink, Building2, AlertCircle, CheckCircle2, Loader2, Mail, Globe } from 'lucide-react'
 import type { SendQueueItem } from '@/types/sending'
 import { markAsSent, markAsFailed } from '@/app/dashboard/sending/actions'
 
@@ -11,12 +11,14 @@ interface SendConfirmModalProps {
   onSent: (id: string) => void
 }
 
-type SendMethod = 'manual' | 'email'
+type SendMethod = 'manual' | 'email' | 'form'
 
 export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmModalProps) {
   const [step, setStep] = useState<'confirm' | 'sending' | 'success' | 'error'>('confirm')
   const [errorMsg, setErrorMsg] = useState('')
-  const [sendMethod, setSendMethod] = useState<SendMethod>('manual')
+  const [sendMethod, setSendMethod] = useState<SendMethod>(
+    item.send_method === 'form' ? 'form' : item.lead?.email ? 'email' : 'manual'
+  )
   const [emailSubject, setEmailSubject] = useState(
     `${item.lead?.company_name ?? '御社'}へのご提案`
   )
@@ -25,7 +27,26 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
   const handleSend = async () => {
     setStep('sending')
 
-    if (sendMethod === 'email' && lead?.email) {
+    if (sendMethod === 'form') {
+      // フォーム自動送信: APIでキューに入れてワーカーが処理
+      try {
+        const res = await fetch('/api/submit-form', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ queueItemId: item.id }),
+        })
+        const data = await res.json()
+        if (!res.ok || data.error) {
+          setErrorMsg(data.error || 'フォーム送信の登録に失敗しました')
+          setStep('error')
+          return
+        }
+        setStep('success')
+      } catch {
+        setErrorMsg('ネットワークエラーが発生しました')
+        setStep('error')
+      }
+    } else if (sendMethod === 'email' && lead?.email) {
       // Send via Resend API
       try {
         const res = await fetch('/api/send-email', {
@@ -112,9 +133,14 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
                 <CheckCircle2 className="w-7 h-7 text-emerald-400" />
               </div>
               <div className="text-center">
-                <p className="text-base font-semibold text-white">送信完了しました</p>
+                <p className="text-base font-semibold text-white">
+                  {sendMethod === 'form' ? 'フォーム送信をキューに登録しました' : '送信完了しました'}
+                </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  {lead?.company_name ?? '企業'} への{sendMethod === 'email' ? 'メール' : ''}送信が完了し、ステータスを「送信済み」に更新しました。
+                  {sendMethod === 'form'
+                    ? `${lead?.company_name ?? '企業'} への問い合わせフォーム送信はワーカーが自動処理します。`
+                    : `${lead?.company_name ?? '企業'} への${sendMethod === 'email' ? 'メール' : ''}送信が完了し、ステータスを「送信済み」に更新しました。`
+                  }
                 </p>
               </div>
             </div>
@@ -136,7 +162,7 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
             <div className="flex flex-col items-center py-8 gap-4">
               <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
               <p className="text-sm text-gray-400">
-                {sendMethod === 'email' ? 'メール送信中...' : '送信処理中...'}
+                {sendMethod === 'form' ? 'フォーム送信を登録中...' : sendMethod === 'email' ? 'メール送信中...' : '送信処理中...'}
               </p>
             </div>
           )}
@@ -147,26 +173,38 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
               <div className="flex gap-2">
                 <button
                   onClick={() => setSendMethod('manual')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-medium border transition-all ${
                     sendMethod === 'manual'
                       ? 'bg-violet-600/20 text-violet-400 border-violet-500/30'
                       : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-600'
                   }`}
                 >
-                  <ExternalLink className="w-4 h-4" />
-                  手動送信
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  手動
                 </button>
                 <button
                   onClick={() => setSendMethod('email')}
                   disabled={!lead?.email}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-medium border transition-all ${
                     sendMethod === 'email'
                       ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30'
                       : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-600'
                   } disabled:opacity-40 disabled:cursor-not-allowed`}
                 >
-                  <Mail className="w-4 h-4" />
-                  メール送信
+                  <Mail className="w-3.5 h-3.5" />
+                  メール
+                </button>
+                <button
+                  onClick={() => setSendMethod('form')}
+                  disabled={!lead?.website_url}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-medium border transition-all ${
+                    sendMethod === 'form'
+                      ? 'bg-cyan-600/20 text-cyan-400 border-cyan-500/30'
+                      : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-600'
+                  } disabled:opacity-40 disabled:cursor-not-allowed`}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  フォーム
                 </button>
               </div>
 
@@ -179,7 +217,12 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
                   <div className="flex-1 min-w-0 space-y-0.5">
                     <p className="text-sm font-semibold text-white">{lead.company_name}</p>
                     {lead.contact_name && <p className="text-xs text-gray-500">担当: {lead.contact_name}</p>}
-                    {lead.email && <p className="text-xs text-gray-400">{lead.email}</p>}
+                    {lead.email && (
+                      <p className="text-xs text-gray-400 flex items-center gap-1">
+                        <Mail className="w-3 h-3" />
+                        {lead.email}
+                      </p>
+                    )}
                     {lead.website_url && (
                       <a href={lead.website_url} target="_blank" rel="noopener noreferrer" className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1">
                         <Building2 className="w-3 h-3" />
@@ -209,7 +252,9 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
               <div className="flex items-start gap-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
                 <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-300/90">
-                  {sendMethod === 'email'
+                  {sendMethod === 'form'
+                    ? 'Playwrightワーカーが企業HPの問い合わせフォームを自動検出し、送信します。フォームが見つからない場合は手動対応が必要になります。'
+                    : sendMethod === 'email'
                     ? 'Resend APIを使用してメールを直接送信します。送信後は取り消せません。'
                     : '以下の文面を企業の問い合わせフォームから送信してください。送信後に「送信完了」ボタンを押すとステータスが更新されます。'}
                 </p>
@@ -262,12 +307,17 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
               <button
                 onClick={handleSend}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-white text-sm font-semibold rounded-xl transition-colors ${
-                  sendMethod === 'email'
-                    ? 'bg-emerald-600 hover:bg-emerald-500'
+                  sendMethod === 'form'
+                    ? 'bg-cyan-600 hover:bg-cyan-500'
                     : 'bg-emerald-600 hover:bg-emerald-500'
                 }`}
               >
-                {sendMethod === 'email' ? (
+                {sendMethod === 'form' ? (
+                  <>
+                    <Globe className="w-4 h-4" />
+                    フォーム自動送信
+                  </>
+                ) : sendMethod === 'email' ? (
                   <>
                     <Mail className="w-4 h-4" />
                     メール送信

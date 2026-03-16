@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { SendQueueItem, SendQueueInsert, SendStats } from '@/types/sending'
+import type { SendQueueItem, SendQueueInsert, SendStats, SendMethod } from '@/types/sending'
 
 const LEAD_SELECT = `
   *,
@@ -62,12 +62,24 @@ export async function addToQueue(
     return { data: null, error: '認証が必要です' }
   }
 
+  // Auto-detect send method based on lead email
+  let sendMethod: SendMethod = item.send_method ?? 'form'
+  if (!item.send_method) {
+    const { data: lead } = await supabase
+      .from('leads')
+      .select('email')
+      .eq('id', item.lead_id)
+      .single()
+    sendMethod = lead?.email ? 'email' : 'form'
+  }
+
   const { data, error } = await supabase
     .from('send_queue')
     .insert({
       user_id: user.id,
       lead_id: item.lead_id,
       message_content: item.message_content,
+      send_method: sendMethod,
       scheduled_at: item.scheduled_at ?? null,
       status: '待機中',
     })

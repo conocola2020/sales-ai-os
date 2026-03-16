@@ -12,10 +12,11 @@ import {
   AlertCircle,
   Building2,
   RotateCcw,
+  Globe,
 } from 'lucide-react'
 import clsx from 'clsx'
 import type { SendQueueItem } from '@/types/sending'
-import { SEND_STATUS_CONFIG } from '@/types/sending'
+import { SEND_STATUS_CONFIG, SEND_METHOD_CONFIG } from '@/types/sending'
 import { markAsReady, deleteQueueItem, retryQueueItem } from '@/app/dashboard/sending/actions'
 
 interface QueueItemProps {
@@ -116,6 +117,16 @@ export default function QueueItem({
               <span className="text-xs text-gray-600">{lead.industry}</span>
             )}
             <span className="text-xs text-gray-600">{timeAgo(item.created_at)}</span>
+            {item.send_method && (
+              <span className={clsx(
+                'text-[10px] px-1.5 py-0.5 rounded-md font-medium border',
+                SEND_METHOD_CONFIG[item.send_method]?.bg,
+                SEND_METHOD_CONFIG[item.send_method]?.border,
+                SEND_METHOD_CONFIG[item.send_method]?.color,
+              )}>
+                {SEND_METHOD_CONFIG[item.send_method]?.label ?? item.send_method}
+              </span>
+            )}
             {item.retry_count > 0 && (
               <span className="text-xs text-amber-500/70 flex items-center gap-1">
                 <RotateCcw className="w-2.5 h-2.5" />
@@ -189,6 +200,24 @@ export default function QueueItem({
                   </a>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Form URL & Screenshot */}
+          {item.form_url && (
+            <div className="flex items-center gap-2 p-2 bg-cyan-500/5 border border-cyan-500/20 rounded-lg">
+              <Globe className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+              <a href={item.form_url} target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-400 hover:text-cyan-300 truncate">
+                {item.form_url}
+              </a>
+            </div>
+          )}
+          {item.screenshot_url && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-1">送信後スクリーンショット</p>
+              <a href={item.screenshot_url} target="_blank" rel="noopener noreferrer">
+                <img src={item.screenshot_url} alt="送信結果" className="rounded-lg border border-gray-700 max-h-32 object-cover" />
+              </a>
             </div>
           )}
 
