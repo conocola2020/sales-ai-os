@@ -144,25 +144,84 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
       // フィールド入力（詳細ログ付き）
       console.log(`  フォームURL: ${formUrl}`)
 
-      // カテゴリ選択（selectボックス対応）
-      const filledCategory = await trySelectField(page, 'category', '卸販売')
-      console.log(`  カテゴリ選択: ${filledCategory ? '✓' : '✗ (selectなし)'}`)
+      // デバッグ: フォーム上の全フィールドをダンプ
+      const allFields = await page.evaluate(() => {
+        const inputs = Array.from(document.querySelectorAll('input, textarea, select'))
+        return inputs.map(el => ({
+          tag: el.tagName,
+          type: (el as HTMLInputElement).type || '',
+          name: (el as HTMLInputElement).name || '',
+          id: el.id || '',
+          placeholder: (el as HTMLInputElement).placeholder || '',
+          visible: el.offsetParent !== null,
+        }))
+      })
+      console.log(`  フォームフィールド一覧: ${JSON.stringify(allFields.filter(f => f.visible))}`)
 
-      const filledCompany = await tryFillField(page, 'company', senderInfo.company_name)
+      // JavaScript evaluateベースの汎用入力関数
+      const fillByJS = async (nameContains: string, value: string): Promise<boolean> => {
+        return page.evaluate(({ nameContains, value }) => {
+          const inputs = Array.from(document.querySelectorAll('input, textarea, select'))
+          const el = inputs.find(el => {
+            const name = (el as HTMLInputElement).name || ''
+            return name.includes(nameContains) && el.offsetParent !== null
+          }) as HTMLInputElement | HTMLTextAreaElement | null
+          if (!el) return false
+          if (el.tagName === 'SELECT') {
+            const select = el as unknown as HTMLSelectElement
+            const options = Array.from(select.options)
+            const match = options.find(o => o.value && o.value !== '')
+            if (match) { select.value = match.value; select.dispatchEvent(new Event('change', { bubbles: true })); return true }
+            return false
+          }
+          el.focus()
+          el.value = value
+          el.dispatchEvent(new Event('input', { bubbles: true }))
+          el.dispatchEvent(new Event('change', { bubbles: true }))
+          return true
+        }, { nameContains, value })
+      }
+
+      // カテゴリ選択
+      let filledCategory = await trySelectField(page, 'category', '卸販売')
+      if (!filledCategory) filledCategory = await fillByJS('項目', '')
+      console.log(`  カテゴリ選択: ${filledCategory ? '✓' : '✗'}`)
+
+      // 会社名
+      let filledCompany = await tryFillField(page, 'company', senderInfo.company_name)
+      if (!filledCompany) filledCompany = await fillByJS('会社', senderInfo.company_name)
       console.log(`  会社名入力: ${filledCompany ? '✓' : '✗'}`)
+
       const filledName = await tryFillField(page, 'name', senderInfo.representative)
       console.log(`  名前入力: ${filledName ? '✓' : '✗'}`)
 
       // フリガナ
-      const filledFurigana = await tryFillField(page, 'furigana', 'コウノダイチ')
-      console.log(`  フリガナ入力: ${filledFurigana ? '✓' : '✗ (フィールドなし)'}`)
+      let filledFurigana = await tryFillField(page, 'furigana', 'コウノダイチ')
+      if (!filledFurigana) filledFurigana = await fillByJS('フリガナ', 'コウノダイチ')
+      console.log(`  フリガナ入力: ${filledFurigana ? '✓' : '✗'}`)
 
-      const filledEmail = await tryFillField(page, 'email', senderInfo.email)
+      let filledEmail = await tryFillField(page, 'email', senderInfo.email)
+      if (!filledEmail) filledEmail = await fillByJS('メールアドレス', senderInfo.email)
       console.log(`  メール入力: ${filledEmail ? '✓' : '✗'}`)
 
       // メール確認用
-      const filledEmailConfirm = await tryFillField(page, 'email_confirm', senderInfo.email)
-      console.log(`  メール確認入力: ${filledEmailConfirm ? '✓' : '✗ (フィールドなし)'}`)
+      let filledEmailConfirm = await tryFillField(page, 'email_confirm', senderInfo.email)
+      if (!filledEmailConfirm) {
+        // 「確認」を含むメールフィールドを探す
+        filledEmailConfirm = await page.evaluate(({ email }) => {
+          const inputs = Array.from(document.querySelectorAll('input'))
+          const el = inputs.find(el => {
+            const name = el.name || ''
+            return name.includes('確認') && name.includes('メール') && el.offsetParent !== null
+          })
+          if (!el) return false
+          el.focus(); el.value = email
+          el.dispatchEvent(new Event('input', { bubbles: true }))
+          el.dispatchEvent(new Event('change', { bubbles: true }))
+          return true
+        }, { email: senderInfo.email })
+      }
+      console.log(`  メール確認入力: ${filledEmailConfirm ? '✓' : '✗'}`)
 
       const filledPhone = await tryFillField(page, 'phone', senderInfo.phone)
       console.log(`  電話入力: ${filledPhone ? '✓' : '✗'}`)
