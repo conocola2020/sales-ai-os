@@ -141,16 +141,30 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
         phone: settings?.company_phone || '052-228-4945',
       }
 
-      // フィールド入力
-      await tryFillField(page, 'company', senderInfo.company_name)
-      await tryFillField(page, 'name', senderInfo.representative)
-      await tryFillField(page, 'email', senderInfo.email)
-      await tryFillField(page, 'phone', senderInfo.phone)
-      await tryFillField(page, 'body', item.message_content)
+      // フィールド入力（詳細ログ付き）
+      console.log(`  フォームURL: ${formUrl}`)
+      const filledCompany = await tryFillField(page, 'company', senderInfo.company_name)
+      console.log(`  会社名入力: ${filledCompany ? '✓' : '✗'}`)
+      const filledName = await tryFillField(page, 'name', senderInfo.representative)
+      console.log(`  名前入力: ${filledName ? '✓' : '✗'}`)
+      const filledEmail = await tryFillField(page, 'email', senderInfo.email)
+      console.log(`  メール入力: ${filledEmail ? '✓' : '✗'}`)
+      const filledPhone = await tryFillField(page, 'phone', senderInfo.phone)
+      console.log(`  電話入力: ${filledPhone ? '✓' : '✗'}`)
+      const filledBody = await tryFillField(page, 'body', item.message_content)
+      console.log(`  本文入力: ${filledBody ? '✓' : '✗'}`)
       await delay(500)
+
+      if (!filledBody && !filledEmail) {
+        const pageTitle = await page.title()
+        const pageUrl = page.url()
+        console.log(`  ⚠️ 主要フィールドが入力できません (title: ${pageTitle}, url: ${pageUrl})`)
+        return { success: false, error: `フォーム入力失敗: メールも本文も入力できませんでした (${pageUrl})` }
+      }
 
       // 送信
       const submitted = await clickSubmitButton(page)
+      console.log(`  送信ボタンクリック: ${submitted ? '✓' : '✗'}`)
       if (!submitted) {
         return { success: false, error: '送信ボタンが見つかりませんでした' }
       }
@@ -158,8 +172,17 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
       await delay(3000)
 
       // 確認画面対応
+      const pageAfterSubmit = page.url()
+      const titleAfterSubmit = await page.title()
+      console.log(`  送信後URL: ${pageAfterSubmit}`)
+      console.log(`  送信後タイトル: ${titleAfterSubmit}`)
       await handleConfirmPage(page)
       await delay(2000)
+
+      const finalUrl = page.url()
+      const finalTitle = await page.title()
+      console.log(`  最終URL: ${finalUrl}`)
+      console.log(`  最終タイトル: ${finalTitle}`)
 
       // スクリーンショット保存
       try {
