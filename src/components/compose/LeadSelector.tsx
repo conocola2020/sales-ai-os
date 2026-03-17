@@ -77,12 +77,13 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
               )}>
                 {selectedLead.status}
               </span>
-              <button
+              <span
+                role="button"
                 onClick={(e) => { e.stopPropagation(); onSelect('') }}
-                className="text-gray-600 hover:text-gray-400 transition-colors"
+                className="text-gray-600 hover:text-gray-400 transition-colors cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
-              </button>
+              </span>
             </div>
           </>
         ) : (

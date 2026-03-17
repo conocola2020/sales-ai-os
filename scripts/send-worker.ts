@@ -182,14 +182,50 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
         }, { nameContains, value })
       }
 
-      // カテゴリ選択
+      // カテゴリ選択（select or radio）
       let filledCategory = await trySelectField(page, 'category', '卸販売')
-      if (!filledCategory) filledCategory = await fillByJS('項目', '')
+      if (!filledCategory) {
+        // ラジオボタン対応
+        filledCategory = await page.evaluate(() => {
+          const radios = Array.from(document.querySelectorAll('input[type="radio"]')) as HTMLInputElement[]
+          for (const radio of radios) {
+            const label = radio.closest('label')?.textContent || radio.parentElement?.textContent || ''
+            if (label.includes('卸') || label.includes('その他')) {
+              radio.click()
+              radio.dispatchEvent(new Event('change', { bubbles: true }))
+              return true
+            }
+          }
+          if (radios.length > 0) { radios[0].click(); return true }
+          return false
+        })
+      }
       console.log(`  カテゴリ選択: ${filledCategory ? '✓' : '✗'}`)
 
-      // 会社名
+      // ラジオ選択後、条件付きフィールド表示を待機
+      await delay(1500)
+
+      // 会社名（条件付き表示フィールド対応）
       let filledCompany = await tryFillField(page, 'company', senderInfo.company_name)
       if (!filledCompany) filledCompany = await fillByJS('会社', senderInfo.company_name)
+      if (!filledCompany) filledCompany = await fillByJS('店舗', senderInfo.company_name)
+      // labelテキストから探す最終手段
+      if (!filledCompany) {
+        filledCompany = await page.evaluate(({ companyName }) => {
+          const allInputs = Array.from(document.querySelectorAll('input[type="text"]')) as HTMLInputElement[]
+          for (const input of allInputs) {
+            const name = input.name || ''
+            if ((name.includes('会社') || name.includes('店舗')) && input.offsetParent !== null) {
+              input.focus()
+              input.value = companyName
+              input.dispatchEvent(new Event('input', { bubbles: true }))
+              input.dispatchEvent(new Event('change', { bubbles: true }))
+              return true
+            }
+          }
+          return false
+        }, { companyName: senderInfo.company_name })
+      }
       console.log(`  会社名入力: ${filledCompany ? '✓' : '✗'}`)
 
       const filledName = await tryFillField(page, 'name', senderInfo.representative)
@@ -227,6 +263,21 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
       console.log(`  電話入力: ${filledPhone ? '✓' : '✗'}`)
       const filledBody = await tryFillField(page, 'body', item.message_content)
       console.log(`  本文入力: ${filledBody ? '✓' : '✗'}`)
+
+      // 個人情報保護方針等のチェックボックスを全てチェック
+      const checkedBoxes = await page.evaluate(() => {
+        const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]')) as HTMLInputElement[]
+        let count = 0
+        for (const cb of checkboxes) {
+          if (cb.offsetParent !== null && !cb.checked) {
+            cb.click()
+            cb.dispatchEvent(new Event('change', { bubbles: true }))
+            count++
+          }
+        }
+        return count
+      })
+      console.log(`  チェックボックス: ${checkedBoxes}件チェック`)
       await delay(500)
 
       if (!filledBody && !filledEmail) {
