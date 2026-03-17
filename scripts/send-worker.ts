@@ -143,12 +143,27 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
 
       // フィールド入力（詳細ログ付き）
       console.log(`  フォームURL: ${formUrl}`)
+
+      // カテゴリ選択（selectボックス対応）
+      const filledCategory = await trySelectField(page, 'category', '卸販売')
+      console.log(`  カテゴリ選択: ${filledCategory ? '✓' : '✗ (selectなし)'}`)
+
       const filledCompany = await tryFillField(page, 'company', senderInfo.company_name)
       console.log(`  会社名入力: ${filledCompany ? '✓' : '✗'}`)
       const filledName = await tryFillField(page, 'name', senderInfo.representative)
       console.log(`  名前入力: ${filledName ? '✓' : '✗'}`)
+
+      // フリガナ
+      const filledFurigana = await tryFillField(page, 'furigana', 'コウノダイチ')
+      console.log(`  フリガナ入力: ${filledFurigana ? '✓' : '✗ (フィールドなし)'}`)
+
       const filledEmail = await tryFillField(page, 'email', senderInfo.email)
       console.log(`  メール入力: ${filledEmail ? '✓' : '✗'}`)
+
+      // メール確認用
+      const filledEmailConfirm = await tryFillField(page, 'email_confirm', senderInfo.email)
+      console.log(`  メール確認入力: ${filledEmailConfirm ? '✓' : '✗ (フィールドなし)'}`)
+
       const filledPhone = await tryFillField(page, 'phone', senderInfo.phone)
       console.log(`  電話入力: ${filledPhone ? '✓' : '✗'}`)
       const filledBody = await tryFillField(page, 'body', item.message_content)
@@ -271,11 +286,14 @@ async function findContactPage(page: import('playwright').Page, baseUrl: string)
 }
 
 const FIELD_SELECTORS: Record<string, string[]> = {
-  company: ['input[name*="company" i]', 'input[name*="会社" i]', 'input[placeholder*="会社" i]'],
-  name: ['input[name*="name" i]:not([name*="company" i]):not([name*="mail" i]):not([type="email"])', 'input[name*="氏名" i]', 'input[name*="名前" i]', 'input[placeholder*="名前" i]'],
-  email: ['input[type="email"]', 'input[name*="mail" i]', 'input[name*="email" i]', 'input[placeholder*="メール" i]'],
-  phone: ['input[type="tel"]', 'input[name*="phone" i]', 'input[name*="tel" i]', 'input[name*="電話" i]'],
-  body: ['textarea[name*="body" i]', 'textarea[name*="message" i]', 'textarea[name*="content" i]', 'textarea[name*="内容" i]', 'textarea'],
+  company: ['input[name*="company" i]', 'input[name*="会社" i]', 'input[name*="店舗" i]', 'input[placeholder*="会社" i]', 'input[placeholder*="店舗" i]'],
+  name: ['input[name="お名前"]', 'input[name*="name" i]:not([name*="company" i]):not([name*="mail" i]):not([name*="会社" i]):not([name*="店舗" i]):not([type="email"]):not([name*="フリガナ" i])', 'input[name*="氏名" i]', 'input[name*="名前" i]:not([name*="フリガナ" i])', 'input[placeholder*="名前" i]:not([placeholder*="フリガナ" i])'],
+  furigana: ['input[name*="フリガナ" i]', 'input[name*="ふりがな" i]', 'input[name*="kana" i]', 'input[placeholder*="フリガナ" i]'],
+  email: ['input[type="email"]', 'input[name="メールアドレス"]', 'input[name*="mail" i]:not([name*="確認" i])', 'input[name*="email" i]:not([name*="confirm" i])', 'input[placeholder*="メール" i]:not([placeholder*="確認" i])'],
+  email_confirm: ['input[name*="メールアドレス(確認" i]', 'input[name*="mail_confirm" i]', 'input[name*="email_confirm" i]', 'input[name*="確認" i]'],
+  phone: ['input[type="tel"]', 'input[name*="phone" i]', 'input[name*="tel" i]', 'input[name*="電話" i]', 'input[placeholder*="電話" i]'],
+  body: ['textarea[name*="body" i]', 'textarea[name*="message" i]', 'textarea[name*="content" i]', 'textarea[name*="内容" i]', 'textarea[name*="inquiry" i]', 'textarea'],
+  category: ['select[name*="項目" i]', 'select[name*="category" i]', 'select[name*="type" i]', 'select[name*="種類" i]'],
 }
 
 async function tryFillField(page: import('playwright').Page, fieldType: string, value: string): Promise<boolean> {
@@ -290,6 +308,37 @@ async function tryFillField(page: import('playwright').Page, fieldType: string, 
         await delay(100)
         await el.fill(value)
         return true
+      }
+    } catch { /* continue */ }
+  }
+  return false
+}
+
+async function trySelectField(page: import('playwright').Page, fieldType: string, valueOrLabel: string): Promise<boolean> {
+  const selectors = FIELD_SELECTORS[fieldType] ?? []
+  for (const sel of selectors) {
+    try {
+      const el = await page.$(sel)
+      if (el && await el.isVisible()) {
+        await el.scrollIntoViewIfNeeded()
+        // selectの場合、optionのテキストで部分一致選択
+        const options = await el.$$eval('option', (opts: HTMLOptionElement[]) =>
+          opts.map(o => ({ value: o.value, text: o.textContent?.trim() ?? '' }))
+        )
+        // 部分一致でオプションを探す
+        const match = options.find(o =>
+          o.text.includes(valueOrLabel) || valueOrLabel.includes(o.text)
+        )
+        if (match) {
+          await el.selectOption(match.value)
+          return true
+        }
+        // 見つからなければ最初の有効なオプション（空でない）を選択
+        const firstValid = options.find(o => o.value && o.value !== '')
+        if (firstValid) {
+          await el.selectOption(firstValid.value)
+          return true
+        }
       }
     } catch { /* continue */ }
   }
