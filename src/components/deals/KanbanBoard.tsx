@@ -95,7 +95,7 @@ export default function KanbanBoard({ deals, onCardClick, onAddClick }: KanbanBo
   )
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 min-h-0">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 pb-4 min-h-0 overflow-y-auto">
       {DEAL_STAGES.map(stage => {
         const cfg = STAGE_CONFIG[stage]
         const stageDeals = dealsByStage[stage]
@@ -104,7 +104,7 @@ export default function KanbanBoard({ deals, onCardClick, onAddClick }: KanbanBo
         return (
           <div
             key={stage}
-            className="flex flex-col shrink-0 w-72 bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden"
+            className="flex flex-col min-w-0 bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden"
           >
             {/* Column header */}
             <div className="px-4 py-3 border-b border-gray-800 shrink-0">

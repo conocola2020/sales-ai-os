@@ -46,6 +46,7 @@ export default function DashboardOverview({
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
       border: 'border-blue-500/20',
+      href: '/dashboard/leads',
     },
     {
       label: '送信数',
@@ -55,6 +56,7 @@ export default function DashboardOverview({
       color: 'text-violet-400',
       bg: 'bg-violet-500/10',
       border: 'border-violet-500/20',
+      href: '/dashboard/sending',
     },
     {
       label: '返信受信数',
@@ -64,6 +66,7 @@ export default function DashboardOverview({
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
       border: 'border-emerald-500/20',
+      href: '/dashboard/replies',
     },
     {
       label: '返信率',
@@ -73,6 +76,7 @@ export default function DashboardOverview({
       color: 'text-amber-400',
       bg: 'bg-amber-500/10',
       border: 'border-amber-500/20',
+      href: '/dashboard/reports',
     },
   ]
 
@@ -113,12 +117,13 @@ export default function DashboardOverview({
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <div
+            <Link
               key={stat.label}
-              className="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-700 transition-all"
+              href={stat.href}
+              className="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 hover:bg-gray-800/50 transition-all group cursor-pointer"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className={`w-10 h-10 ${stat.bg} border ${stat.border} rounded-xl flex items-center justify-center`}>
+                <div className={`w-10 h-10 ${stat.bg} border ${stat.border} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
                   <Icon className={`w-5 h-5 ${stat.color}`} />
                 </div>
                 <div className="flex items-center gap-1 text-xs font-medium text-gray-500">
@@ -127,7 +132,7 @@ export default function DashboardOverview({
               </div>
               <p className="text-2xl font-bold text-white">{stat.value}</p>
               <p className="text-gray-400 text-sm mt-1">{stat.label}</p>
-            </div>
+            </Link>
           )
         })}
       </div>
@@ -135,7 +140,7 @@ export default function DashboardOverview({
       {/* Middle section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Pipeline */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <Link href="/dashboard/deals" className="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-gray-600 hover:bg-gray-800/30 transition-all cursor-pointer block">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-base font-semibold text-white">営業パイプライン</h2>
             <Handshake className="w-4 h-4 text-gray-500" />
@@ -167,10 +172,10 @@ export default function DashboardOverview({
               </span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Key Metrics */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <Link href="/dashboard/deals" className="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-gray-600 hover:bg-gray-800/30 transition-all cursor-pointer block">
           <h2 className="text-base font-semibold text-white mb-5">重要指標</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl">
@@ -204,7 +209,7 @@ export default function DashboardOverview({
               <span className="text-sm font-bold text-red-400">{sendStats.failed}件</span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Quick Actions */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">

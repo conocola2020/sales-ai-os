@@ -159,55 +159,73 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
           </div>
 
           {/* Days grid */}
-          <div className="grid grid-cols-7 gap-px flex-1 auto-rows-fr">
+          <div className="grid grid-cols-7 gap-1 flex-1">
             {calendarDays.map((date, idx) => {
               if (!date) {
-                return <div key={`empty-${idx}`} className="bg-gray-950/50 rounded-lg" />
+                return <div key={`empty-${idx}`} className="bg-gray-950/30 rounded-lg min-h-[80px]" />
               }
 
               const dayEvents = getEventsForDate(date)
               const isToday = isSameDay(date, today)
               const isSelected = selectedDate ? isSameDay(date, selectedDate) : false
-              const dayOfWeek = idx % 7 // 0=Mon ... 6=Sun
-
-              const hasMeeting = dayEvents.some(e => e.type === 'meeting')
-              const hasAction = dayEvents.some(e => e.type === 'action')
+              const dayOfWeek = idx % 7
 
               return (
                 <button
                   key={date.toISOString()}
                   onClick={() => setSelectedDate(date)}
                   className={clsx(
-                    'relative flex flex-col items-center pt-1.5 pb-1 rounded-lg transition-all text-xs',
+                    'relative flex flex-col p-1.5 rounded-lg transition-all text-left min-h-[80px]',
                     isSelected
-                      ? 'bg-violet-600/20 border border-violet-500/40'
-                      : 'hover:bg-gray-800/50 border border-transparent',
-                    isToday && !isSelected && 'bg-gray-900 border-gray-700'
+                      ? 'bg-violet-600/15 border-2 border-violet-500/50'
+                      : dayEvents.length > 0
+                        ? 'bg-gray-900/80 border border-gray-700/50 hover:border-gray-600'
+                        : 'bg-gray-950/30 border border-transparent hover:bg-gray-900/40',
+                    isToday && !isSelected && 'ring-2 ring-violet-500/40'
                   )}
                 >
-                  <span
-                    className={clsx(
-                      'w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium',
-                      isToday ? 'bg-violet-600 text-white' : '',
-                      dayOfWeek === 5 ? 'text-blue-400' : dayOfWeek === 6 ? 'text-red-400' : 'text-gray-300',
-                      isToday && 'text-white'
+                  {/* Date header */}
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span
+                      className={clsx(
+                        'w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold',
+                        isToday ? 'bg-violet-600 text-white' : '',
+                        !isToday && (dayOfWeek === 5 ? 'text-blue-400' : dayOfWeek === 6 ? 'text-red-400' : 'text-gray-400')
+                      )}
+                    >
+                      {date.getDate()}
+                    </span>
+                    {dayEvents.length > 0 && (
+                      <span className={clsx(
+                        'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
+                        dayEvents.length >= 3 ? 'bg-violet-600 text-white' :
+                        dayEvents.length >= 2 ? 'bg-violet-500/30 text-violet-300' :
+                        'text-gray-500'
+                      )}>
+                        {dayEvents.length}件
+                      </span>
                     )}
-                  >
-                    {date.getDate()}
-                  </span>
+                  </div>
 
-                  {/* Event dots */}
-                  {(hasMeeting || hasAction) && (
-                    <div className="flex items-center gap-0.5 mt-0.5">
-                      {hasMeeting && <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />}
-                      {hasAction && <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
-                    </div>
-                  )}
-
-                  {/* Event count badge */}
-                  {dayEvents.length > 0 && (
-                    <span className="text-[10px] text-gray-500 mt-0.5">{dayEvents.length}</span>
-                  )}
+                  {/* Event mini cards */}
+                  <div className="flex flex-col gap-0.5 w-full overflow-hidden flex-1">
+                    {dayEvents.slice(0, 3).map((event, i) => (
+                      <div
+                        key={i}
+                        className={clsx(
+                          'w-full px-1.5 py-0.5 rounded text-[10px] font-medium truncate',
+                          event.type === 'meeting'
+                            ? 'bg-violet-500/20 text-violet-300 border-l-2 border-violet-400'
+                            : 'bg-amber-500/15 text-amber-300 border-l-2 border-amber-400'
+                        )}
+                      >
+                        {event.deal.company_name}
+                      </div>
+                    ))}
+                    {dayEvents.length > 3 && (
+                      <span className="text-[9px] text-gray-500 pl-1">+{dayEvents.length - 3}件</span>
+                    )}
+                  </div>
                 </button>
               )
             })}

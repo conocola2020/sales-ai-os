@@ -165,39 +165,8 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
-        {/* Stats panel */}
-        <StatsPanel stats={stats} />
-
-        {/* Tabs */}
-        <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1 overflow-x-auto">
-          {TABS.map(tab => (
-            <button
-              key={tab.label}
-              onClick={() => setActiveTab(tab.label)}
-              className={clsx(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
-                activeTab === tab.label
-                  ? 'bg-violet-600 text-white shadow'
-                  : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
-              )}
-            >
-              {tab.icon}
-              {tab.label}
-              {tab.count && (
-                <span
-                  className={clsx(
-                    'ml-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold',
-                    activeTab === tab.label
-                      ? 'bg-violet-500 text-white'
-                      : 'bg-gray-800 text-gray-500'
-                  )}
-                >
-                  {tab.count(stats)}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+        {/* Stats panel (clickable tabs) */}
+        <StatsPanel stats={stats} activeTab={activeTab} onTabChange={setActiveTab} />
 
         {/* Queue list */}
         {filteredQueue.length === 0 ? (
