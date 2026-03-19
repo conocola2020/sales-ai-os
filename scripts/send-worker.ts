@@ -326,6 +326,50 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
       console.log(`  最終URL: ${finalUrl}`)
       console.log(`  最終タイトル: ${finalTitle}`)
 
+      // 送信完了の判定（ページ内容から確認）
+      const completionCheck = await page.evaluate(() => {
+        const text = document.body.innerText || ''
+        const successKeywords = [
+          'ありがとう', '送信完了', '送信しました', '受付', '受け付け',
+          '完了しました', '送信いたしました', 'お問い合わせを承り',
+          'thank you', 'submitted', 'complete',
+        ]
+        const errorKeywords = [
+          'エラー', '入力してください', '必須', '正しく入力',
+          'error', 'required', 'invalid',
+        ]
+        const foundSuccess = successKeywords.filter(kw => text.includes(kw))
+        const foundError = errorKeywords.filter(kw => text.includes(kw))
+        return { foundSuccess, foundError, textSnippet: text.substring(0, 500) }
+      })
+
+      const urlChanged = finalUrl !== formUrl
+      const hasSuccessText = completionCheck.foundSuccess.length > 0
+      const hasErrorText = completionCheck.foundError.length > 0
+
+      console.log(`  URL変化: ${urlChanged ? '✓ 遷移あり' : '✗ 変化なし'}`)
+      console.log(`  完了テキスト: ${hasSuccessText ? `✓ [${completionCheck.foundSuccess.join(', ')}]` : '✗ なし'}`)
+      console.log(`  エラーテキスト: ${hasErrorText ? `⚠️ [${completionCheck.foundError.join(', ')}]` : '✓ なし'}`)
+
+      // 判定ロジック
+      let sendStatus: '送信済み' | '送信未確認' | '失敗'
+      let statusReason = ''
+
+      if (hasErrorText && !hasSuccessText) {
+        sendStatus = '失敗'
+        statusReason = `エラー検出: ${completionCheck.foundError.join(', ')}`
+      } else if (hasSuccessText || urlChanged) {
+        sendStatus = '送信済み'
+        statusReason = hasSuccessText
+          ? `完了テキスト検出: ${completionCheck.foundSuccess.join(', ')}`
+          : 'サンクスページへ遷移'
+      } else {
+        sendStatus = '送信未確認'
+        statusReason = '完了テキストもURL遷移も検出できず。手動確認が必要です。'
+      }
+
+      console.log(`  判定: ${sendStatus} (${statusReason})`)
+
       // スクリーンショット保存
       try {
         const buffer = await page.screenshot({ fullPage: false })
@@ -343,14 +387,16 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
           .update({ form_url: formUrl, screenshot_url: urlData.publicUrl })
           .eq('id', item.id)
       } catch {
-        // スクショ失敗は非致命的
         await supabase
           .from('send_queue')
           .update({ form_url: formUrl })
           .eq('id', item.id)
       }
 
-      return { success: true }
+      if (sendStatus === '失敗') {
+        return { success: false, error: statusReason }
+      }
+      return { success: true, verified: sendStatus === '送信済み', reason: statusReason }
     } finally {
       await page.close()
       await context.close()
@@ -582,7 +628,7 @@ async function pollAndProcess() {
       for (const item of items as unknown as QueueItem[]) {
         console.log(`\n📧 ${item.lead.company_name} [${item.send_method}]`)
 
-        let result: { success: boolean; error?: string }
+        let result: { success: boolean; error?: string; verified?: boolean; reason?: string }
 
         if (item.send_method === 'email') {
           result = await sendEmail(item)
@@ -591,20 +637,24 @@ async function pollAndProcess() {
         }
 
         if (result.success) {
+          const status = result.verified === false ? '送信未確認' : '送信済み'
           await supabase
             .from('send_queue')
             .update({
-              status: '送信済み',
+              status,
               sent_at: new Date().toISOString(),
+              error_message: result.verified === false ? (result.reason ?? '完了確認なし') : null,
             })
             .eq('id', item.id)
 
-          await supabase
-            .from('leads')
-            .update({ status: '送信済み' })
-            .eq('id', item.lead_id)
+          if (result.verified !== false) {
+            await supabase
+              .from('leads')
+              .update({ status: '送信済み' })
+              .eq('id', item.lead_id)
+          }
 
-          console.log(`  ✅ 送信成功`)
+          console.log(`  ${result.verified !== false ? '✅ 送信成功（確認済み）' : '⚠️ 送信未確認（手動確認必要）'}`)
         } else if (result.error !== 'form_not_found') {
           await supabase
             .from('send_queue')
