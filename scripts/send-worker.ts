@@ -486,56 +486,47 @@ async function handleConfirmPage(page: import('playwright').Page): Promise<void>
 
   if (!isConfirmPage) return
 
-  // 幅広いセレクタで「送信する」ボタンを探す
-  const selectors = [
-    'button:has-text("送信する")',
-    'button:has-text("送信")',
-    'input[type="submit"][value*="送信"]',
-    'input[type="button"][value*="送信"]',
-    'a:has-text("送信する")',
-    'button[type="submit"]',
-    'input[type="submit"]',
-    '.wpcf7-submit',                    // Contact Form 7
-    '.mw_wp_form_confirm .submit-btn',  // MW WP Form 確認画面
-    'input[value="送信する"]',
-    'button.confirm-submit',
-    '.confirm input[type="submit"]',
-  ]
+  // 全ボタンのテキストをログ出力
+  const allButtons = await page.evaluate(() => {
+    const elements = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"], a.btn, a.button'))
+    return elements.map(el => ({
+      tag: el.tagName,
+      text: ((el as HTMLElement).textContent || (el as HTMLInputElement).value || '').trim(),
+      visible: el.getBoundingClientRect().height > 0,
+    }))
+  })
+  console.log(`  確認画面のボタン一覧: ${JSON.stringify(allButtons)}`)
 
-  for (const sel of selectors) {
-    try {
-      const el = await page.$(sel)
-      if (el && await el.isVisible()) {
-        const text = await el.evaluate((e: Element) => e.textContent || (e as HTMLInputElement).value || '')
-        console.log(`  確認画面送信ボタン発見: "${text}" (${sel})`)
-        await el.scrollIntoViewIfNeeded()
-        await delay(500)
-        await el.click()
-        console.log(`  確認画面送信クリック: ✓`)
-        await delay(3000)
-        return
-      }
-    } catch { /* continue */ }
-  }
-
-  // セレクタで見つからない場合、JSで「送信」テキストを含むボタンを探す
+  // JSで「送信する」「送信」テキストのボタンを探す（「確認」「入力」を含むボタンは除外）
   const clicked = await page.evaluate(() => {
-    const elements = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"], a'))
+    const elements = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"], a.btn, a.button'))
+
+    // 優先順位1: テキストが「送信する」のボタン
     for (const el of elements) {
-      const text = (el as HTMLElement).textContent || (el as HTMLInputElement).value || ''
-      if (text.includes('送信') && !text.includes('確認')) {
+      const text = ((el as HTMLElement).textContent || (el as HTMLInputElement).value || '').trim()
+      if (text === '送信する' && el.getBoundingClientRect().height > 0) {
         (el as HTMLElement).click()
-        return text.trim()
+        return text
       }
     }
+
+    // 優先順位2: 「送信」を含み「確認」「入力」を含まないボタン
+    for (const el of elements) {
+      const text = ((el as HTMLElement).textContent || (el as HTMLInputElement).value || '').trim()
+      if (text.includes('送信') && !text.includes('確認') && !text.includes('入力') && el.getBoundingClientRect().height > 0) {
+        (el as HTMLElement).click()
+        return text
+      }
+    }
+
     return null
   })
 
   if (clicked) {
-    console.log(`  JS経由で送信ボタンクリック: "${clicked}" ✓`)
+    console.log(`  確認画面送信クリック: "${clicked}" ✓`)
     await delay(3000)
   } else {
-    console.log(`  ⚠️ 確認画面の送信ボタンが見つかりません`)
+    console.log(`  ⚠️ 確認画面の「送信する」ボタンが見つかりません`)
   }
 }
 
