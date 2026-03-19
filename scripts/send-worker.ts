@@ -138,7 +138,7 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
         company_name: settings?.company_name || '株式会社CONOCOLA',
         representative: settings?.representative || '河野大地',
         email: settings?.company_email || 'daichi@conocola.com',
-        phone: settings?.company_phone || '052-228-4945',
+        phone: '', // 電話番号は記載しない
       }
 
       // フィールド入力（詳細ログ付き）
@@ -259,8 +259,9 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
       }
       console.log(`  メール確認入力: ${filledEmailConfirm ? '✓' : '✗'}`)
 
-      const filledPhone = await tryFillField(page, 'phone', senderInfo.phone)
-      console.log(`  電話入力: ${filledPhone ? '✓' : '✗'}`)
+      // 電話番号は入力しない（記載不要のため）
+      // const filledPhone = await tryFillField(page, 'phone', senderInfo.phone)
+      console.log(`  電話入力: スキップ（記載不要）`)
       const filledBody = await tryFillField(page, 'body', item.message_content)
       console.log(`  本文入力: ${filledBody ? '✓' : '✗'}`)
 

@@ -793,7 +793,8 @@ async function submitForm(
     // 2. テキストフィールドを入力
     await findAndFillField(page, 'name', senderInfo.representative)
     await fillFurigana(page, 'コウノダイチ') // TODO: user_settingsから取得
-    await findAndFillField(page, 'phone', senderInfo.phone)
+    // 電話番号は入力しない（記載不要のため）
+    // await findAndFillField(page, 'phone', senderInfo.phone)
     await findAndFillField(page, 'email', senderInfo.email)
     await findAndFillField(page, 'email_confirm', senderInfo.email)
     const companyFilled = await findAndFillField(page, 'company', senderInfo.company_name)
@@ -914,7 +915,7 @@ async function getSenderInfo(userId: string): Promise<SenderInfo> {
     company_name: data?.company_name || '株式会社CONOCOLA',
     representative: data?.representative || '河野大地',
     email: data?.company_email || 'daichi@conocola.com',
-    phone: data?.company_phone || '052-228-4945',
+    phone: '', // 電話番号は記載しない
   }
 }
 
