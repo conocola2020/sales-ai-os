@@ -14,6 +14,7 @@ import clsx from 'clsx'
 interface RepliesPageProps {
   initialReplies: Reply[]
   leads: Lead[]
+  sentLeadIds?: string[]
 }
 
 type Tab = '全て' | '未読' | Sentiment
@@ -40,7 +41,7 @@ const TABS: { label: Tab; getCount: (s: ReplyStats) => number }[] = [
   { label: 'その他', getCount: s => s.other },
 ]
 
-export default function RepliesPage({ initialReplies, leads }: RepliesPageProps) {
+export default function RepliesPage({ initialReplies, leads, sentLeadIds = [] }: RepliesPageProps) {
   const [replies, setReplies] = useState<Reply[]>(initialReplies)
   const [activeTab, setActiveTab] = useState<Tab>('全て')
   const [selectedReply, setSelectedReply] = useState<Reply | null>(null)
@@ -181,12 +182,9 @@ export default function RepliesPage({ initialReplies, leads }: RepliesPageProps)
               {activeTab === '全て' ? '返信がありません' : `${activeTab}の返信はありません`}
             </p>
             {activeTab === '全て' && (
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="mt-3 text-xs text-violet-400 hover:text-violet-300 transition-colors"
-              >
-                + 返信を手動で追加
-              </button>
+              <p className="mt-3 text-xs text-gray-600">
+                Gmailから自動で取り込まれます
+              </p>
             )}
           </div>
         ) : (
@@ -204,6 +202,7 @@ export default function RepliesPage({ initialReplies, leads }: RepliesPageProps)
       {selectedReply && (
         <ReplyDetailModal
           reply={selectedReply}
+          leads={leads}
           onClose={() => setSelectedReply(null)}
           onUpdated={handleUpdated}
           onDeleted={handleDeleted}
@@ -214,6 +213,7 @@ export default function RepliesPage({ initialReplies, leads }: RepliesPageProps)
       {showAddModal && (
         <AddReplyModal
           leads={leads}
+          sentLeadIds={sentLeadIds}
           onClose={() => setShowAddModal(false)}
           onAdded={handleAdded}
         />

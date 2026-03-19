@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   X,
@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Trash2,
   RefreshCw,
+  Mail,
 } from 'lucide-react'
 import clsx from 'clsx'
 import type { Reply, Sentiment } from '@/types/replies'
@@ -23,11 +24,14 @@ import {
   updateSentiment,
   saveAiResponse,
   deleteReply,
+  linkReplyToLead,
 } from '@/app/dashboard/replies/actions'
 import { createDealFromReply } from '@/app/dashboard/deals/actions'
+import type { Lead } from '@/types/leads'
 
 interface ReplyDetailModalProps {
   reply: Reply
+  leads?: Lead[]
   onClose: () => void
   onUpdated: (id: string, changes: Partial<Reply>) => void
   onDeleted: (id: string) => void
@@ -35,6 +39,7 @@ interface ReplyDetailModalProps {
 
 export default function ReplyDetailModal({
   reply,
+  leads = [],
   onClose,
   onUpdated,
   onDeleted,
@@ -51,20 +56,23 @@ export default function ReplyDetailModal({
   const [isCreatingDeal, setIsCreatingDeal] = useState(false)
   const [dealCreated, setDealCreated] = useState(false)
   const [error, setError] = useState('')
+  const [showLeadSelector, setShowLeadSelector] = useState(false)
+  const [isLinking, setIsLinking] = useState(false)
+  const [linkedLead, setLinkedLead] = useState(reply.lead ?? null)
+  const [linkedLeadId, setLinkedLeadId] = useState(reply.lead_id ?? null)
 
   const cfg = SENTIMENT_CONFIG[sentiment]
-  const lead = reply.lead
+  const lead = linkedLead
 
   // Mark as read on open (fire-and-forget)
-  const [markedRead] = useState(() => {
+  useEffect(() => {
     if (!reply.is_read) {
       markAsRead(reply.id).then(() => {
         onUpdated(reply.id, { is_read: true })
       })
     }
-    return true
-  })
-  void markedRead
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reply.id])
 
   // ── AI response generation ──────────────────
   const handleGenerateResponse = async () => {
@@ -143,13 +151,106 @@ export default function ReplyDetailModal({
     }
   }
 
+  // ── Auto-match lead from reply content ─────
+  const findMatchingLead = (): Lead | null => {
+    if (leads.length === 0) return null
+
+    // Extract sender email domain from content
+    const emailMatch = reply.content.match(/【送信者】.*?<([^>]+)>/)
+    const senderEmail = emailMatch?.[1] || ''
+    const senderDomain = senderEmail.split('@')[1]?.toLowerCase() || ''
+
+    // 1. Domain match (highest confidence)
+    if (senderDomain) {
+      const domainMatch = leads.find(l => {
+        const leadEmailDomain = l.email?.split('@')[1]?.toLowerCase() || ''
+        const leadWebDomain = l.website_url
+          ?.replace(/^https?:\/\//, '')
+          .replace(/^www\./, '')
+          .split('/')[0]
+          ?.toLowerCase() || ''
+        return (
+          (leadEmailDomain && senderDomain === leadEmailDomain) ||
+          (leadWebDomain && senderDomain.includes(leadWebDomain)) ||
+          (leadWebDomain && leadWebDomain.includes(senderDomain))
+        )
+      })
+      if (domainMatch) return domainMatch
+    }
+
+    // 2. Company name match in content
+    const content = reply.content
+    const nameMatch = leads.find(l => {
+      if (!l.company_name || l.company_name.length < 2) return false
+      return content.includes(l.company_name)
+    })
+    if (nameMatch) return nameMatch
+
+    return null
+  }
+
+  // ── Auto-link on button click ────────────────
+  const handleAutoLink = async () => {
+    const matched = findMatchingLead()
+    if (matched) {
+      await handleLinkLead(matched)
+    } else {
+      // No auto-match found, show manual selector
+      setShowLeadSelector(true)
+    }
+  }
+
+  // ── Link reply to a lead ───────────────────
+  const handleLinkLead = async (selectedLead: Lead) => {
+    setIsLinking(true)
+    setError('')
+    const { data, error: err } = await linkReplyToLead(reply.id, selectedLead.id)
+    setIsLinking(false)
+    if (err) {
+      setError(err)
+      return
+    }
+    setLinkedLead({
+      company_name: selectedLead.company_name,
+      contact_name: selectedLead.contact_name,
+      email: selectedLead.email,
+      website_url: selectedLead.website_url,
+      industry: selectedLead.industry,
+      status: selectedLead.status,
+    })
+    setLinkedLeadId(selectedLead.id)
+    setShowLeadSelector(false)
+    onUpdated(reply.id, { lead_id: selectedLead.id, lead: data?.lead })
+  }
+
+  // ── Open Gmail compose with AI response ────
+  const handleOpenGmailCompose = () => {
+    // Extract sender email from content header: 【送信者】名前 <email@example.com>
+    const emailMatch = reply.content.match(/【送信者】.*?<([^>]+)>/)
+    const toEmail = emailMatch?.[1] || lead?.email || ''
+
+    // Extract subject from content header: 【件名】...
+    const subjectMatch = reply.content.match(/【件名】(.+)/)
+    const originalSubject = subjectMatch?.[1]?.trim() || 'お問い合わせについて'
+    const subject = originalSubject.startsWith('Re:') ? originalSubject : `Re: ${originalSubject}`
+
+    const params = new URLSearchParams({
+      view: 'cm',
+      to: toEmail,
+      su: subject,
+      body: aiResponse,
+    })
+    // Open Gmail compose for daichi@conocola.com (Google Workspace)
+    window.open(`https://mail.google.com/a/conocola.com/?${params.toString()}`, '_blank')
+  }
+
   // ── Create deal and go to deals ────────────
   const handleCreateDealAndGo = async () => {
-    if (!reply.lead_id || !lead) return
+    if (!linkedLeadId || !lead) return
     setIsCreatingDeal(true)
     setError('')
     const { data, error: err } = await createDealFromReply(
-      reply.lead_id,
+      linkedLeadId,
       lead.company_name ?? '不明',
       lead.contact_name,
       reply.content,
@@ -158,7 +259,7 @@ export default function ReplyDetailModal({
     if (err) {
       // 既に商談がある場合はそのまま遷移
       if (err.includes('既に存在')) {
-        router.push(`/dashboard/deals?leadId=${reply.lead_id}`)
+        router.push(`/dashboard/deals?leadId=${linkedLeadId}`)
         onClose()
         return
       }
@@ -296,27 +397,64 @@ export default function ReplyDetailModal({
                   hour: '2-digit', minute: '2-digit',
                 })}
               </span>
-              {/* 商談作成ボタン（興味あり・検討中・質問で表示） */}
-              {['興味あり', '検討中', '質問'].includes(sentiment) && reply.lead_id && (
-                <button
-                  onClick={handleCreateDealAndGo}
-                  disabled={isCreatingDeal || dealCreated}
-                  className={clsx(
-                    'flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-semibold rounded-lg transition-colors',
-                    dealCreated
-                      ? 'bg-emerald-600'
-                      : 'bg-violet-600 hover:bg-violet-500'
-                  )}
-                >
-                  {isCreatingDeal ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : dealCreated ? (
-                    <Check className="w-3.5 h-3.5" />
-                  ) : (
-                    <Handshake className="w-3.5 h-3.5" />
-                  )}
-                  {isCreatingDeal ? '作成中...' : dealCreated ? '商談作成済み！' : '商談を作成'}
-                </button>
+              {/* リード紐づけ or 商談作成ボタン */}
+              {['興味あり', '検討中', '質問'].includes(sentiment) && (
+                linkedLeadId ? (
+                  <button
+                    onClick={handleCreateDealAndGo}
+                    disabled={isCreatingDeal || dealCreated}
+                    className={clsx(
+                      'flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-semibold rounded-lg transition-colors',
+                      dealCreated
+                        ? 'bg-emerald-600'
+                        : 'bg-violet-600 hover:bg-violet-500'
+                    )}
+                  >
+                    {isCreatingDeal ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : dealCreated ? (
+                      <Check className="w-3.5 h-3.5" />
+                    ) : (
+                      <Handshake className="w-3.5 h-3.5" />
+                    )}
+                    {isCreatingDeal ? '作成中...' : dealCreated ? '商談作成済み！' : '商談を作成'}
+                  </button>
+                ) : (
+                  <div className="relative">
+                    <button
+                      onClick={handleAutoLink}
+                      disabled={isLinking}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg transition-colors"
+                    >
+                      {isLinking ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      )}
+                      リードに紐づけ
+                    </button>
+                    {showLeadSelector && (
+                      <div className="absolute top-full right-0 mt-1 w-64 max-h-60 overflow-y-auto bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-20">
+                        {leads.length === 0 ? (
+                          <p className="px-3 py-2 text-xs text-gray-500">リードがありません</p>
+                        ) : (
+                          leads.map(l => (
+                            <button
+                              key={l.id}
+                              onClick={() => handleLinkLead(l)}
+                              className="w-full flex flex-col px-3 py-2 text-left hover:bg-gray-800 transition-colors border-b border-gray-800 last:border-0"
+                            >
+                              <span className="text-xs font-semibold text-white">{l.company_name}</span>
+                              {l.contact_name && (
+                                <span className="text-[10px] text-gray-500">{l.contact_name}</span>
+                              )}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
               )}
             </div>
           </div>
@@ -354,22 +492,31 @@ export default function ReplyDetailModal({
               </h3>
               <div className="flex items-center gap-2">
                 {aiResponse && (
-                  <button
-                    onClick={handleCopy}
-                    className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
-                  >
-                    {isCopied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400">コピー済み</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        コピー
-                      </>
-                    )}
-                  </button>
+                  <>
+                    <button
+                      onClick={handleOpenGmailCompose}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      Gmailで返信
+                    </button>
+                    <button
+                      onClick={handleCopy}
+                      className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                    >
+                      {isCopied ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-emerald-400">コピー済み</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          コピー
+                        </>
+                      )}
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={handleGenerateResponse}

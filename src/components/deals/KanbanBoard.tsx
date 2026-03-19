@@ -38,7 +38,7 @@ interface KanbanCardProps {
 }
 
 function KanbanCard({ deal, onClick }: KanbanCardProps) {
-  const cfg = STAGE_CONFIG[deal.stage]
+  const cfg = STAGE_CONFIG[deal.stage] ?? STAGE_CONFIG['初回接触']
   const dateStatus =
     deal.next_action_date && deal.stage !== '成約' && deal.stage !== '失注'
       ? getDateStatus(deal.next_action_date)

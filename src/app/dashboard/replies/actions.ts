@@ -175,6 +175,33 @@ export async function saveAiResponse(
 }
 
 // ──────────────────────────────────────────
+// Link reply to a lead
+// ──────────────────────────────────────────
+export async function linkReplyToLead(
+  replyId: string,
+  leadId: string
+): Promise<{ data: Reply | null; error: string | null }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { data: null, error: '認証が必要です' }
+
+  const { data, error } = await supabase
+    .from('replies')
+    .update({ lead_id: leadId })
+    .eq('id', replyId)
+    .eq('user_id', user.id)
+    .select(LEAD_SELECT)
+    .single()
+
+  if (error) return { data: null, error: error.message }
+  revalidatePath('/dashboard/replies')
+  return { data: data as Reply, error: null }
+}
+
+// ──────────────────────────────────────────
 // Delete a reply
 // ──────────────────────────────────────────
 export async function deleteReply(id: string): Promise<{ error: string | null }> {

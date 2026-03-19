@@ -11,11 +11,12 @@ import clsx from 'clsx'
 
 interface AddReplyModalProps {
   leads: Lead[]
+  sentLeadIds?: string[]
   onClose: () => void
   onAdded: (reply: Reply) => void
 }
 
-export default function AddReplyModal({ leads, onClose, onAdded }: AddReplyModalProps) {
+export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdded }: AddReplyModalProps) {
   const [leadSearch, setLeadSearch] = useState('')
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [content, setContent] = useState('')
@@ -26,6 +27,12 @@ export default function AddReplyModal({ leads, onClose, onAdded }: AddReplyModal
     ai_response: string
   } | null>(null)
   const [error, setError] = useState('')
+
+  // 送信済みリードを優先表示
+  const sentLeads = useMemo(
+    () => leads.filter(l => sentLeadIds.includes(l.id)),
+    [leads, sentLeadIds]
+  )
 
   const filteredLeads = useMemo(
     () =>
@@ -157,8 +164,27 @@ export default function AddReplyModal({ leads, onClose, onAdded }: AddReplyModal
           {/* Lead selector */}
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
-              関連リード（任意）
+              返信元の企業
             </label>
+
+            {/* 送信済みリードのクイック選択 */}
+            {!selectedLead && sentLeads.length > 0 && !leadSearch && (
+              <div className="mb-2">
+                <p className="text-[10px] text-gray-600 mb-1.5">📨 送信済み企業（クリックで選択）</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {sentLeads.slice(0, 10).map(lead => (
+                    <button
+                      key={lead.id}
+                      onClick={() => setSelectedLead(lead)}
+                      className="px-2.5 py-1.5 text-xs bg-violet-500/10 border border-violet-500/20 hover:border-violet-500/40 rounded-lg text-violet-300 hover:text-violet-200 transition-all"
+                    >
+                      {lead.company_name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="relative mb-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
               <input
@@ -255,13 +281,20 @@ export default function AddReplyModal({ leads, onClose, onAdded }: AddReplyModal
 
           {/* Classification result */}
           {classifyResult && cfg && (
-            <div className={clsx('flex items-center gap-2 px-3 py-2 rounded-xl border text-sm', cfg.bg, cfg.border, cfg.color)}>
-              <span className="text-base">{cfg.emoji}</span>
-              <div>
-                <span className="font-semibold">{cfg.label}</span>
-                <span className="text-xs ml-2 opacity-70">{cfg.description}</span>
+            <div className="space-y-2">
+              <div className={clsx('flex items-center gap-2 px-3 py-2 rounded-xl border text-sm', cfg.bg, cfg.border, cfg.color)}>
+                <span className="text-base">{cfg.emoji}</span>
+                <div>
+                  <span className="font-semibold">{cfg.label}</span>
+                  <span className="text-xs ml-2 opacity-70">{cfg.description}</span>
+                </div>
+                <span className="ml-auto text-xs opacity-60">返信文案も生成済み</span>
               </div>
-              <span className="ml-auto text-xs opacity-60">返信文案も生成済み</span>
+              {classifyResult.sentiment === '興味あり' && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                  <span className="text-xs text-emerald-400">🎯 前向きな返信です！追加後に商談管理へ移行できます</span>
+                </div>
+              )}
             </div>
           )}
         </div>

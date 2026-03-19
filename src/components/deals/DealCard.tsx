@@ -50,7 +50,7 @@ function formatMeetingDate(isoStr: string): string {
 }
 
 export default function DealCard({ deal, onClick }: DealCardProps) {
-  const cfg = STAGE_CONFIG[deal.stage]
+  const cfg = STAGE_CONFIG[deal.stage] ?? STAGE_CONFIG['初回接触']
 
   const dateStatus =
     deal.next_action_date && deal.stage !== '成約' && deal.stage !== '失注'
@@ -140,7 +140,7 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
             )}
 
             {/* Activity timeline (last 3) */}
-            {deal.activity_log && deal.activity_log.length > 0 && (
+            {Array.isArray(deal.activity_log) && deal.activity_log.length > 0 && (
               <div className="mt-2 pt-2 border-t border-gray-800">
                 <ActivityTimeline
                   activities={deal.activity_log}
