@@ -288,14 +288,30 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
         return { success: false, error: `フォーム入力失敗: メールも本文も入力できませんでした (${pageUrl})` }
       }
 
-      // 送信
+      // 送信（1回目: 「入力内容を確認する」ボタン）
       const submitted = await clickSubmitButton(page)
       console.log(`  送信ボタンクリック: ${submitted ? '✓' : '✗'}`)
       if (!submitted) {
         return { success: false, error: '送信ボタンが見つかりませんでした' }
       }
 
-      await delay(3000)
+      // 確認画面が表示されるまで待つ（最大10秒）
+      console.log(`  確認画面の表示を待機中...`)
+      for (let i = 0; i < 10; i++) {
+        await delay(1000)
+        const hasSubmitButton = await page.evaluate(() => {
+          const buttons = Array.from(document.querySelectorAll('button, input[type="submit"]'))
+          return buttons.some(el => {
+            const text = ((el as HTMLElement).textContent || (el as HTMLInputElement).value || '').trim()
+            return text === '送信する' || (text.includes('送信') && !text.includes('確認') && !text.includes('入力'))
+          })
+        })
+        if (hasSubmitButton) {
+          console.log(`  「送信する」ボタン検出（${i + 1}秒後）`)
+          break
+        }
+        if (i === 9) console.log(`  10秒待機しても「送信する」ボタンが見つかりません`)
+      }
 
       // 確認画面対応
       const pageAfterSubmit = page.url()
