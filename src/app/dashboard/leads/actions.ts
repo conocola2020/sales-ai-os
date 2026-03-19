@@ -32,6 +32,31 @@ export async function getLeads(): Promise<{ data: Lead[]; error: string | null }
 }
 
 // ──────────────────────────────────────────
+// Lightweight lead summary (for dashboard)
+// ──────────────────────────────────────────
+export async function getLeadSummary(): Promise<{
+  data: { total: number; untouched: number } | null
+  error: string | null
+}> {
+  const supabase = await createClient()
+
+  const [totalRes, untouchedRes] = await Promise.all([
+    supabase.from('leads').select('id', { count: 'exact', head: true }),
+    supabase.from('leads').select('id', { count: 'exact', head: true }).eq('status', '未着手'),
+  ])
+
+  if (totalRes.error) return { data: null, error: totalRes.error.message }
+
+  return {
+    data: {
+      total: totalRes.count ?? 0,
+      untouched: untouchedRes.count ?? 0,
+    },
+    error: null,
+  }
+}
+
+// ──────────────────────────────────────────
 // Create a single lead
 // ──────────────────────────────────────────
 export async function createLead(

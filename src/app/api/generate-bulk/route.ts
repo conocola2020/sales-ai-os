@@ -6,6 +6,7 @@ import { DEFAULT_USER_SETTINGS } from '@/types/settings'
 import { fetchStructuredHpContent, formatStructuredContent } from '@/lib/hp-fetcher'
 import { analyzeForConocola, formatAnalysis } from '@/lib/hp-analyzer'
 import { buildSystemPrompt, buildUserPrompt, parseSubjectAndBody } from '@/lib/prompt-builder'
+import { getAnthropicApiKey } from '@/lib/env'
 
 interface BulkGenerateRequest {
   leadIds: string[]
@@ -34,9 +35,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'leadIds と tone は必須です' }, { status: 400 })
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
-    if (!apiKey || apiKey === 'your-anthropic-api-key-here') {
-      return NextResponse.json({ error: 'APIキーが設定されていません' }, { status: 500 })
+    const apiKey = getAnthropicApiKey()
+    const isDemo = !apiKey || apiKey === 'your-anthropic-api-key-here'
+
+    // ── デモモード: ダミーデータをストリーム返却 ──
+    if (isDemo) {
+      const { generateCandidateDatesText } = await import('@/lib/date-utils')
+      const dates = generateCandidateDatesText('9:00〜19:00')
+      const encoder = new TextEncoder()
+      const stream = new ReadableStream({
+        async start(controller) {
+          const total = leadIds.length
+          controller.enqueue(encoder.encode(
+            JSON.stringify({ type: 'progress', total, completed: 0 }) + '\n'
+          ))
+          for (let i = 0; i < total; i++) {
+            await new Promise(r => setTimeout(r, 300))
+            const demoBody = `ご担当者様\n\nはじめまして！世界初のサウナ専用コーラを作っている、株式会社CONOCOLAの河野大地です。\n\n貴施設のWebサイトを拝見し、サウナへのこだわりに大変共感いたしました。\n\n弊社は全国60以上のサウナ施設様にご導入いただいており、NHK・東海テレビなどメディア掲載実績も多数ございます。\n\nぜひ一度、15分程度のオンラインミーティングでご紹介させてください。\n\n▼ ご都合のよい日時をお選びください\n${dates}\n📅 https://timerex.net/s/daichi_3022_c34c/a78a4d68\n\n河野大地\nCONOCOLA株式会社\nTel: 050-1234-5678\nEmail: daichi@conocola.com`
+            controller.enqueue(encoder.encode(
+              JSON.stringify({
+                type: 'result',
+                leadId: leadIds[i],
+                companyName: `デモ企業${i + 1}`,
+                subject: `【CONOCOLA】サウナ専用コーラのご提案`,
+                body: demoBody,
+                progress: { total, completed: i + 1 },
+              }) + '\n'
+            ))
+          }
+          controller.enqueue(encoder.encode(
+            JSON.stringify({ type: 'done', total, completed: total }) + '\n'
+          ))
+          controller.close()
+        },
+      })
+      return new Response(stream, {
+        headers: { 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-cache' },
+      })
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

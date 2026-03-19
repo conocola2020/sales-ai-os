@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import type { AnalysisResult } from '@/types/analyses'
+import { getAnthropicApiKey } from '@/lib/env'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const apiKey = getAnthropicApiKey()
+const client = new Anthropic({ apiKey })
 
 const ANALYSIS_SYSTEM_PROMPT = [
   'あなたは企業調査の専門家です。提供されたWebサイトのコンテンツを分析し、以下のJSON形式で企業情報を返してください。',
@@ -93,8 +95,8 @@ export async function POST(req: NextRequest) {
     }
 
     const isDemo =
-      !process.env.ANTHROPIC_API_KEY ||
-      process.env.ANTHROPIC_API_KEY === 'your-anthropic-api-key-here'
+      !getAnthropicApiKey() ||
+      getAnthropicApiKey() === 'your-anthropic-api-key-here'
 
     if (isDemo) {
       const result = await demoAnalysis()

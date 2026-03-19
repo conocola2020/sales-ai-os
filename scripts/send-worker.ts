@@ -137,7 +137,7 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
       const senderInfo = {
         company_name: settings?.company_name || '株式会社CONOCOLA',
         representative: settings?.representative || '河野大地',
-        email: settings?.company_email || 'conocola2020@gmail.com',
+        email: settings?.company_email || 'daichi@conocola.com',
         phone: settings?.company_phone || '052-228-4945',
       }
 

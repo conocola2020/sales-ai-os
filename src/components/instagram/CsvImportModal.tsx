@@ -17,14 +17,47 @@ export default function CsvImportModal({ onClose, onImported }: CsvImportModalPr
   const [importedCount, setImportedCount] = useState(0)
   const [dragOver, setDragOver] = useState(false)
 
+  // 引用符対応のCSV行パーサー
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = []
+    let current = ''
+    let inQuotes = false
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i]
+      if (inQuotes) {
+        if (ch === '"' && line[i + 1] === '"') {
+          current += '"'
+          i++ // skip escaped quote
+        } else if (ch === '"') {
+          inQuotes = false
+        } else {
+          current += ch
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true
+        } else if (ch === ',') {
+          result.push(current.trim())
+          current = ''
+        } else {
+          current += ch
+        }
+      }
+    }
+    result.push(current.trim())
+    return result
+  }
+
   const parseCSV = useCallback((text: string) => {
-    const lines = text.trim().split('\n')
+    // BOM除去
+    const clean = text.replace(/^\ufeff/, '')
+    const lines = clean.trim().split('\n')
     if (lines.length < 2) {
       setError('CSVファイルにヘッダーとデータが必要です')
       return
     }
 
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''))
+    const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/"/g, ''))
     const usernameIdx = headers.findIndex(h => h === 'username' || h === 'ユーザー名')
     if (usernameIdx === -1) {
       setError('username列が見つかりません。ヘッダーに "username" を含めてください。')
@@ -35,11 +68,11 @@ export default function CsvImportModal({ onClose, onImported }: CsvImportModalPr
     const bioIdx = headers.findIndex(h => h === 'bio' || h === 'プロフィール')
     const industryIdx = headers.findIndex(h => h === 'industry' || h === '業種')
     const followerIdx = headers.findIndex(h => h === 'follower_count' || h === 'フォロワー数')
-    const notesIdx = headers.findIndex(h => h === 'notes' || h === 'メモ')
+    const notesIdx = headers.findIndex(h => h === 'notes' || h === 'メモ' || h === '備考')
 
     const parsed: InstagramTargetInsert[] = []
     for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''))
+      const cols = parseCSVLine(lines[i])
       const username = cols[usernameIdx]?.trim()
       if (!username) continue
 

@@ -4,16 +4,20 @@ import { useState } from 'react'
 import { X, Sparkles, Copy, Check, Send, RefreshCw, AlertCircle } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { InstagramTarget } from '@/types/instagram'
+import type { DmSafetyStatus } from '@/types/instagram-safety'
 import { STATUS_CONFIG } from '@/types/instagram'
+import { formatWaitTime } from '@/lib/instagram-safety'
 import { saveDmAndMarkSent, updateTarget } from '@/app/dashboard/instagram/actions'
 
 interface DmModalProps {
   target: InstagramTarget
   onClose: () => void
   onUpdated: (target: InstagramTarget) => void
+  safetyStatus?: DmSafetyStatus | null
+  onSafetyRefresh?: () => void
 }
 
-export default function DmModal({ target, onClose, onUpdated }: DmModalProps) {
+export default function DmModal({ target, onClose, onUpdated, safetyStatus, onSafetyRefresh }: DmModalProps) {
   const [dmContent, setDmContent] = useState(target.dm_content ?? '')
   const [generating, setGenerating] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -67,12 +71,13 @@ export default function DmModal({ target, onClose, onUpdated }: DmModalProps) {
     }
     setError(null)
     setSaving(true)
-    const { data, error: err } = await saveDmAndMarkSent(target.id, dmContent.trim())
+    const { data, error: err } = await saveDmAndMarkSent(target.id, dmContent.trim(), target.username)
     setSaving(false)
     if (err || !data) {
       setError(err ?? '保存に失敗しました')
       return
     }
+    onSafetyRefresh?.()
     onUpdated(data)
   }
 
@@ -124,6 +129,20 @@ export default function DmModal({ target, onClose, onUpdated }: DmModalProps) {
 
         {/* Body */}
         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+          {/* Safety warnings */}
+          {safetyStatus && !safetyStatus.canSendNow && !target.dm_sent && (
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-sm text-red-400">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              本日のDM上限（{safetyStatus.effectiveLimit}件）に達しました。明日まで待つことをお勧めします。
+            </div>
+          )}
+          {safetyStatus && safetyStatus.canSendNow && safetyStatus.waitSeconds > 0 && !target.dm_sent && (
+            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 py-3 text-sm text-amber-400">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              推奨間隔まであと{formatWaitTime(safetyStatus.waitSeconds)}。少し待つとアカウントが安全です。
+            </div>
+          )}
+
           {error && (
             <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-sm text-red-400">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -196,24 +215,36 @@ export default function DmModal({ target, onClose, onUpdated }: DmModalProps) {
             )}
           </div>
 
-          {/* Copy button */}
+          {/* Copy + Open Instagram buttons */}
           {dmContent.trim() && (
-            <button
-              onClick={handleCopy}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 hover:text-white rounded-xl text-sm font-medium transition-all"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 text-emerald-400" />
-                  <span className="text-emerald-400">コピーしました！</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  DMをコピー
-                </>
-              )}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCopy}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 hover:text-white rounded-xl text-sm font-medium transition-all"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span className="text-emerald-400">コピー済み</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    コピー
+                  </>
+                )}
+              </button>
+              <a
+                href={`https://ig.me/m/${target.username}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => { if (!copied) handleCopy() }}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl text-sm font-semibold transition-all"
+              >
+                <Send className="w-4 h-4" />
+                Instagramで送る
+              </a>
+            </div>
           )}
 
           {/* Reply management (show if dm_sent) */}
@@ -254,11 +285,11 @@ export default function DmModal({ target, onClose, onUpdated }: DmModalProps) {
           {!target.dm_sent && (
             <button
               onClick={handleMarkSent}
-              disabled={saving || !dmContent.trim()}
+              disabled={saving || !dmContent.trim() || (safetyStatus ? !safetyStatus.canSendNow : false)}
               className="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-50 transition-colors"
             >
               <Send className="w-4 h-4" />
-              {saving ? '保存中...' : 'DM送信済みにする'}
+              {saving ? '保存中...' : safetyStatus && !safetyStatus.canSendNow ? '上限到達' : 'DM送信済みにする'}
             </button>
           )}
 

@@ -1,6 +1,7 @@
 import CompaniesPage from '@/components/companies/CompaniesPage'
 import { getAnalyses } from '@/app/dashboard/companies/actions'
 import { getLeads } from '@/app/dashboard/leads/actions'
+import { getAnthropicApiKey } from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,8 +14,8 @@ export default async function CompaniesPageRoute() {
   const analyses = analysesResult.data ?? []
   const leads = leadsResult.data ?? []
   const isDemo =
-    !process.env.ANTHROPIC_API_KEY ||
-    process.env.ANTHROPIC_API_KEY === 'your-anthropic-api-key-here'
+    !getAnthropicApiKey() ||
+    getAnthropicApiKey() === 'your-anthropic-api-key-here'
 
   return (
     <CompaniesPage

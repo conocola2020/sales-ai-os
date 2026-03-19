@@ -59,6 +59,8 @@ export async function createDeal(
       probability: item.probability ?? null,
       next_action: item.next_action ?? null,
       next_action_date: item.next_action_date ?? null,
+      meeting_date: item.meeting_date ?? null,
+      meeting_url: item.meeting_url ?? null,
       notes: item.notes ?? null,
     })
     .select('*')
@@ -124,6 +126,74 @@ export async function deleteDeal(id: string): Promise<{ error: string | null }> 
   if (error) return { error: error.message }
   revalidatePath('/dashboard/deals')
   return { error: null }
+}
+
+// ──────────────────────────────────────────
+// Create deal from reply (auto-link lead + update status)
+// ──────────────────────────────────────────
+export async function createDealFromReply(
+  leadId: string,
+  companyName: string,
+  contactName?: string | null,
+  replyContent?: string | null,
+): Promise<{ data: Deal | null; error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: null, error: '認証が必要です' }
+
+  // Check if deal already exists for this lead
+  const { data: existing } = await supabase
+    .from('deals')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('lead_id', leadId)
+    .limit(1)
+    .maybeSingle()
+
+  if (existing) {
+    return { data: null, error: 'この企業の商談は既に存在します' }
+  }
+
+  // Create deal
+  const { data, error } = await supabase
+    .from('deals')
+    .insert({
+      user_id: user.id,
+      lead_id: leadId,
+      company_name: companyName,
+      contact_name: contactName ?? null,
+      stage: 'ヒアリング',
+      probability: 20,
+      next_action: '初回ミーティング日程調整',
+      meeting_url: 'https://timerex.net/s/daichi_3022_c34c/a78a4d68',
+      notes: replyContent ? `【返信内容】\n${replyContent.slice(0, 500)}` : null,
+      activity_log: JSON.stringify([{
+        date: new Date().toISOString(),
+        type: 'stage_change',
+        description: '返信から商談を自動作成',
+        from: '未着手',
+        to: 'ヒアリング',
+      }]),
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('createDealFromReply error:', error)
+    return { data: null, error: error.message }
+  }
+
+  // Update lead status to 商談中
+  await supabase
+    .from('leads')
+    .update({ status: '商談中' })
+    .eq('id', leadId)
+    .eq('user_id', user.id)
+
+  revalidatePath('/dashboard/deals')
+  revalidatePath('/dashboard/leads')
+  revalidatePath('/dashboard/replies')
+  return { data: data as Deal, error: null }
 }
 
 // ──────────────────────────────────────────

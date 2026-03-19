@@ -14,6 +14,7 @@ interface MessageEditorProps {
   onCopy: () => void
   onRegenerate: () => void
   onAddToQueue?: () => void
+  onSaveAndQueue?: () => void
   copied: boolean
   canRegenerate: boolean
 }
@@ -29,6 +30,7 @@ export default function MessageEditor({
   onCopy,
   onRegenerate,
   onAddToQueue,
+  onSaveAndQueue,
   copied,
   canRegenerate,
 }: MessageEditorProps) {
@@ -137,15 +139,30 @@ export default function MessageEditor({
           <button
             onClick={onSave}
             disabled={isStreaming || isSaving || !value}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
               <Save className="w-3.5 h-3.5" />
             )}
-            {isSaving ? '保存中...' : '保存'}
+            {isSaving ? '保存中...' : '保存のみ'}
           </button>
+
+          {onSaveAndQueue && (
+            <button
+              onClick={onSaveAndQueue}
+              disabled={isStreaming || isSaving || !value}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors"
+            >
+              {isSaving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
+              {isSaving ? '処理中...' : '保存 & キュー追加'}
+            </button>
+          )}
         </div>
       )}
     </div>

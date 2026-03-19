@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import type { Sentiment } from '@/types/replies'
+import { getAnthropicApiKey } from '@/lib/env'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const apiKey = getAnthropicApiKey()
+const client = new Anthropic({ apiKey })
 
 // ──────────────────────────────────────────
 // System prompt: classify + draft response
@@ -84,8 +86,8 @@ export async function POST(req: NextRequest) {
     }
 
     const isDemo =
-      !process.env.ANTHROPIC_API_KEY ||
-      process.env.ANTHROPIC_API_KEY === 'your-anthropic-api-key-here'
+      !getAnthropicApiKey() ||
+      getAnthropicApiKey() === 'your-anthropic-api-key-here'
 
     if (isDemo) {
       await new Promise(resolve => setTimeout(resolve, 800))

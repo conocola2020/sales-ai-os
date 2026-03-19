@@ -10,6 +10,10 @@ import {
   InboxIcon,
   Plus,
   RefreshCw,
+  Trash2,
+  CheckSquare,
+  Square,
+  Rocket,
 } from 'lucide-react'
 import clsx from 'clsx'
 import type { SendQueueItem, SendStats } from '@/types/sending'
@@ -19,6 +23,7 @@ import StatsPanel from './StatsPanel'
 import QueueItem from './QueueItem'
 import SendConfirmModal from './SendConfirmModal'
 import AddToQueueModal from './AddToQueueModal'
+import { deleteQueueItem } from '@/app/dashboard/sending/actions'
 
 // ──────────────────────────────────────────
 // Tab definitions
@@ -63,8 +68,46 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
   const [activeTab, setActiveTab] = useState<Tab>('全て')
   const [confirmItem, setConfirmItem] = useState<SendQueueItem | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false)
 
   const stats = useMemo(() => buildStats(queue), [queue])
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selected.size === filteredQueue.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(filteredQueue.map(i => i.id)))
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (!selected.size || !confirm(`${selected.size}件を削除しますか？`)) return
+    setIsBulkProcessing(true)
+    for (const id of selected) {
+      await deleteQueueItem(id)
+      setQueue(prev => prev.filter(i => i.id !== id))
+    }
+    setSelected(new Set())
+    setIsBulkProcessing(false)
+  }
+
+  const handleBulkSendAll = () => {
+    // 待機中のアイテムを全て確認待ちに変更
+    const pendingItems = filteredQueue.filter(i => i.status === '待機中' && selected.has(i.id))
+    if (!pendingItems.length) return
+    if (!confirm(`${pendingItems.length}件を送信キューに投入しますか？`)) return
+    pendingItems.forEach(item => handleUpdated(item.id, '確認待ち'))
+    setSelected(new Set())
+  }
 
   const filteredQueue = useMemo(
     () =>
@@ -192,6 +235,43 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
           </div>
         ) : (
           <div className="space-y-2">
+            {/* Bulk action bar */}
+            <div className="flex items-center gap-2 px-2 py-2 bg-gray-900/50 border border-gray-800 rounded-xl">
+              <button
+                onClick={toggleSelectAll}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                {selected.size === filteredQueue.length && filteredQueue.length > 0
+                  ? <CheckSquare className="w-3.5 h-3.5 text-violet-400" />
+                  : <Square className="w-3.5 h-3.5" />}
+                全選択
+              </button>
+
+              {selected.size > 0 && (
+                <>
+                  <span className="text-xs text-gray-500">{selected.size}件選択</span>
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    <button
+                      onClick={handleBulkSendAll}
+                      disabled={isBulkProcessing}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      <Rocket className="w-3.5 h-3.5" />
+                      一括送信
+                    </button>
+                    <button
+                      onClick={handleBulkDelete}
+                      disabled={isBulkProcessing}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      一括削除
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* Bulk actions for 失敗 tab */}
             {activeTab === '失敗' && filteredQueue.length > 0 && (
               <div className="flex items-center justify-between px-4 py-3 bg-red-500/5 border border-red-500/20 rounded-xl">
@@ -211,13 +291,24 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
             )}
 
             {filteredQueue.map(item => (
-              <QueueItem
-                key={item.id}
-                item={item}
-                onSendClick={setConfirmItem}
-                onDeleted={handleDeleted}
-                onUpdated={handleUpdated}
-              />
+              <div key={item.id} className="flex items-start gap-2">
+                <button
+                  onClick={() => toggleSelect(item.id)}
+                  className="mt-4 flex-shrink-0 text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  {selected.has(item.id)
+                    ? <CheckSquare className="w-4 h-4 text-violet-400" />
+                    : <Square className="w-4 h-4" />}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <QueueItem
+                    item={item}
+                    onSendClick={setConfirmItem}
+                    onDeleted={handleDeleted}
+                    onUpdated={handleUpdated}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         )}

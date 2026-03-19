@@ -24,6 +24,7 @@ import {
   saveAiResponse,
   deleteReply,
 } from '@/app/dashboard/replies/actions'
+import { createDealFromReply } from '@/app/dashboard/deals/actions'
 
 interface ReplyDetailModalProps {
   reply: Reply
@@ -47,6 +48,8 @@ export default function ReplyDetailModal({
   const [showSentimentMenu, setShowSentimentMenu] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isCreatingDeal, setIsCreatingDeal] = useState(false)
+  const [dealCreated, setDealCreated] = useState(false)
   const [error, setError] = useState('')
 
   const cfg = SENTIMENT_CONFIG[sentiment]
@@ -140,12 +143,34 @@ export default function ReplyDetailModal({
     }
   }
 
-  // ── Go to deals ────────────────────────────
-  const handleGoToDeals = () => {
-    if (lead) {
-      router.push(`/dashboard/deals?leadId=${reply.lead_id}`)
+  // ── Create deal and go to deals ────────────
+  const handleCreateDealAndGo = async () => {
+    if (!reply.lead_id || !lead) return
+    setIsCreatingDeal(true)
+    setError('')
+    const { data, error: err } = await createDealFromReply(
+      reply.lead_id,
+      lead.company_name ?? '不明',
+      lead.contact_name,
+      reply.content,
+    )
+    setIsCreatingDeal(false)
+    if (err) {
+      // 既に商談がある場合はそのまま遷移
+      if (err.includes('既に存在')) {
+        router.push(`/dashboard/deals?leadId=${reply.lead_id}`)
+        onClose()
+        return
+      }
+      setError(err)
+      return
     }
-    onClose()
+    setDealCreated(true)
+    // 少し待ってから遷移（ユーザーに成功を見せる）
+    setTimeout(() => {
+      router.push('/dashboard/deals')
+      onClose()
+    }, 800)
   }
 
   return (
@@ -271,14 +296,26 @@ export default function ReplyDetailModal({
                   hour: '2-digit', minute: '2-digit',
                 })}
               </span>
-              {/* 商談管理へ (only for 興味あり) */}
-              {sentiment === '興味あり' && reply.lead_id && (
+              {/* 商談作成ボタン（興味あり・検討中・質問で表示） */}
+              {['興味あり', '検討中', '質問'].includes(sentiment) && reply.lead_id && (
                 <button
-                  onClick={handleGoToDeals}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors"
+                  onClick={handleCreateDealAndGo}
+                  disabled={isCreatingDeal || dealCreated}
+                  className={clsx(
+                    'flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-semibold rounded-lg transition-colors',
+                    dealCreated
+                      ? 'bg-emerald-600'
+                      : 'bg-violet-600 hover:bg-violet-500'
+                  )}
                 >
-                  <Handshake className="w-3.5 h-3.5" />
-                  商談管理へ
+                  {isCreatingDeal ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : dealCreated ? (
+                    <Check className="w-3.5 h-3.5" />
+                  ) : (
+                    <Handshake className="w-3.5 h-3.5" />
+                  )}
+                  {isCreatingDeal ? '作成中...' : dealCreated ? '商談作成済み！' : '商談を作成'}
                 </button>
               )}
             </div>

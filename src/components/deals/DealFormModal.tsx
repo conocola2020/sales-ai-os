@@ -48,6 +48,12 @@ export default function DealFormModal({
   const [probability, setProbability] = useState<number>(deal?.probability ?? 50)
   const [nextAction, setNextAction] = useState(deal?.next_action ?? '')
   const [nextActionDate, setNextActionDate] = useState(deal?.next_action_date ?? '')
+  const [meetingDate, setMeetingDate] = useState(
+    deal?.meeting_date ? deal.meeting_date.slice(0, 16) : ''
+  )
+  const [meetingUrl, setMeetingUrl] = useState(
+    deal?.meeting_url ?? (isEdit ? '' : 'https://timerex.net/s/daichi_3022_c34c/a78a4d68')
+  )
   const [notes, setNotes] = useState(deal?.notes ?? '')
 
   // UI state
@@ -81,6 +87,8 @@ export default function DealFormModal({
       probability,
       next_action: nextAction.trim() || null,
       next_action_date: nextActionDate || null,
+      meeting_date: meetingDate ? new Date(meetingDate).toISOString() : null,
+      meeting_url: meetingUrl.trim() || null,
       notes: notes.trim() || null,
     }
 
@@ -323,6 +331,33 @@ export default function DealFormModal({
               value={nextActionDate}
               onChange={e => setNextActionDate(e.target.value)}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors [color-scheme:dark]"
+            />
+          </div>
+
+          {/* Meeting date */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1.5">
+              ミーティング日時
+            </label>
+            <input
+              type="datetime-local"
+              value={meetingDate}
+              onChange={e => setMeetingDate(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors [color-scheme:dark]"
+            />
+          </div>
+
+          {/* Meeting URL */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1.5">
+              ミーティングURL
+            </label>
+            <input
+              type="url"
+              value={meetingUrl}
+              onChange={e => setMeetingUrl(e.target.value)}
+              placeholder="https://timerex.net/..."
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
             />
           </div>
 

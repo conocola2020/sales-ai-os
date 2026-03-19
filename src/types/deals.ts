@@ -68,6 +68,14 @@ export const STAGE_CONFIG: Record<
   },
 }
 
+export interface DealActivity {
+  date: string
+  type: 'stage_change' | 'meeting' | 'note' | 'email'
+  description: string
+  from?: string
+  to?: string
+}
+
 export interface Deal {
   id: string
   user_id: string
@@ -79,6 +87,9 @@ export interface Deal {
   probability: number | null
   next_action: string | null
   next_action_date: string | null // YYYY-MM-DD
+  meeting_date: string | null     // ISO datetime for next meeting
+  meeting_url: string | null      // TimeRex or other booking URL
+  activity_log: DealActivity[] | null
   notes: string | null
   created_at: string
   updated_at: string
@@ -93,6 +104,8 @@ export type DealInsert = {
   probability?: number | null
   next_action?: string | null
   next_action_date?: string | null
+  meeting_date?: string | null
+  meeting_url?: string | null
   notes?: string | null
 }
 
@@ -105,6 +118,8 @@ export type DealUpdate = {
   probability?: number | null
   next_action?: string | null
   next_action_date?: string | null
+  meeting_date?: string | null
+  meeting_url?: string | null
   notes?: string | null
 }
 

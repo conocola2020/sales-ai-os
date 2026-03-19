@@ -79,7 +79,7 @@ async function main() {
       company: '株式会社CONOCOLA',
       name: '河野大地',
       furigana: 'コウノダイチ',
-      email: 'conocola2020@gmail.com',
+      email: 'daichi@conocola.com',
       phone: '052-228-4945',
       body: 'お忙しいところ失礼いたします。\n\n株式会社CONOCOLAの河野と申します。\n\nこれはテスト送信です。',
     }

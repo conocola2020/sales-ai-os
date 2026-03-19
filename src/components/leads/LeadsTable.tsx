@@ -1,18 +1,27 @@
 'use client'
 
-import { useState, useMemo, useTransition } from 'react'
+import { useState, useMemo, useCallback, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Search, Filter, ChevronUp, ChevronDown, ChevronsUpDown,
   Upload, Download, Plus, Trash2, ExternalLink, Loader2,
-  Building2, CheckSquare, Square, Globe, Mail, Phone
+  Building2, CheckSquare, Square, Globe, Mail, Phone, Sparkles
 } from 'lucide-react'
 import StatusBadge from './StatusBadge'
 import LeadModal from './LeadModal'
 import CSVImport from './CSVImport'
 import { updateLeadStatus, deleteLeads, createLead } from '@/app/dashboard/leads/actions'
 import type { Lead, LeadStatus } from '@/types/leads'
-import { LEAD_STATUSES, INDUSTRIES, STATUS_CONFIG } from '@/types/leads'
+import { LEAD_STATUSES, INDUSTRIES, STATUS_CONFIG, PREFECTURES } from '@/types/leads'
+import { detectContactMethod } from '@/lib/contact-method'
 import clsx from 'clsx'
+
+const CONTACT_METHOD_BADGE: Record<string, { icon: string; label: string; color: string }> = {
+  form: { icon: '\u{1F4DD}', label: '\u30D5\u30A9\u30FC\u30E0', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+  email: { icon: '\u{1F4E7}', label: '\u30E1\u30FC\u30EB', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  instagram: { icon: '\u{1F4F8}', label: 'Instagram', color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' },
+  manual: { icon: '\u270B', label: '\u624B\u52D5', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' },
+}
 
 type SortField = 'company_name' | 'industry' | 'status' | 'created_at'
 type SortDir = 'asc' | 'desc'
@@ -24,16 +33,20 @@ interface LeadsTableProps {
 const inputCls = 'bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all'
 
 export default function LeadsTable({ initialLeads }: LeadsTableProps) {
+  const router = useRouter()
   const [leads, setLeads] = useState<Lead[]>(initialLeads)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all')
   const [industryFilter, setIndustryFilter] = useState('all')
+  const [prefectureFilter, setPrefectureFilter] = useState('all')
   const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [activeLead, setActiveLead] = useState<Lead | null>(null)
   const [showCSV, setShowCSV] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 50
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -51,13 +64,14 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
     }
     if (statusFilter !== 'all') rows = rows.filter((l) => l.status === statusFilter)
     if (industryFilter !== 'all') rows = rows.filter((l) => l.industry === industryFilter)
+    if (prefectureFilter !== 'all') rows = rows.filter((l) => (l.prefecture ?? l.notes) === prefectureFilter)
 
     return [...rows].sort((a, b) => {
       const av = a[sortField] ?? ''
       const bv = b[sortField] ?? ''
       return sortDir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
     })
-  }, [leads, search, statusFilter, industryFilter, sortField, sortDir])
+  }, [leads, search, statusFilter, industryFilter, prefectureFilter, sortField, sortDir])
 
   // ── Status counts ──────────────────────────────────────────
   const counts = useMemo(() => {
@@ -83,13 +97,13 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
   const toggleAll = () => {
     setSelected(allSelected ? new Set() : new Set(filtered.map((l) => l.id)))
   }
-  const toggleOne = (id: string) => {
+  const toggleOne = useCallback((id: string) => {
     setSelected((prev) => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
-  }
+  }, [])
 
   // ── Toast helper ───────────────────────────────────────────
   const showToast = (msg: string, type: 'success' | 'error') => {
@@ -268,7 +282,7 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
             return (
               <button
                 key={s}
-                onClick={() => setStatusFilter(s)}
+                onClick={() => { setStatusFilter(s); setPage(1) }}
                 className={clsx(
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border',
                   active
@@ -300,7 +314,7 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             placeholder="会社名・担当者・メールで検索"
             className={clsx(inputCls, 'pl-9 w-full')}
           />
@@ -310,27 +324,47 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
           <Filter className="w-4 h-4 text-gray-500" />
           <select
             value={industryFilter}
-            onChange={(e) => setIndustryFilter(e.target.value)}
+            onChange={(e) => { setIndustryFilter(e.target.value); setPage(1) }}
             className={clsx(inputCls, 'cursor-pointer')}
           >
             <option value="all">業種: すべて</option>
             {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
           </select>
+          <select
+            value={prefectureFilter}
+            onChange={(e) => { setPrefectureFilter(e.target.value); setPage(1) }}
+            className={clsx(inputCls, 'cursor-pointer')}
+          >
+            <option value="all">都道府県: すべて</option>
+            {PREFECTURES.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
         </div>
 
         {selected.size > 0 && (
-          <button
-            onClick={handleBulkDelete}
-            disabled={isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl hover:bg-red-500/20 transition-colors"
-          >
-            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            {selected.size}件削除
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const ids = Array.from(selected).join(',')
+                router.push(`/dashboard/compose?mode=bulk&leads=${ids}`)
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-violet-500/10 border border-violet-500/20 text-violet-400 text-sm rounded-xl hover:bg-violet-500/20 transition-colors"
+            >
+              <Sparkles className="w-4 h-4" />
+              {selected.size}件 一括文面生成
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={isPending}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl hover:bg-red-500/20 transition-colors"
+            >
+              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              {selected.size}件削除
+            </button>
+          </div>
         )}
 
         <div className="ml-auto text-xs text-gray-500">
-          {filtered.length.toLocaleString()} 件表示
+          {filtered.length.toLocaleString()} 件表示（{page}/{Math.ceil(filtered.length / PAGE_SIZE) || 1}ページ）
         </div>
       </div>
 
@@ -384,7 +418,7 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
                   </td>
                 </tr>
               ) : (
-                filtered.map((lead) => (
+                filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((lead) => (
                   <tr
                     key={lead.id}
                     className={clsx(
@@ -413,9 +447,20 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
                         <div className="w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold text-gray-300 group-hover:from-violet-600/30 group-hover:to-indigo-600/30 transition-all">
                           {lead.company_name[0]}
                         </div>
-                        <span className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">
-                          {lead.company_name}
-                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">
+                            {lead.company_name}
+                          </span>
+                          {(() => {
+                            const method = lead.contact_method || detectContactMethod(lead)
+                            const badge = CONTACT_METHOD_BADGE[method] || CONTACT_METHOD_BADGE.manual
+                            return (
+                              <span className={clsx('inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border w-fit', badge.color)}>
+                                {badge.icon} {badge.label}
+                              </span>
+                            )
+                          })()}
+                        </div>
                       </button>
                     </td>
 
@@ -481,21 +526,33 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
 
                     {/* Actions */}
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            router.push(`/dashboard/compose?leadId=${lead.id}`)
+                          }}
+                          title="文面生成"
+                          className="p-1.5 rounded-lg text-violet-500/60 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                        </button>
                         {lead.website_url && (
                           <a
                             href={lead.website_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="text-gray-600 hover:text-gray-300 transition-colors"
+                            title="Webサイト"
+                            className="p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-gray-800 transition-all"
                           >
                             <Globe className="w-3.5 h-3.5" />
                           </a>
                         )}
                         <button
                           onClick={() => setActiveLead(lead)}
-                          className="text-gray-600 hover:text-violet-400 transition-colors"
+                          title="詳細"
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-violet-400 hover:bg-gray-800 transition-all"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </button>
@@ -507,6 +564,66 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {filtered.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-800">
+            <span className="text-xs text-gray-500">
+              {((page - 1) * PAGE_SIZE + 1).toLocaleString()}〜{Math.min(page * PAGE_SIZE, filtered.length).toLocaleString()} / {filtered.length.toLocaleString()}件
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(1)}
+                disabled={page === 1}
+                className="px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                最初
+              </button>
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ← 前
+              </button>
+              {(() => {
+                const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+                const pages: number[] = []
+                const start = Math.max(1, page - 2)
+                const end = Math.min(totalPages, page + 2)
+                for (let i = start; i <= end; i++) pages.push(i)
+                return pages.map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={clsx(
+                      'w-7 h-7 text-xs rounded-lg',
+                      p === page
+                        ? 'bg-violet-600 text-white font-bold'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))
+              })()}
+              <button
+                onClick={() => setPage(p => Math.min(Math.ceil(filtered.length / PAGE_SIZE), p + 1))}
+                disabled={page >= Math.ceil(filtered.length / PAGE_SIZE)}
+                className="px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                次 →
+              </button>
+              <button
+                onClick={() => setPage(Math.ceil(filtered.length / PAGE_SIZE))}
+                disabled={page >= Math.ceil(filtered.length / PAGE_SIZE)}
+                className="px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                最後
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

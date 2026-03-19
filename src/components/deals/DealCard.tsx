@@ -1,9 +1,10 @@
 'use client'
 
-import { Calendar, ChevronRight, TrendingUp } from 'lucide-react'
+import { Calendar, ChevronRight, TrendingUp, Video, ExternalLink } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Deal } from '@/types/deals'
 import { STAGE_CONFIG } from '@/types/deals'
+import ActivityTimeline from './ActivityTimeline'
 
 interface DealCardProps {
   deal: Deal
@@ -37,6 +38,15 @@ function formatDate(dateStr: string): string {
   const m = d.getMonth() + 1
   const day = d.getDate()
   return `${y}/${m}/${day}`
+}
+
+function formatMeetingDate(isoStr: string): string {
+  const d = new Date(isoStr)
+  const m = d.getMonth() + 1
+  const day = d.getDate()
+  const h = d.getHours().toString().padStart(2, '0')
+  const min = d.getMinutes().toString().padStart(2, '0')
+  return `${m}/${day} ${h}:${min}`
 }
 
 export default function DealCard({ deal, onClick }: DealCardProps) {
@@ -106,6 +116,37 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
                 {deal.next_action && (
                   <span className="text-gray-500 truncate ml-1">— {deal.next_action}</span>
                 )}
+              </div>
+            )}
+
+            {/* Meeting date */}
+            {deal.meeting_date && (
+              <div className="mt-2 flex items-center gap-1 text-xs text-blue-400">
+                <Video className="w-3 h-3" />
+                <span>{formatMeetingDate(deal.meeting_date)}</span>
+                {deal.meeting_url && (
+                  <a
+                    href={deal.meeting_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    className="inline-flex items-center gap-0.5 text-violet-400 hover:text-violet-300 transition-colors ml-1"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>リンク</span>
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Activity timeline (last 3) */}
+            {deal.activity_log && deal.activity_log.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-gray-800">
+                <ActivityTimeline
+                  activities={deal.activity_log}
+                  maxItems={3}
+                  compact
+                />
               </div>
             )}
           </div>

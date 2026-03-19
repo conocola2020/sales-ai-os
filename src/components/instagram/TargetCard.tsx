@@ -1,6 +1,6 @@
 'use client'
 
-import { Heart, UserPlus, MessageCircle, Users, ThumbsUp, Reply } from 'lucide-react'
+import { Heart, UserPlus, MessageCircle, Users, ThumbsUp, Reply, ExternalLink } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { InstagramTarget } from '@/types/instagram'
 import { STATUS_CONFIG } from '@/types/instagram'
@@ -63,12 +63,24 @@ export default function TargetCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <button
-                onClick={onEdit}
-                className="text-sm font-semibold text-white hover:text-violet-400 transition-colors truncate block"
-              >
-                @{target.username}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={onEdit}
+                  className="text-sm font-semibold text-white hover:text-violet-400 transition-colors truncate"
+                >
+                  @{target.username}
+                </button>
+                <a
+                  href={`https://instagram.com/${target.username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  className="text-gray-600 hover:text-pink-400 transition-colors shrink-0"
+                  title="Instagramで開く"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
               {target.display_name && (
                 <p className="text-xs text-gray-400 mt-0.5 truncate">{target.display_name}</p>
               )}
@@ -115,10 +127,14 @@ export default function TargetCard({
 
           {/* Action row */}
           <div className="mt-3 flex items-center gap-1 flex-wrap">
-            {/* いいね toggle */}
+            {/* いいね toggle → Instagramプロフィールを開く + 記録 */}
             <button
-              onClick={e => { e.stopPropagation(); onToggleLiked() }}
-              title={target.liked ? 'いいね済み（クリックで解除）' : 'いいね'}
+              onClick={e => {
+                e.stopPropagation()
+                if (!target.liked) window.open(`https://instagram.com/${target.username}`, '_blank')
+                onToggleLiked()
+              }}
+              title={target.liked ? 'いいね済み（クリックで解除）' : 'いいね → Instagramが開きます'}
               className={clsx(
                 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',
                 target.liked
@@ -130,10 +146,14 @@ export default function TargetCard({
               {target.liked ? 'いいね済' : 'いいね'}
             </button>
 
-            {/* フォロー toggle */}
+            {/* フォロー toggle → Instagramプロフィールを開く + 記録 */}
             <button
-              onClick={e => { e.stopPropagation(); onToggleFollowing() }}
-              title={target.following ? 'フォロー済み（クリックで解除）' : 'フォロー'}
+              onClick={e => {
+                e.stopPropagation()
+                if (!target.following) window.open(`https://instagram.com/${target.username}`, '_blank')
+                onToggleFollowing()
+              }}
+              title={target.following ? 'フォロー済み（クリックで解除）' : 'フォロー → Instagramが開きます'}
               className={clsx(
                 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',
                 target.following
@@ -145,10 +165,10 @@ export default function TargetCard({
               {target.following ? 'フォロー済' : 'フォロー'}
             </button>
 
-            {/* DM ボタン */}
+            {/* DM ボタン → DM生成モーダル */}
             <button
               onClick={e => { e.stopPropagation(); onOpenDm() }}
-              title="DMを管理"
+              title="DM文面を生成 → Instagramで送信"
               className={clsx(
                 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',
                 target.dm_sent

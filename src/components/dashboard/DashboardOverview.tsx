@@ -13,8 +13,13 @@ import type { ReplyStats } from '@/types/replies'
 import type { DealStats } from '@/types/deals'
 import type { InstagramStats } from '@/types/instagram'
 
+interface LeadSummary {
+  total: number
+  untouched: number
+}
+
 interface DashboardOverviewProps {
-  leads: Lead[]
+  leads: Lead[] | LeadSummary
   sendStats: SendStats
   replyStats: ReplyStats
   dealStats: DealStats
@@ -35,8 +40,8 @@ export default function DashboardOverview({
   const stats = [
     {
       label: 'リード総数',
-      value: leads.length.toLocaleString(),
-      change: `${leads.filter(l => l.status === '未着手').length}件未着手`,
+      value: (Array.isArray(leads) ? leads.length : leads.total).toLocaleString(),
+      change: `${Array.isArray(leads) ? leads.filter(l => l.status === '未着手').length : leads.untouched}件未着手`,
       icon: Users,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',

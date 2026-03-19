@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
-import { Plus, LayoutList, Columns, AlertTriangle, TrendingUp, DollarSign, Trophy, Percent, Search } from 'lucide-react'
+import { Plus, LayoutList, Columns, CalendarDays, AlertTriangle, TrendingUp, DollarSign, Trophy, Percent, Search } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Deal, DealStage, DealStats } from '@/types/deals'
 import { DEAL_STAGES, STAGE_CONFIG, ACTIVE_STAGES } from '@/types/deals'
@@ -9,6 +9,7 @@ import type { Lead } from '@/types/leads'
 import DealCard from './DealCard'
 import DealFormModal from './DealFormModal'
 import KanbanBoard from './KanbanBoard'
+import DealsCalendar from './DealsCalendar'
 
 interface DealsPageProps {
   initialDeals: Deal[]
@@ -16,7 +17,7 @@ interface DealsPageProps {
   initialLead?: Lead | null
 }
 
-type ViewMode = 'list' | 'kanban'
+type ViewMode = 'list' | 'kanban' | 'calendar'
 type StageFilter = 'all' | 'active' | DealStage
 
 function buildStats(deals: Deal[]): DealStats {
@@ -197,6 +198,18 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
               <Columns className="w-3.5 h-3.5" />
               カンバン
             </button>
+            <button
+              onClick={() => setView('calendar')}
+              className={clsx(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                view === 'calendar'
+                  ? 'bg-violet-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              )}
+            >
+              <CalendarDays className="w-3.5 h-3.5" />
+              カレンダー
+            </button>
           </div>
 
           {/* Add button */}
@@ -355,6 +368,16 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
             deals={deals}
             onCardClick={deal => setSelectedDeal(deal)}
             onAddClick={stage => openCreate(stage)}
+          />
+        </div>
+      )}
+
+      {/* Calendar view */}
+      {view === 'calendar' && (
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <DealsCalendar
+            deals={deals}
+            onDealClick={deal => setSelectedDeal(deal)}
           />
         </div>
       )}

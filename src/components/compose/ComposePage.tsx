@@ -23,6 +23,8 @@ interface ComposePageProps {
   initialMessages: Message[]
   isDemo: boolean
   initialLeadId?: string
+  initialMode?: 'bulk'
+  initialBulkLeadIds?: string[]
   templates: MessageTemplate[]
 }
 
@@ -31,9 +33,11 @@ export default function ComposePage({
   initialMessages,
   isDemo,
   initialLeadId = '',
+  initialMode,
+  initialBulkLeadIds,
   templates,
 }: ComposePageProps) {
-  const [mode, setMode] = useState<Mode>('single')
+  const [mode, setMode] = useState<Mode>(initialMode ?? 'single')
   const [selectedLeadId, setSelectedLeadId] = useState(initialLeadId)
   const [tone, setTone] = useState<Tone>('丁寧')
   const [selectedTemplateId, setSelectedTemplateId] = useState(
@@ -157,6 +161,32 @@ export default function ComposePage({
     }
   }
 
+  const handleSaveAndQueue = async () => {
+    if (!generatedMessage || !selectedLeadId) return
+    setIsSaving(true)
+    // 1. Save
+    const { data, error: saveError } = await saveMessage({
+      lead_id: selectedLeadId,
+      subject: generatedSubject || null,
+      content: generatedMessage,
+      tone,
+    })
+    if (saveError) { setError(saveError); setIsSaving(false); return }
+    if (data) setMessages(prev => [data, ...prev])
+    // 2. Queue
+    const { error: queueError } = await addToQueue({
+      lead_id: selectedLeadId,
+      message_content: generatedMessage,
+      subject: generatedSubject || undefined,
+    })
+    setIsSaving(false)
+    if (queueError) { setError(queueError); return }
+    setError('')
+    const origMsg = generatedMessage
+    setGeneratedMessage('✅ 保存＆キュー追加完了！')
+    setTimeout(() => setGeneratedMessage(origMsg), 2000)
+  }
+
   const handleSelectHistory = (content: string) => {
     const { subject, body } = parseSubjectAndBody(content)
     setGeneratedSubject(subject)
@@ -234,6 +264,7 @@ export default function ComposePage({
           onToneChange={setTone}
           selectedTemplateId={selectedTemplateId}
           onTemplateChange={setSelectedTemplateId}
+          initialSelectedIds={initialBulkLeadIds}
         />
       ) : (
         <div className="flex-1 min-h-0 grid grid-cols-[1fr_320px] gap-0 overflow-hidden">
@@ -284,6 +315,7 @@ export default function ComposePage({
                 onCopy={handleCopy}
                 onRegenerate={handleGenerate}
                 onAddToQueue={selectedLeadId ? handleAddToQueue : undefined}
+                onSaveAndQueue={selectedLeadId ? handleSaveAndQueue : undefined}
                 copied={copied}
                 canRegenerate={!!selectedLeadId}
               />

@@ -153,6 +153,33 @@ export default function QueueItem({
           {cfg.label}
         </div>
 
+        {/* Quick delete (inline) */}
+        {confirmDelete ? (
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              onClick={handleDelete}
+              disabled={loading}
+              className="px-2 py-1 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white text-[10px] font-semibold rounded-lg transition-colors"
+            >
+              削除
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-[10px] font-semibold rounded-lg transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={(e) => { e.stopPropagation(); setConfirmDelete(true) }}
+            title="削除"
+            className="flex-shrink-0 p-1.5 text-gray-700 hover:text-red-400 hover:bg-red-500/10 transition-colors rounded-lg"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+
         {/* Expand toggle */}
         <button
           onClick={() => setExpanded(v => !v)}

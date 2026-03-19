@@ -1,23 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { getAnthropicApiKey } from '@/lib/env'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const apiKey = getAnthropicApiKey()
+const client = new Anthropic({ apiKey })
 
 // ──────────────────────────────────────────
 // System prompt: generate personalized Instagram DM
 // ──────────────────────────────────────────
 const DM_SYSTEM_PROMPT = [
-  'あなたはInstagramのDMを書くプロのコピーライターです。',
-  'ターゲットのプロフィール情報をもとに、自然で親しみやすいDMを日本語で生成してください。',
+  'あなたはCONOCOLA（コノコーラ）のInstagram DM担当です。',
+  '送信元アカウント: @conospice（CONOCOLAのInstagramアカウント）',
+  '担当者: 河野大地（CONOCOLA代表）',
+  'CONOCOLAはサウナー専用コーラブランドで、全国60以上のサウナ施設に導入済みです。',
+  'ターゲット（主にサウナ施設）のプロフィール情報をもとに、自然で親しみやすいDMを日本語で生成してください。',
   '',
   '【DM生成ルール】',
-  '- 3〜5文程度の簡潔なDM（200文字以内推奨）',
-  '- 相手のプロフィール・業種・発信内容に自然に言及する',
-  '- 売り込み感を出さず、まず相互フォローや会話のきっかけを作ることを目的にする',
-  '- 具体的な質問や提案で締めて、返信しやすくする',
+  '- 200文字以内の簡潔なDM',
+  '- カジュアルで親しみやすいトーン（Instagram DMらしく）',
+  '- 「サウナー専用コーラ」CONOCOLAを自然に紹介する',
+  '- 相手の施設情報やプロフィールに具体的に言及する（HP情報がある場合は活用）',
   '- 冒頭に@ユーザー名を含めない（直接メッセージなので不要）',
-  '- 「はじめまして」から自然に始める',
-  '- マーケティング・集客・売上向上の文脈で価値を提供できることを示す（押しつけがましくなく）',
+  '- 「はじめまして、CONOCOLAの河野です！」のように自然に始める',
+  '- 最後に商談予約リンクを案内: https://timerex.net/s/daichi_3022_c34c/a78a4d68',
+  '- 押しつけがましくなく、興味があれば気軽にという姿勢',
   '',
   'DM文面のみを返してください（説明・補足不要）。',
 ].join('\n')
@@ -27,19 +33,18 @@ function demoDm(
   username: string,
   displayName: string | null,
   bio: string | null,
-  industry: string | null
+  industry: string | null,
+  facilityName: string | null
 ): string {
-  const name = displayName || `@${username}`
-  if (industry && (industry.includes('飲食') || industry.includes('食品'))) {
-    return `はじめまして！${name}さんのお料理の投稿いつも拝見しています✨ 美味しそうな写真と丁寧な発信がとても素敵だなと思いフォローさせていただきました。もしよろしければ、お店のSNS集客についてお役に立てることがあればと思いご連絡しました。少しでもご興味があれば、お気軽にご返信いただけますか？`
+  const name = facilityName || displayName || `@${username}`
+  const timerexUrl = 'https://timerex.net/s/daichi_3022_c34c/a78a4d68'
+  if (industry && (industry.includes('サウナ') || industry.includes('温浴') || industry.includes('銭湯') || industry.includes('スパ'))) {
+    return `はじめまして、CONOCOLAの河野です！${name}さんの素敵な施設、投稿で拝見しました🧖 サウナー専用コーラを全国60施設以上でお取り扱いいただいてまして、ととのい後の一杯にぴったりだと好評です！もしご興味あれば気軽にお話しさせてください✨ ${timerexUrl}`
   }
-  if (industry && (industry.includes('IT') || industry.includes('SaaS') || industry.includes('テック'))) {
-    return `はじめまして！${name}さんのプロダクト発信いつも参考にしています🙌 ${bio ? `「${bio.slice(0, 20)}」` : 'IT・SaaS領域'}でご活躍とのこと、とても刺激を受けています。もしよろしければ、マーケティング面でお力になれることがあればと思いご連絡しました。ご興味あればお気軽にお返事いただけますか？`
+  if (bio && (bio.includes('サウナ') || bio.includes('ととの') || bio.includes('温泉'))) {
+    return `はじめまして、CONOCOLAの河野です！${name}さんのサウナ愛が伝わる投稿、いつも楽しく見ています🔥 サウナー専用コーラを全国60施設以上に導入してまして、ご興味あれば詳しくお話しさせてください！ ${timerexUrl}`
   }
-  if (industry && industry.includes('コンサルティング')) {
-    return `はじめまして！${name}さんのビジネス発信、いつも勉強になっています📊 コンサルティング業界での豊富なご経験が伝わってきます。もしよろしければ、クライアント獲得やブランディングについて情報交換させていただけないでしょうか？お気軽にご返信いただけますか？`
-  }
-  return `はじめまして！${name}さんの投稿をいつも楽しく拝見しています✨ ${bio ? `「${bio.slice(0, 30)}...」というプロフィールに共感しました。` : 'とても素敵な発信をされているなと思いご連絡しました。'}もし差し支えなければ、SNSやマーケティングについて情報交換できればと思っています。ご興味があればお気軽にご返信ください🙌`
+  return `はじめまして、CONOCOLAの河野です！${name}さんの投稿いつも拝見しています✨ サウナー専用コーラを展開しているのですが、もしお取り扱いにご興味あれば気軽にお話しできればうれしいです🙌 ${timerexUrl}`
 }
 
 // ──────────────────────────────────────────
@@ -55,6 +60,9 @@ export async function POST(req: NextRequest) {
       industry?: string | null
       follower_count?: number | null
       engagement_rate?: number | null
+      facility_name?: string | null
+      website_url?: string | null
+      hp_info?: string | null
     }
 
     if (!body.username || typeof body.username !== 'string') {
@@ -62,8 +70,8 @@ export async function POST(req: NextRequest) {
     }
 
     const isDemo =
-      !process.env.ANTHROPIC_API_KEY ||
-      process.env.ANTHROPIC_API_KEY === 'your-anthropic-api-key-here'
+      !getAnthropicApiKey() ||
+      getAnthropicApiKey() === 'your-anthropic-api-key-here'
 
     if (isDemo) {
       await new Promise(resolve => setTimeout(resolve, 900))
@@ -71,7 +79,8 @@ export async function POST(req: NextRequest) {
         body.username,
         body.display_name ?? null,
         body.bio ?? null,
-        body.industry ?? null
+        body.industry ?? null,
+        body.facility_name ?? null
       )
       return NextResponse.json({ dm })
     }
@@ -80,6 +89,7 @@ export async function POST(req: NextRequest) {
     const lines: string[] = [
       `ユーザー名: @${body.username}`,
       `表示名: ${body.display_name || '不明'}`,
+      `施設名: ${body.facility_name || '不明'}`,
       `プロフィール(bio): ${body.bio || '（なし）'}`,
       `業種: ${body.industry || '不明'}`,
     ]
@@ -88,6 +98,12 @@ export async function POST(req: NextRequest) {
     }
     if (body.engagement_rate != null) {
       lines.push(`エンゲージメント率: ${body.engagement_rate}%`)
+    }
+    if (body.website_url) {
+      lines.push(`WebサイトURL: ${body.website_url}`)
+    }
+    if (body.hp_info) {
+      lines.push(`\n【施設HP情報】\n${body.hp_info}`)
     }
 
     const userMessage = ['【ターゲット情報】', ...lines].join('\n')
@@ -118,7 +134,8 @@ export async function POST(req: NextRequest) {
         body.username,
         body.display_name ?? null,
         body.bio ?? null,
-        body.industry ?? null
+        body.industry ?? null,
+        body.facility_name ?? null
       )
       return NextResponse.json({ dm })
     }

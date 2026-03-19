@@ -913,7 +913,7 @@ async function getSenderInfo(userId: string): Promise<SenderInfo> {
   return {
     company_name: data?.company_name || '株式会社CONOCOLA',
     representative: data?.representative || '河野大地',
-    email: data?.company_email || 'conocola2020@gmail.com',
+    email: data?.company_email || 'daichi@conocola.com',
     phone: data?.company_phone || '052-228-4945',
   }
 }

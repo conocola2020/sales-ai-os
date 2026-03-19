@@ -6,7 +6,7 @@ import { getTemplates, seedDefaultTemplates } from '@/app/dashboard/settings/act
 export const dynamic = 'force-dynamic'
 
 interface Props {
-  searchParams: Promise<{ leadId?: string }>
+  searchParams: Promise<{ leadId?: string; mode?: string; leads?: string }>
 }
 
 export default async function ComposePageRoute({ searchParams }: Props) {
@@ -20,9 +20,8 @@ export default async function ComposePageRoute({ searchParams }: Props) {
   const leads = leadsResult.data ?? []
   const messages = messagesResult.data ?? []
   let templates = templatesResult.data ?? []
-  const isDemo =
-    !process.env.ANTHROPIC_API_KEY ||
-    process.env.ANTHROPIC_API_KEY === 'your-anthropic-api-key-here'
+  // API側でデモ判定するため、ページ側では常にfalse
+  const isDemo = false
 
   // テンプレートがなければデフォルトを作成
   if (templates.length === 0) {
@@ -37,6 +36,8 @@ export default async function ComposePageRoute({ searchParams }: Props) {
       initialMessages={messages}
       isDemo={isDemo}
       initialLeadId={params.leadId ?? ''}
+      initialMode={params.mode === 'bulk' ? 'bulk' : undefined}
+      initialBulkLeadIds={params.leads?.split(',').filter(Boolean)}
       templates={templates}
     />
   )

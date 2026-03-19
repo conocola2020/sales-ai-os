@@ -8,6 +8,17 @@ import type {
   InstagramTargetUpdate,
   InstagramStats,
 } from '@/types/instagram'
+import type {
+  InstagramSafetySettings,
+  InstagramActivityLog,
+  DmSafetyStatus,
+} from '@/types/instagram-safety'
+import {
+  getWarmupLimit,
+  getSafetyLevel,
+  getNextRecommendedTime,
+  getJstToday,
+} from '@/lib/instagram-safety'
 
 // ──────────────────────────────────────────
 // Fetch all targets for current user
@@ -23,19 +34,31 @@ export async function getTargets(): Promise<{
 
   if (!user) return { data: [], error: null }
 
-  const { data, error } = await supabase
-    .from('instagram_targets')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(500)
+  // Supabaseは1リクエスト最大1000行。ページネーションで全件取得
+  const PAGE_SIZE = 1000
+  const allRows: InstagramTarget[] = []
+  let from = 0
 
-  if (error) {
-    console.error('getTargets error:', error)
-    return { data: null, error: error.message }
+  while (true) {
+    const { data, error } = await supabase
+      .from('instagram_targets')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1)
+
+    if (error) {
+      console.error('getTargets error:', error)
+      return { data: allRows.length > 0 ? allRows : null, error: error.message }
+    }
+
+    allRows.push(...(data as InstagramTarget[]))
+
+    if (data.length < PAGE_SIZE) break // 最後のページ
+    from += PAGE_SIZE
   }
 
-  return { data: data as InstagramTarget[], error: null }
+  return { data: allRows, error: null }
 }
 
 // ──────────────────────────────────────────
@@ -147,23 +170,46 @@ export async function deleteTarget(id: string): Promise<{ error: string | null }
 export async function toggleFlag(
   id: string,
   flag: 'liked' | 'following' | 'dm_replied' | 'liked_back' | 'followed_back',
-  value: boolean
+  value: boolean,
+  targetUsername?: string
 ): Promise<{ data: InstagramTarget | null; error: string | null }> {
-  return updateTarget(id, { [flag]: value })
+  const result = await updateTarget(id, { [flag]: value })
+
+  // Log like/follow actions
+  if (result.data && value) {
+    const actionMap: Record<string, 'like' | 'follow' | undefined> = {
+      liked: 'like',
+      following: 'follow',
+    }
+    const actionType = actionMap[flag]
+    if (actionType) {
+      logActivity(id, actionType, targetUsername || result.data.username).catch(() => {})
+    }
+  }
+
+  return result
 }
 
 // ──────────────────────────────────────────
-// Save DM content and mark as sent
+// Save DM content and mark as sent (+ activity log)
 // ──────────────────────────────────────────
 export async function saveDmAndMarkSent(
   id: string,
-  dmContent: string
+  dmContent: string,
+  targetUsername?: string
 ): Promise<{ data: InstagramTarget | null; error: string | null }> {
-  return updateTarget(id, {
+  const result = await updateTarget(id, {
     dm_content: dmContent,
     dm_sent: true,
     status: 'DM送信済み',
   })
+
+  // Activity log (fire-and-forget)
+  if (result.data) {
+    logActivity(id, 'dm_sent', targetUsername || result.data.username).catch(() => {})
+  }
+
+  return result
 }
 
 // ──────────────────────────────────────────
@@ -198,9 +244,16 @@ export async function bulkCreateTargets(
   const CHUNK = 500
   let inserted = 0
   for (let i = 0; i < rows.length; i += CHUNK) {
-    const { error } = await supabase.from('instagram_targets').insert(rows.slice(i, i + CHUNK))
-    if (error) return { count: inserted, error: error.message }
-    inserted += Math.min(CHUNK, rows.length - i)
+    const chunk = rows.slice(i, i + CHUNK)
+    const { error } = await supabase
+      .from('instagram_targets')
+      .upsert(chunk, { onConflict: 'user_id,username', ignoreDuplicates: true })
+    if (error) {
+      console.error('bulkCreate chunk error:', error.message)
+      // Continue with next chunk instead of stopping
+      continue
+    }
+    inserted += chunk.length
   }
 
   revalidatePath('/dashboard/instagram')
@@ -226,6 +279,205 @@ export async function bulkDeleteTargets(
   if (error) return { error: error.message }
   revalidatePath('/dashboard/instagram')
   return { error: null }
+}
+
+// ══════════════════════════════════════════
+// 安全管理システム
+// ══════════════════════════════════════════
+
+// ──────────────────────────────────────────
+// Activity logging
+// ──────────────────────────────────────────
+export async function logActivity(
+  targetId: string | null,
+  actionType: 'dm_sent' | 'like' | 'follow' | 'unfollow',
+  targetUsername?: string
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: '認証が必要です' }
+
+  const { error } = await supabase.from('instagram_activity_log').insert({
+    user_id: user.id,
+    target_id: targetId,
+    action_type: actionType,
+    target_username: targetUsername ?? null,
+  })
+
+  if (error) {
+    console.error('logActivity error:', error)
+    return { error: error.message }
+  }
+  return { error: null }
+}
+
+// ──────────────────────────────────────────
+// Safety settings CRUD
+// ──────────────────────────────────────────
+export async function getSafetySettings(): Promise<{
+  data: InstagramSafetySettings | null
+  error: string | null
+}> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: null, error: null }
+
+  const { data, error } = await supabase
+    .from('instagram_safety_settings')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (error) return { data: null, error: error.message }
+
+  // Auto-create defaults if not exists
+  if (!data) {
+    const { data: created, error: createErr } = await supabase
+      .from('instagram_safety_settings')
+      .insert({
+        user_id: user.id,
+        account_start_date: getJstToday(),
+        daily_dm_limit: 20,
+        min_interval_minutes: 5,
+        warmup_enabled: true,
+      })
+      .select('*')
+      .single()
+
+    if (createErr) return { data: null, error: createErr.message }
+    return { data: created as InstagramSafetySettings, error: null }
+  }
+
+  return { data: data as InstagramSafetySettings, error: null }
+}
+
+export async function updateSafetySettings(
+  changes: Partial<Pick<InstagramSafetySettings, 'account_start_date' | 'daily_dm_limit' | 'min_interval_minutes' | 'warmup_enabled'>>
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: '認証が必要です' }
+
+  const { error } = await supabase
+    .from('instagram_safety_settings')
+    .update(changes)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  return { error: null }
+}
+
+// ──────────────────────────────────────────
+// DM Safety Status (main check)
+// ──────────────────────────────────────────
+export async function getDmSafetyStatus(): Promise<{
+  data: DmSafetyStatus | null
+  error: string | null
+}> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Demo mode: return safe defaults
+  if (!user) {
+    return {
+      data: {
+        todayDmCount: 0,
+        effectiveLimit: 20,
+        hardLimit: 20,
+        warmupDay: 30,
+        warmupPhase: '通常モード (20件/日)',
+        lastDmSentAt: null,
+        nextRecommendedAt: null,
+        waitSeconds: 0,
+        safetyLevel: 'safe',
+        canSendNow: true,
+        todayLikeCount: 0,
+        todayFollowCount: 0,
+      },
+      error: null,
+    }
+  }
+
+  // Fetch settings
+  const { data: settings } = await getSafetySettings()
+  const safetySettings = settings || {
+    account_start_date: getJstToday(),
+    daily_dm_limit: 20,
+    min_interval_minutes: 5,
+    warmup_enabled: true,
+  }
+
+  // Fetch today's activity (JST midnight boundary)
+  const today = getJstToday()
+  const todayMidnight = `${today}T00:00:00+09:00`
+
+  const { data: activities } = await supabase
+    .from('instagram_activity_log')
+    .select('action_type, created_at')
+    .eq('user_id', user.id)
+    .gte('created_at', todayMidnight)
+    .order('created_at', { ascending: false })
+
+  const rows = (activities || []) as { action_type: string; created_at: string }[]
+  const todayDmCount = rows.filter(r => r.action_type === 'dm_sent').length
+  const todayLikeCount = rows.filter(r => r.action_type === 'like').length
+  const todayFollowCount = rows.filter(r => r.action_type === 'follow').length
+
+  // Last DM timestamp
+  const lastDmRow = rows.find(r => r.action_type === 'dm_sent')
+  const lastDmSentAt = lastDmRow?.created_at ?? null
+
+  // Warmup calculation
+  const warmup = getWarmupLimit(
+    safetySettings.account_start_date,
+    safetySettings.daily_dm_limit,
+    safetySettings.warmup_enabled
+  )
+
+  // Next recommended time
+  const nextRec = getNextRecommendedTime(lastDmSentAt, safetySettings.min_interval_minutes)
+
+  // Safety level
+  const safetyLevel = getSafetyLevel(todayDmCount, warmup.effectiveLimit)
+
+  return {
+    data: {
+      todayDmCount,
+      effectiveLimit: warmup.effectiveLimit,
+      hardLimit: safetySettings.daily_dm_limit,
+      warmupDay: warmup.warmupDay,
+      warmupPhase: warmup.warmupPhase,
+      lastDmSentAt,
+      nextRecommendedAt: nextRec.nextAt,
+      waitSeconds: nextRec.waitSeconds,
+      safetyLevel,
+      canSendNow: todayDmCount < warmup.effectiveLimit,
+      todayLikeCount,
+      todayFollowCount,
+    },
+    error: null,
+  }
+}
+
+// ──────────────────────────────────────────
+// Recent activity log
+// ──────────────────────────────────────────
+export async function getRecentActivityLog(
+  limit: number = 20
+): Promise<{ data: InstagramActivityLog[]; error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: [], error: null }
+
+  const { data, error } = await supabase
+    .from('instagram_activity_log')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) return { data: [], error: error.message }
+  return { data: (data || []) as InstagramActivityLog[], error: null }
 }
 
 // ──────────────────────────────────────────

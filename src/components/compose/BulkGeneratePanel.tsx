@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo, memo } from 'react'
 import {
   Sparkles, Loader2, Check, X, Globe, Mail, Send,
   ChevronDown, ChevronUp, RefreshCw, Save, CheckSquare, Square,
@@ -24,6 +24,48 @@ interface BulkResult {
   queued?: boolean
 }
 
+// Memoized lead row — only re-renders when its own isSelected changes
+// チェックアイコン（軽量インラインSVG）
+const CheckIcon = () => (
+  <svg className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="18" height="18" rx="2" /><path d="m9 12 2 2 4-4" />
+  </svg>
+)
+const UncheckIcon = () => (
+  <svg className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+  </svg>
+)
+
+const LeadRow = memo(function LeadRow({
+  lead,
+  isSelected,
+  onToggle,
+}: {
+  lead: Lead
+  isSelected: boolean
+  onToggle: (id: string) => void
+}) {
+  return (
+    <div
+      role="button"
+      onClick={() => onToggle(lead.id)}
+      className={isSelected
+        ? 'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-xs bg-violet-500/10 border border-violet-500/30 cursor-pointer'
+        : 'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-xs bg-gray-800/50 border border-transparent cursor-pointer'
+      }
+    >
+      {isSelected ? <CheckIcon /> : <UncheckIcon />}
+      <div className="flex-1 min-w-0">
+        <span className="text-white truncate block">{lead.company_name}</span>
+        {lead.industry && <span className="text-gray-500 text-[10px]">{lead.industry}</span>}
+      </div>
+    </div>
+  )
+})
+
+const VISIBLE_BATCH = 50 // 1回に表示する件数
+
 interface BulkGeneratePanelProps {
   leads: Lead[]
   templates: MessageTemplate[]
@@ -31,6 +73,7 @@ interface BulkGeneratePanelProps {
   onToneChange: (tone: Tone) => void
   selectedTemplateId: string
   onTemplateChange: (id: string) => void
+  initialSelectedIds?: string[]
 }
 
 export default function BulkGeneratePanel({
@@ -40,36 +83,47 @@ export default function BulkGeneratePanel({
   onToneChange,
   selectedTemplateId,
   onTemplateChange,
+  initialSelectedIds,
 }: BulkGeneratePanelProps) {
-  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set())
+  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(
+    new Set(initialSelectedIds ?? [])
+  )
   const [customInstructions, setCustomInstructions] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [progress, setProgress] = useState({ total: 0, completed: 0 })
   const [results, setResults] = useState<BulkResult[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [prefectureFilter, setPrefectureFilter] = useState('all')
+  const [visibleCount, setVisibleCount] = useState(VISIBLE_BATCH)
   const [isSavingAll, setIsSavingAll] = useState(false)
   const [isQueuingAll, setIsQueuingAll] = useState(false)
 
-  // Filtered leads
-  const filteredLeads = leads.filter(l => {
-    if (!searchQuery) return true
-    const q = searchQuery.toLowerCase()
-    return (
-      l.company_name?.toLowerCase().includes(q) ||
-      l.industry?.toLowerCase().includes(q) ||
-      l.contact_name?.toLowerCase().includes(q)
-    )
-  })
+  // Filtered leads（検索クエリ + 都道府県フィルター）
+  const filteredLeads = useMemo(() => {
+    let rows = leads
+    if (prefectureFilter !== 'all') {
+      rows = rows.filter(l => (l.prefecture ?? l.notes) === prefectureFilter)
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      rows = rows.filter(l =>
+        l.company_name?.toLowerCase().includes(q) ||
+        l.industry?.toLowerCase().includes(q) ||
+        l.contact_name?.toLowerCase().includes(q)
+      )
+    }
+    return rows
+  }, [leads, searchQuery, prefectureFilter])
 
-  const toggleLead = (id: string) => {
+  const toggleLead = useCallback((id: string) => {
     setSelectedLeadIds(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
     })
-  }
+  }, [])
 
   const selectAll = () => {
     setSelectedLeadIds(new Set(filteredLeads.map(l => l.id)))
@@ -127,9 +181,11 @@ export default function BulkGeneratePanel({
           try {
             const data = JSON.parse(line)
             if (data.type === 'result') {
+              // リードデータから正しい企業名を取得（デモモードの「デモ企業N」を上書き）
+              const realLead = leads.find(l => l.id === data.leadId)
               setResults(prev => [...prev, {
                 leadId: data.leadId,
-                companyName: data.companyName,
+                companyName: realLead?.company_name ?? data.companyName,
                 subject: data.subject,
                 body: data.body,
                 error: data.error,
@@ -187,8 +243,44 @@ export default function BulkGeneratePanel({
     setIsQueuingAll(false)
   }
 
+  const handleSaveAndQueueAll = async () => {
+    setIsSavingAll(true)
+    setIsQueuingAll(true)
+    const targets = results.filter(r => !r.error && r.body && !r.queued)
+    for (const result of targets) {
+      // Save
+      if (!result.saved) {
+        const { error } = await saveMessage({
+          lead_id: result.leadId,
+          subject: result.subject || null,
+          content: result.body,
+          tone,
+        })
+        if (!error) {
+          setResults(prev => prev.map(r =>
+            r.leadId === result.leadId ? { ...r, saved: true } : r
+          ))
+        }
+      }
+      // Queue
+      const { error: qErr } = await addToQueue({
+        lead_id: result.leadId,
+        message_content: result.body,
+        subject: result.subject || undefined,
+      })
+      if (!qErr) {
+        setResults(prev => prev.map(r =>
+          r.leadId === result.leadId ? { ...r, queued: true } : r
+        ))
+      }
+    }
+    setIsSavingAll(false)
+    setIsQueuingAll(false)
+  }
+
   const successCount = results.filter(r => !r.error && r.body).length
   const errorCount = results.filter(r => r.error).length
+  const unqueuedCount = results.filter(r => !r.error && r.body && !r.queued).length
 
   return (
     <div className="flex-1 min-h-0 flex overflow-hidden">
@@ -199,10 +291,23 @@ export default function BulkGeneratePanel({
           <input
             type="text"
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={e => { setSearchQuery(e.target.value); setVisibleCount(VISIBLE_BATCH) }}
             placeholder="リードを検索..."
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
           />
+
+          {/* Prefecture filter */}
+          <select
+            value={prefectureFilter}
+            onChange={e => { setPrefectureFilter(e.target.value); setVisibleCount(VISIBLE_BATCH) }}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+          >
+            <option value="all">都道府県: すべて</option>
+            {(() => {
+              const prefs = [...new Set(leads.map(l => l.prefecture ?? l.notes).filter(Boolean))] as string[]
+              return prefs.sort().map(p => <option key={p} value={p}>{p} ({leads.filter(l => (l.prefecture ?? l.notes) === p).length})</option>)
+            })()}
+          </select>
 
           {/* Quick select buttons */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -219,36 +324,28 @@ export default function BulkGeneratePanel({
             <span className="text-xs text-gray-500 ml-auto">{selectedLeadIds.size}件選択</span>
           </div>
 
-          {/* Lead list */}
-          <div className="space-y-1 max-h-[300px] overflow-y-auto">
-            {filteredLeads.map(lead => (
-              <button
+          {/* Lead list (virtualized: show first N, load more on scroll) */}
+          <div className="space-y-1 max-h-[300px] overflow-y-auto" onScroll={e => {
+            const el = e.currentTarget
+            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50 && visibleCount < filteredLeads.length) {
+              setVisibleCount(v => Math.min(v + VISIBLE_BATCH, filteredLeads.length))
+            }
+          }}>
+            {filteredLeads.slice(0, visibleCount).map(lead => (
+              <LeadRow
                 key={lead.id}
-                onClick={() => toggleLead(lead.id)}
-                className={clsx(
-                  'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all text-xs',
-                  selectedLeadIds.has(lead.id)
-                    ? 'bg-violet-500/10 border border-violet-500/30'
-                    : 'bg-gray-800/50 border border-transparent hover:border-gray-700'
-                )}
-              >
-                {selectedLeadIds.has(lead.id) ? (
-                  <CheckSquare className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
-                ) : (
-                  <Square className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <span className="text-white truncate block">{lead.company_name}</span>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    {lead.industry && <span className="text-gray-500">{lead.industry}</span>}
-                    {(lead.company_url || lead.website_url) && (
-                      <Globe className="w-2.5 h-2.5 text-cyan-500" />
-                    )}
-                    {lead.email && <Mail className="w-2.5 h-2.5 text-blue-500" />}
-                  </div>
-                </div>
-              </button>
+                lead={lead}
+                isSelected={selectedLeadIds.has(lead.id)}
+                onToggle={toggleLead}
+              />
             ))}
+            {visibleCount < filteredLeads.length && (
+              <div className="text-center py-2">
+                <span className="text-[10px] text-gray-600">
+                  {visibleCount}/{filteredLeads.length}件表示中 — スクロールで続きを読み込み
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Controls */}
@@ -298,20 +395,20 @@ export default function BulkGeneratePanel({
               {results.length > 0 && !isGenerating && (
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={handleSaveAll}
-                    disabled={isSavingAll || successCount === 0}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white transition-colors"
+                    onClick={handleSaveAndQueueAll}
+                    disabled={(isSavingAll && isQueuingAll) || unqueuedCount === 0}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white transition-colors"
                   >
-                    {isSavingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-                    全て保存
+                    {(isSavingAll || isQueuingAll) ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                    {(isSavingAll || isQueuingAll) ? '処理中...' : `全て保存＆送信キューへ (${unqueuedCount}件)`}
                   </button>
                   <button
-                    onClick={handleQueueAll}
-                    disabled={isQueuingAll || successCount === 0}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white transition-colors"
+                    onClick={handleSaveAll}
+                    disabled={isSavingAll || successCount === 0}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-gray-300 transition-colors"
                   >
-                    {isQueuingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                    全てキューに追加
+                    {isSavingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                    保存のみ
                   </button>
                 </div>
               )}

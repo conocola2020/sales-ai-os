@@ -1,18 +1,24 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback, lazy, Suspense } from 'react'
 import {
   Plus, Search, Users, MessageCircle, Heart, TrendingUp,
   UserCheck, ChevronDown, ChevronUp, Filter, Upload, Download,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { InstagramTarget, InstagramStatus, InstagramStats } from '@/types/instagram'
+import type { DmSafetyStatus } from '@/types/instagram-safety'
 import { INSTAGRAM_STATUSES, STATUS_CONFIG } from '@/types/instagram'
-import { toggleFlag } from '@/app/dashboard/instagram/actions'
+import { toggleFlag, getDmSafetyStatus } from '@/app/dashboard/instagram/actions'
 import TargetCard from './TargetCard'
-import TargetFormModal from './TargetFormModal'
-import DmModal from './DmModal'
-import CsvImportModal from './CsvImportModal'
+import SafetyDashboard from './SafetyDashboard'
+import NextTargetSuggestion from './NextTargetSuggestion'
+import ActivityLog from './ActivityLog'
+
+// Lazy load heavy modals — only loaded when user opens them
+const TargetFormModal = lazy(() => import('./TargetFormModal'))
+const DmModal = lazy(() => import('./DmModal'))
+const CsvImportModal = lazy(() => import('./CsvImportModal'))
 
 // ──────────────────────────────────────────
 // Props
@@ -69,6 +75,20 @@ const FILTER_TABS: { label: string; value: StatusFilter }[] = [
 export default function InstagramPage({ initialTargets, initialStats }: InstagramPageProps) {
   const [targets, setTargets] = useState<InstagramTarget[]>(initialTargets)
   const [stats, setStats] = useState<InstagramStats>(initialStats)
+
+  // Safety
+  const [safetyStatus, setSafetyStatus] = useState<DmSafetyStatus | null>(null)
+  const [activityRefreshKey, setActivityRefreshKey] = useState(0)
+
+  const refreshSafety = useCallback(async () => {
+    const { data } = await getDmSafetyStatus()
+    if (data) setSafetyStatus(data)
+    setActivityRefreshKey(k => k + 1)
+  }, [])
+
+  useEffect(() => {
+    refreshSafety()
+  }, [refreshSafety])
 
   // Modals
   const [formTarget, setFormTarget] = useState<InstagramTarget | null | undefined>(undefined)
@@ -144,22 +164,24 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
   const handleToggleLiked = async (target: InstagramTarget) => {
     const newVal = !target.liked
     updateLocal({ ...target, liked: newVal })
-    const { data, error } = await toggleFlag(target.id, 'liked', newVal)
+    const { data, error } = await toggleFlag(target.id, 'liked', newVal, target.username)
     if (error || !data) {
       updateLocal(target) // revert
     } else {
       updateLocal(data)
+      refreshSafety()
     }
   }
 
   const handleToggleFollowing = async (target: InstagramTarget) => {
     const newVal = !target.following
     updateLocal({ ...target, following: newVal })
-    const { data, error } = await toggleFlag(target.id, 'following', newVal)
+    const { data, error } = await toggleFlag(target.id, 'following', newVal, target.username)
     if (error || !data) {
       updateLocal(target)
     } else {
       updateLocal(data)
+      refreshSafety()
     }
   }
 
@@ -249,6 +271,18 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
             color="bg-emerald-500/10 text-emerald-400"
           />
         </div>
+
+        {/* ── Safety Dashboard ── */}
+        {safetyStatus && (
+          <SafetyDashboard status={safetyStatus} onRefresh={refreshSafety} />
+        )}
+
+        {/* ── Next Target Suggestion ── */}
+        <NextTargetSuggestion
+          targets={targets}
+          canSendNow={safetyStatus?.canSendNow ?? true}
+          onOpenDm={(target) => setDmTarget(target)}
+        />
 
         {/* ── Approach candidates panel ── */}
         {(likeCandidates.length > 0 || followCandidates.length > 0) && (
@@ -392,9 +426,13 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
             ))}
           </div>
         )}
+
+        {/* ── Activity Log ── */}
+        <ActivityLog refreshKey={activityRefreshKey} />
       </div>
 
-      {/* ── Modals ── */}
+      {/* ── Modals (lazy loaded) ── */}
+      <Suspense fallback={null}>
 
       {/* Target form (create / edit) */}
       {formTarget !== undefined && (
@@ -425,6 +463,8 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
             updateLocal(updated)
             setDmTarget(updated)
           }}
+          safetyStatus={safetyStatus}
+          onSafetyRefresh={refreshSafety}
         />
       )}
 
@@ -438,6 +478,8 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
           }}
         />
       )}
+
+      </Suspense>
     </div>
   )
 }

@@ -5,6 +5,7 @@
 
 import type { Tone } from '@/types/messages'
 import type { UserSettings, MessageTemplate } from '@/types/settings'
+import { generateCtaWithDates } from '@/lib/date-utils'
 
 // ---------------------------------------------------------------------------
 // Tone Instructions
@@ -98,11 +99,11 @@ export function buildSystemPrompt(
       parts.push(`【導入実績】${settings.social_proof}`)
     }
 
-    // CTA
-    if (settings.cta_text) {
-      parts.push('')
-      parts.push(`【デフォルトCTA】${settings.cta_text}`)
-    }
+    // CTA（候補日を動的に生成）
+    const ctaText = settings.cta_text || generateCtaWithDates()
+    parts.push('')
+    parts.push(`【デフォルトCTA】\n${ctaText}`)
+    parts.push('★重要★ CTA内の候補日・URLは省略・変更せず、必ずそのまま本文に含めてください。候補日の日付と時間帯、日程調整リンクのURLをそのまま記載してください。')
     parts.push('')
   }
 
@@ -150,22 +151,24 @@ export function buildSystemPrompt(
   parts.push('【出力形式 ★必ず守る★】')
   parts.push('必ず以下の形式で出力してください：')
   parts.push('')
-  parts.push('件名：（20〜35文字の件名。施設名または具体的なメリットを含む）')
+  parts.push('件名：株式会社CONOCOLAの河野大地です。（＋施設名または具体的なメリットを含む補足）')
   parts.push('---')
   parts.push('（本文 500〜800文字）')
   parts.push('')
   parts.push('※「件名：」で始まる1行目と「---」区切り線は必須です')
   parts.push('※件名の後に必ず改行+「---」を入れてください')
+  parts.push('※件名は必ず「株式会社CONOCOLAの河野大地です。」から始めてください')
   parts.push('')
 
   // ---- ビジネスメール構成 ----
   parts.push('【本文の構成】')
   parts.push('1. 宛名：「○○ ご担当者様」')
-  parts.push('2. HP感想＋自己紹介：HPの具体的な特徴に触れながら自然に自己紹介')
-  parts.push('3. 課題提起（不の指摘）★最重要★：HP分析で特定した「不」を2〜3個、具体的に提起')
-  parts.push('4. 提案内容（不の解決）★最重要★：課題それぞれに対して弊社商品で解決する具体策')
-  parts.push('5. CTA：具体的な次のアクション提案')
-  parts.push('6. 署名：会社名・氏名・肩書き・メール・電話・Web')
+  parts.push('2. 自己紹介（1行目）★必須★：「株式会社CONOCOLAの河野大地と申します。」で必ず始める')
+  parts.push('3. HP感想：HPの具体的な特徴に触れながら自然につなげる')
+  parts.push('4. 課題提起（不の指摘）★最重要★：HP分析で特定した「不」を2〜3個、具体的に提起')
+  parts.push('5. 提案内容（不の解決）★最重要★：課題それぞれに対して弊社商品で解決する具体策')
+  parts.push('6. CTA：具体的な次のアクション提案')
+  parts.push('7. 署名：会社名・氏名・肩書き・メール・Web（電話番号は記載しない）')
   parts.push('')
   parts.push('【文体ルール】')
   parts.push('- 段落ごとに空行を入れて読みやすくする')
