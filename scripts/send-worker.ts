@@ -478,17 +478,64 @@ async function clickSubmitButton(page: import('playwright').Page): Promise<boole
 
 async function handleConfirmPage(page: import('playwright').Page): Promise<void> {
   await delay(2000)
-  const selectors = ['button:has-text("送信")', 'input[type="submit"]', 'input[value*="送信"]']
+
+  // 確認画面かどうかチェック
+  const pageText = await page.evaluate(() => document.body.innerText || '')
+  const isConfirmPage = pageText.includes('確認') || pageText.includes('内容をご確認')
+  console.log(`  確認画面検出: ${isConfirmPage ? 'はい' : 'いいえ'}`)
+
+  if (!isConfirmPage) return
+
+  // 幅広いセレクタで「送信する」ボタンを探す
+  const selectors = [
+    'button:has-text("送信する")',
+    'button:has-text("送信")',
+    'input[type="submit"][value*="送信"]',
+    'input[type="button"][value*="送信"]',
+    'a:has-text("送信する")',
+    'button[type="submit"]',
+    'input[type="submit"]',
+    '.wpcf7-submit',                    // Contact Form 7
+    '.mw_wp_form_confirm .submit-btn',  // MW WP Form 確認画面
+    'input[value="送信する"]',
+    'button.confirm-submit',
+    '.confirm input[type="submit"]',
+  ]
+
   for (const sel of selectors) {
     try {
       const el = await page.$(sel)
       if (el && await el.isVisible()) {
+        const text = await el.evaluate((e: Element) => e.textContent || (e as HTMLInputElement).value || '')
+        console.log(`  確認画面送信ボタン発見: "${text}" (${sel})`)
         await el.scrollIntoViewIfNeeded()
-        await delay(300)
+        await delay(500)
         await el.click()
+        console.log(`  確認画面送信クリック: ✓`)
+        await delay(3000)
         return
       }
     } catch { /* continue */ }
+  }
+
+  // セレクタで見つからない場合、JSで「送信」テキストを含むボタンを探す
+  const clicked = await page.evaluate(() => {
+    const elements = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"], a'))
+    for (const el of elements) {
+      const text = (el as HTMLElement).textContent || (el as HTMLInputElement).value || ''
+      if (text.includes('送信') && !text.includes('確認')) {
+        (el as HTMLElement).click()
+        return text.trim()
+      }
+    }
+    return null
+  })
+
+  if (clicked) {
+    console.log(`  JS経由で送信ボタンクリック: "${clicked}" ✓`)
+    await delay(3000)
+  } else {
+    console.log(`  ⚠️ 確認画面の送信ボタンが見つかりません`)
   }
 }
 
