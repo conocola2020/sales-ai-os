@@ -259,9 +259,9 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
       }
       console.log(`  メール確認入力: ${filledEmailConfirm ? '✓' : '✗'}`)
 
-      // 電話番号は入力しない（記載不要のため）
-      // const filledPhone = await tryFillField(page, 'phone', senderInfo.phone)
-      console.log(`  電話入力: スキップ（記載不要）`)
+      // 電話番号: フォーム必須項目の場合があるので入力する（メール本文には含まない）
+      const filledPhone = await tryFillField(page, 'phone', '000-0000-0000')
+      console.log(`  電話入力: ${filledPhone ? '✓ (ダミー)' : '✗'}`)
       const filledBody = await tryFillField(page, 'body', item.message_content)
       console.log(`  本文入力: ${filledBody ? '✓' : '✗'}`)
 
