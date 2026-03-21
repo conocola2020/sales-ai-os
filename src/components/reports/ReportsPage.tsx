@@ -219,7 +219,7 @@ export default function ReportsPage({
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -414,7 +414,7 @@ export default function ReportsPage({
             <Send className="w-4 h-4 text-violet-400" />
             送信パフォーマンス
           </h3>
-          <div className="grid grid-cols-5 gap-4 text-center">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 text-center">
             <div className="bg-gray-800/50 rounded-lg p-3">
               <p className="text-xl font-bold text-white">{sendStats.total}</p>
               <p className="text-xs text-gray-500">総キュー</p>

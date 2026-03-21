@@ -16,7 +16,20 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/dashboard/sending)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/dashboard/replies)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/dashboard/deals)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/dashboard/instagram)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/dashboard/instagram)",
+      "Bash(npm install resend)",
+      "Bash(git add package.json package-lock.json src/app/api/export/route.ts src/app/api/send-email/route.ts src/app/dashboard/error.tsx src/app/dashboard/loading.tsx src/app/dashboard/leads/loading.tsx src/app/dashboard/instagram/actions.ts src/app/dashboard/page.tsx src/app/dashboard/reports/page.tsx src/app/dashboard/settings/page.tsx src/components/dashboard/DashboardOverview.tsx src/components/instagram/CsvImportModal.tsx src/components/instagram/InstagramPage.tsx src/components/leads/LeadsTable.tsx src/components/reports/ReportsPage.tsx src/components/sending/SendConfirmModal.tsx src/components/ui/Toast.tsx supabase/migrations/001_rls_policies.sql)",
+      "Bash(git commit:*)",
+      "Bash(git push origin main)",
+      "Bash(git push https://github.com/conocola2020/sales-ai-os.git main)",
+      "WebFetch(domain:sauna-ikitai.com)",
+      "Bash(pip install requests beautifulsoup4 pandas)",
+      "Bash(pip3 install requests beautifulsoup4 pandas)",
+      "Bash(python3 scrape_sauna.py)",
+      "Bash(python3 -u scrape_sauna.py)",
+      "Bash(python3 -c \":*)",
+      "Bash(python3 convert_sauna_csv.py)",
+      "Bash(git add:*)"
     ]
   }
 }

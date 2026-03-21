@@ -175,9 +175,9 @@ export default function CompaniesPage({ initialAnalyses, leads, isDemo }: Compan
       )}
 
       {/* Main content */}
-      <div className="flex-1 min-h-0 grid grid-cols-[1fr_300px] gap-0 overflow-hidden">
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_300px] gap-0 overflow-hidden">
         {/* Left: Analysis area */}
-        <div className="flex flex-col overflow-y-auto p-6 space-y-5 border-r border-gray-800">
+        <div className="flex flex-col overflow-y-auto p-4 md:p-6 space-y-5 border-b md:border-b-0 md:border-r border-gray-800">
           {/* URL Input */}
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-1.5">
@@ -298,7 +298,7 @@ export default function CompaniesPage({ initialAnalyses, leads, isDemo }: Compan
         </div>
 
         {/* Right: History panel */}
-        <div className="flex flex-col overflow-hidden p-5">
+        <div className="flex flex-col overflow-hidden p-4 md:p-5">
           <AnalysisHistory
             analyses={analyses}
             onSelect={handleSelectHistory}

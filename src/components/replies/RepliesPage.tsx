@@ -128,7 +128,7 @@ export default function RepliesPage({ initialReplies, leads, sentLeadIds = [] }:
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <StatCard label="合計" value={stats.total} color="text-gray-300" bg="bg-gray-800/60" />
         <StatCard label="未読" value={stats.unread} color="text-violet-400" bg="bg-violet-500/10 border border-violet-500/20" />
         <StatCard label="興味あり" value={stats.interested} color="text-emerald-400" bg="bg-emerald-500/10 border border-emerald-500/20" />
