@@ -267,8 +267,8 @@ export default function ComposePage({
           initialSelectedIds={initialBulkLeadIds}
         />
       ) : (
-        <div className="flex-1 min-h-0 grid grid-cols-[1fr_320px] gap-0 overflow-hidden">
-          <div className="flex flex-col overflow-y-auto p-6 space-y-5 border-r border-gray-800">
+        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_300px] gap-0 overflow-hidden">
+          <div className="flex flex-col overflow-y-auto p-4 md:p-6 space-y-5 border-b border-gray-800 md:border-b-0 md:border-r">
             <LeadSelector leads={leads} selectedLeadId={selectedLeadId} onSelect={setSelectedLeadId} />
             <TemplateSelector templates={templates} selectedId={selectedTemplateId} onChange={setSelectedTemplateId} />
             <ToneSelector value={tone} onChange={setTone} />
@@ -322,7 +322,7 @@ export default function ComposePage({
             </div>
           </div>
 
-          <div className="flex flex-col overflow-hidden p-5">
+          <div className="hidden md:flex flex-col overflow-hidden p-5">
             <HistoryPanel messages={messages} onSelect={handleSelectHistory} onDeleted={handleDeleteHistory} />
           </div>
         </div>
