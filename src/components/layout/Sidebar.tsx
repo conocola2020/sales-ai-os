@@ -16,6 +16,7 @@ import {
   LogOut,
   ChevronRight,
   Settings,
+  X,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -53,9 +54,11 @@ const navItems = [
 interface SidebarProps {
   userName?: string
   userEmail?: string
+  isOpen?: boolean
+  onClose?: () => void
 }
 
-export default function Sidebar({ userName, userEmail }: SidebarProps) {
+export default function Sidebar({ userName, userEmail, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -66,11 +69,15 @@ export default function Sidebar({ userName, userEmail }: SidebarProps) {
     router.refresh()
   }
 
-  return (
-    <aside className="w-64 h-screen bg-gray-950 border-r border-gray-800/50 flex flex-col flex-shrink-0">
+  const handleNavClick = () => {
+    onClose?.()
+  }
+
+  const sidebarContent = (
+    <aside className="w-72 md:w-64 h-full bg-gray-950 border-r border-gray-800/50 flex flex-col">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-gray-800/50">
-        <Link href="/dashboard" className="flex items-center gap-3 group">
+      <div className="px-5 py-5 border-b border-gray-800/50 flex items-center justify-between">
+        <Link href="/dashboard" className="flex items-center gap-3 group" onClick={handleNavClick}>
           <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30 group-hover:shadow-violet-500/50 transition-shadow">
             <Zap className="w-4 h-4 text-white" />
           </div>
@@ -79,6 +86,15 @@ export default function Sidebar({ userName, userEmail }: SidebarProps) {
             <span className="text-xs text-gray-500 mt-0.5 block">営業自動化</span>
           </div>
         </Link>
+        {/* Close button (mobile only) */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -97,8 +113,9 @@ export default function Sidebar({ userName, userEmail }: SidebarProps) {
                   <li key={item.href}>
                     <Link
                       href={item.href}
+                      onClick={handleNavClick}
                       className={clsx(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group',
+                        'flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-xl text-sm font-medium transition-all group',
                         isActive
                           ? 'bg-violet-600/15 text-violet-300 border border-violet-500/20'
                           : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/60'
@@ -106,7 +123,7 @@ export default function Sidebar({ userName, userEmail }: SidebarProps) {
                     >
                       <Icon
                         className={clsx(
-                          'w-4 h-4 flex-shrink-0 transition-colors',
+                          'w-5 h-5 md:w-4 md:h-4 flex-shrink-0 transition-colors',
                           isActive ? 'text-violet-400' : 'text-gray-500 group-hover:text-gray-300'
                         )}
                       />
@@ -139,9 +156,10 @@ export default function Sidebar({ userName, userEmail }: SidebarProps) {
       <div className="px-3 py-4 border-t border-gray-800/50 space-y-1">
         <Link
           href="/dashboard/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-all"
+          onClick={handleNavClick}
+          className="flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-all"
         >
-          <Settings className="w-4 h-4 text-gray-500" />
+          <Settings className="w-5 h-5 md:w-4 md:h-4 text-gray-500" />
           <span>設定</span>
         </Link>
 
@@ -151,7 +169,7 @@ export default function Sidebar({ userName, userEmail }: SidebarProps) {
           <p className="text-xs text-gray-500 truncate mt-0.5">{userEmail || ''}</p>
           <button
             onClick={handleLogout}
-            className="mt-3 flex items-center gap-2 text-xs text-gray-500 hover:text-red-400 transition-colors"
+            className="mt-3 flex items-center gap-2 text-xs text-gray-500 hover:text-red-400 transition-colors py-1"
           >
             <LogOut className="w-3 h-3" />
             ログアウト
@@ -159,5 +177,40 @@ export default function Sidebar({ userName, userEmail }: SidebarProps) {
         </div>
       </div>
     </aside>
+  )
+
+  return (
+    <>
+      {/* Desktop: static sidebar */}
+      <div className="hidden md:flex h-screen flex-shrink-0">
+        {sidebarContent}
+      </div>
+
+      {/* Mobile: overlay drawer */}
+      <div
+        className={clsx(
+          'md:hidden fixed inset-0 z-50 transition-all duration-300',
+          isOpen ? 'visible' : 'invisible'
+        )}
+      >
+        {/* Backdrop */}
+        <div
+          className={clsx(
+            'absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300',
+            isOpen ? 'opacity-100' : 'opacity-0'
+          )}
+          onClick={onClose}
+        />
+        {/* Drawer */}
+        <div
+          className={clsx(
+            'absolute left-0 top-0 h-full transition-transform duration-300 ease-out',
+            isOpen ? 'translate-x-0' : '-translate-x-full'
+          )}
+        >
+          {sidebarContent}
+        </div>
+      </div>
+    </>
   )
 }
