@@ -75,14 +75,14 @@ export default function MessageEditor({
       )}
 
       {/* Body textarea */}
-      <div className="relative flex-1 min-h-0">
+      <div className="relative flex-1 min-h-0 overflow-hidden">
         <textarea
           value={value}
           onChange={e => onChange(e.target.value)}
           disabled={isStreaming}
           placeholder="リードを選択して「✨ 生成する」をクリックしてください"
           className={clsx(
-            'w-full h-full min-h-[220px] resize-none rounded-xl border px-4 py-3.5 text-sm leading-relaxed transition-all',
+            'w-full h-full min-h-[220px] resize-none rounded-xl border px-4 py-3.5 text-sm leading-relaxed transition-all overflow-y-auto',
             'bg-gray-800 text-white placeholder-gray-600',
             'focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent',
             isStreaming
@@ -99,7 +99,7 @@ export default function MessageEditor({
 
       {/* Toolbar */}
       {(value || isStreaming) && (
-        <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-gray-800 sticky bottom-0 bg-gray-950 pb-2 z-10">
+        <div className="flex-shrink-0 flex items-center gap-2 mt-2.5 pt-2.5 border-t border-gray-800">
           <button
             onClick={onCopy}
             disabled={isStreaming || !value}
