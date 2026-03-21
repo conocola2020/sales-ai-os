@@ -90,21 +90,21 @@ export default function DashboardOverview({
   const pipelineMax = Math.max(...pipeline.map(p => p.count), 1)
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">ダッシュボード</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-white">ダッシュボード</h1>
           <p className="text-gray-400 text-sm mt-1">営業活動の全体像を確認</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">
             <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-            <span className="text-emerald-400 text-sm font-medium">システム稼働中</span>
+            <span className="text-emerald-400 text-xs sm:text-sm font-medium">システム稼働中</span>
           </div>
           <Link
             href="/dashboard/compose"
-            className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+            className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
           >
             <Zap className="w-4 h-4" />
             文面生成
@@ -113,32 +113,32 @@ export default function DashboardOverview({
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
             <Link
               key={stat.label}
               href={stat.href}
-              className="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 hover:bg-gray-800/50 transition-all group cursor-pointer"
+              className="bg-gray-900 border border-gray-800 rounded-2xl p-4 md:p-5 hover:border-gray-600 hover:bg-gray-800/50 transition-all group cursor-pointer"
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3 md:mb-4">
                 <div className={`w-10 h-10 ${stat.bg} border ${stat.border} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
                   <Icon className={`w-5 h-5 ${stat.color}`} />
                 </div>
-                <div className="flex items-center gap-1 text-xs font-medium text-gray-500">
+                <div className="flex items-center gap-1 text-xs font-medium text-gray-500 text-right leading-tight">
                   {stat.change}
                 </div>
               </div>
-              <p className="text-2xl font-bold text-white">{stat.value}</p>
-              <p className="text-gray-400 text-sm mt-1">{stat.label}</p>
+              <p className="text-xl md:text-2xl font-bold text-white">{stat.value}</p>
+              <p className="text-gray-400 text-xs md:text-sm mt-1">{stat.label}</p>
             </Link>
           )
         })}
       </div>
 
       {/* Middle section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Pipeline */}
         <Link href="/dashboard/deals" className="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-gray-600 hover:bg-gray-800/30 transition-all cursor-pointer block">
           <div className="flex items-center justify-between mb-5">

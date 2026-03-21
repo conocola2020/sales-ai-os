@@ -1,4 +1,4 @@
-import Sidebar from '@/components/layout/Sidebar'
+import DashboardShell from '@/components/layout/DashboardShell'
 
 export default async function DashboardLayout({
   children,
@@ -23,11 +23,8 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-950 overflow-hidden">
-      <Sidebar userName={userName} userEmail={userEmail} />
-      <main className="flex-1 overflow-y-auto bg-gray-950">
-        {children}
-      </main>
-    </div>
+    <DashboardShell userName={userName} userEmail={userEmail}>
+      {children}
+    </DashboardShell>
   )
 }
