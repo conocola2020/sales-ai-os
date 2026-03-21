@@ -75,14 +75,15 @@ export default function MessageEditor({
       )}
 
       {/* Body textarea */}
-      <div className="relative flex-1 min-h-0 overflow-hidden">
+      <div className="relative">
         <textarea
           value={value}
           onChange={e => onChange(e.target.value)}
           disabled={isStreaming}
           placeholder="リードを選択して「✨ 生成する」をクリックしてください"
+          style={{ minHeight: '300px', maxHeight: '50vh', overflowY: 'auto' }}
           className={clsx(
-            'w-full h-full min-h-[220px] resize-none rounded-xl border px-4 py-3.5 text-sm leading-relaxed transition-all overflow-y-auto',
+            'w-full resize-none rounded-xl border px-4 py-3.5 text-sm leading-relaxed transition-all',
             'bg-gray-800 text-white placeholder-gray-600',
             'focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent',
             isStreaming
