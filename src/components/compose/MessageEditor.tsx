@@ -99,7 +99,7 @@ export default function MessageEditor({
 
       {/* Toolbar */}
       {(value || isStreaming) && (
-        <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-gray-800">
+        <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-gray-800 sticky bottom-0 bg-gray-950 pb-2 z-10">
           <button
             onClick={onCopy}
             disabled={isStreaming || !value}
