@@ -99,6 +99,9 @@ export async function POST(req: NextRequest) {
       if (data) template = data as MessageTemplate
     }
 
+    // Get authenticated user
+    const { data: { user } } = await supabase.auth.getUser()
+
     // Fetch all leads at once
     const { data: leadsData } = await supabase.from('leads').select('*').in('id', leadIds)
     const leadsMap = new Map<string, Record<string, string | null>>()
@@ -170,6 +173,45 @@ export async function POST(req: NextRequest) {
 
             const { subject, body } = parseSubjectAndBody(fullText)
 
+            // 自動保存＆送信キュー追加
+            let saved = false
+            let queued = false
+            if (user) {
+              try {
+                const { error: saveErr } = await supabase
+                  .from('messages')
+                  .insert({
+                    user_id: user.id,
+                    lead_id: leadId,
+                    subject: subject || null,
+                    content: body,
+                    tone,
+                  })
+                saved = !saveErr
+                if (saveErr) console.error('Auto saveMessage error:', saveErr)
+              } catch (e) {
+                console.error('Auto saveMessage exception:', e)
+              }
+              try {
+                // Auto-detect send method
+                const sendMethod = (lead.email ? 'email' : 'form') as string
+                const { error: queueErr } = await supabase
+                  .from('send_queue')
+                  .insert({
+                    user_id: user.id,
+                    lead_id: leadId,
+                    message_content: body,
+                    subject: subject || null,
+                    send_method: sendMethod,
+                    status: '確認待ち',
+                  })
+                queued = !queueErr
+                if (queueErr) console.error('Auto addToQueue error:', queueErr)
+              } catch (e) {
+                console.error('Auto addToQueue exception:', e)
+              }
+            }
+
             const result: BulkGenerateResult = {
               leadId,
               companyName: (lead.company_name as string) ?? '不明',
@@ -179,7 +221,7 @@ export async function POST(req: NextRequest) {
 
             completed++
             controller.enqueue(encoder.encode(
-              JSON.stringify({ type: 'result', ...result, progress: { total, completed } }) + '\n'
+              JSON.stringify({ type: 'result', ...result, saved, queued, progress: { total, completed } }) + '\n'
             ))
           } catch (err) {
             completed++

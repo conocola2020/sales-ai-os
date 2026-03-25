@@ -145,8 +145,6 @@ export default function BulkGeneratePanel({
     setResults([])
     setProgress({ total: selectedLeadIds.size, completed: 0 })
 
-    const collectedResults: BulkResult[] = []
-
     try {
       const res = await fetch('/api/generate-bulk', {
         method: 'POST',
@@ -184,17 +182,15 @@ export default function BulkGeneratePanel({
             const data = JSON.parse(line)
             if (data.type === 'result') {
               const realLead = leads.find(l => l.id === data.leadId)
-              const result: BulkResult = {
+              setResults(prev => [...prev, {
                 leadId: data.leadId,
                 companyName: realLead?.company_name ?? data.companyName,
                 subject: data.subject,
                 body: data.body,
                 error: data.error,
-                saved: false,
-                queued: false,
-              }
-              collectedResults.push(result)
-              setResults(prev => [...prev, result])
+                saved: data.saved ?? false,
+                queued: data.queued ?? false,
+              }])
               setProgress(data.progress)
             } else if (data.type === 'progress') {
               setProgress(data)
@@ -210,38 +206,6 @@ export default function BulkGeneratePanel({
       setIsGenerating(false)
     }
 
-    // ストリーム完了後、成功した結果を順番に保存＆キュー追加
-    const successResults = collectedResults.filter(r => !r.error && r.body)
-    if (successResults.length > 0) {
-      setIsSavingAll(true)
-      setIsQueuingAll(true)
-      for (const result of successResults) {
-        try {
-          const { error: saveErr } = await saveMessage({
-            lead_id: result.leadId,
-            subject: result.subject || null,
-            content: result.body,
-            tone,
-          })
-          const { error: queueErr } = await addToQueue({
-            lead_id: result.leadId,
-            message_content: result.body,
-            subject: result.subject || undefined,
-          })
-          setResults(prev => prev.map(r =>
-            r.leadId === result.leadId
-              ? { ...r, saved: !saveErr, queued: !queueErr }
-              : r
-          ))
-          if (saveErr) console.error('saveMessage error:', saveErr)
-          if (queueErr) console.error('addToQueue error:', queueErr)
-        } catch (e) {
-          console.error('Auto save/queue error:', e)
-        }
-      }
-      setIsSavingAll(false)
-      setIsQueuingAll(false)
-    }
   }, [selectedLeadIds, tone, customInstructions, selectedTemplateId])
 
   const handleSaveAll = async () => {
