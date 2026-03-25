@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react'
 import {
   Send,
-  Clock,
   Eye,
   CheckCircle2,
   XCircle,
@@ -28,11 +27,10 @@ import { deleteQueueItem } from '@/app/dashboard/sending/actions'
 // ──────────────────────────────────────────
 // Tab definitions
 // ──────────────────────────────────────────
-type Tab = '全て' | '待機中' | '確認待ち' | '送信済み' | '失敗'
+type Tab = '全て' | '確認待ち' | '送信済み' | '失敗'
 
 const TABS: { label: Tab; icon: React.ReactNode; count?: (s: SendStats) => number }[] = [
   { label: '全て', icon: <Send className="w-3.5 h-3.5" />, count: s => s.total },
-  { label: '待機中', icon: <Clock className="w-3.5 h-3.5" />, count: s => s.pending },
   { label: '確認待ち', icon: <Eye className="w-3.5 h-3.5" />, count: s => s.reviewing },
   { label: '送信済み', icon: <CheckCircle2 className="w-3.5 h-3.5" />, count: s => s.sent },
   { label: '失敗', icon: <XCircle className="w-3.5 h-3.5" />, count: s => s.failed },
@@ -44,7 +42,6 @@ const TABS: { label: Tab; icon: React.ReactNode; count?: (s: SendStats) => numbe
 function buildStats(items: SendQueueItem[]): SendStats {
   return {
     total: items.length,
-    pending: items.filter(i => i.status === '待機中').length,
     reviewing: items.filter(i => i.status === '確認待ち').length,
     sent: items.filter(i => i.status === '送信済み').length,
     failed: items.filter(i => i.status === '失敗').length,
@@ -101,11 +98,11 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
   }
 
   const handleBulkSendAll = () => {
-    // 待機中のアイテムを全て確認待ちに変更
-    const pendingItems = filteredQueue.filter(i => i.status === '待機中' && selected.has(i.id))
-    if (!pendingItems.length) return
-    if (!confirm(`${pendingItems.length}件を送信キューに投入しますか？`)) return
-    pendingItems.forEach(item => handleUpdated(item.id, '確認待ち'))
+    // 選択した確認待ちアイテムを一括送信
+    const reviewItems = filteredQueue.filter(i => i.status === '確認待ち' && selected.has(i.id))
+    if (!reviewItems.length) return
+    if (!confirm(`${reviewItems.length}件を送信しますか？`)) return
+    reviewItems.forEach(item => setConfirmItem(item))
     setSelected(new Set())
   }
 
@@ -248,7 +245,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                 <button
                   onClick={() => {
                     filteredQueue.forEach(item => {
-                      if (item.status === '失敗') handleUpdated(item.id, '待機中')
+                      if (item.status === '失敗') handleUpdated(item.id, '確認待ち')
                     })
                   }}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-lg transition-colors"

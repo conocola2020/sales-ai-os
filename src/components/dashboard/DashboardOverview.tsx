@@ -51,7 +51,7 @@ export default function DashboardOverview({
     {
       label: '送信数',
       value: sendStats.sent.toString(),
-      change: `待機: ${sendStats.pending}件`,
+      change: `確認待ち: ${sendStats.reviewing}件`,
       icon: Send,
       color: 'text-violet-400',
       bg: 'bg-violet-500/10',

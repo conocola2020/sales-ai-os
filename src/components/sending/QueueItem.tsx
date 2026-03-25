@@ -60,7 +60,7 @@ export default function QueueItem({
     setLoading(true)
     const { error } = await retryQueueItem(item.id)
     setLoading(false)
-    if (!error) onUpdated(item.id, '待機中')
+    if (!error) onUpdated(item.id, '確認待ち')
   }
 
   const handleDelete = async () => {
@@ -283,18 +283,6 @@ export default function QueueItem({
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* 待機中 → 確認待ち */}
-            {item.status === '待機中' && (
-              <button
-                onClick={handleMarkReady}
-                disabled={loading}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-xs font-semibold rounded-lg transition-colors"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                確認待ちにする
-              </button>
-            )}
-
             {/* 確認待ち → 送信 (opens modal) */}
             {item.status === '確認待ち' && (
               <button

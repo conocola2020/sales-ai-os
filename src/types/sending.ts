@@ -1,4 +1,4 @@
-export type SendStatus = '待機中' | '確認待ち' | '送信済み' | '失敗' | 'form_not_found'
+export type SendStatus = '確認待ち' | '送信済み' | '失敗' | 'form_not_found'
 export type SendMethod = 'email' | 'form'
 
 export interface SendQueueItem {
@@ -32,19 +32,12 @@ export interface SendQueueItem {
 export type SendQueueInsert = Pick<SendQueueItem, 'lead_id' | 'message_content'> &
   Partial<Pick<SendQueueItem, 'subject' | 'scheduled_at' | 'send_method'>>
 
-export const SEND_STATUSES: SendStatus[] = ['待機中', '確認待ち', '送信済み', '失敗', 'form_not_found']
+export const SEND_STATUSES: SendStatus[] = ['確認待ち', '送信済み', '失敗', 'form_not_found']
 
 export const SEND_STATUS_CONFIG: Record<
   SendStatus,
   { label: string; color: string; bg: string; border: string; dot: string }
 > = {
-  待機中: {
-    label: '待機中',
-    color: 'text-gray-400',
-    bg: 'bg-gray-500/10',
-    border: 'border-gray-500/20',
-    dot: 'bg-gray-400',
-  },
   確認待ち: {
     label: '確認待ち',
     color: 'text-amber-400',
@@ -95,7 +88,6 @@ export const SEND_METHOD_CONFIG: Record<
 
 export interface SendStats {
   total: number
-  pending: number    // 待機中
   reviewing: number  // 確認待ち
   sent: number       // 送信済み
   failed: number     // 失敗
