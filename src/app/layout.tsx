@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   description: "企業の問い合わせフォームへの半自動営業とInstagram半自動化を一つのダッシュボードで管理",
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover' as const,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

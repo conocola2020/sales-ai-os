@@ -414,14 +414,10 @@ export default function ReportsPage({
             <Send className="w-4 h-4 text-violet-400" />
             送信パフォーマンス
           </h3>
-          <div className="grid grid-cols-5 gap-4 text-center">
+          <div className="grid grid-cols-4 gap-4 text-center">
             <div className="bg-gray-800/50 rounded-lg p-3">
               <p className="text-xl font-bold text-white">{sendStats.total}</p>
               <p className="text-xs text-gray-500">総キュー</p>
-            </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-xl font-bold text-gray-400">{sendStats.pending}</p>
-              <p className="text-xs text-gray-500">待機中</p>
             </div>
             <div className="bg-gray-800/50 rounded-lg p-3">
               <p className="text-xl font-bold text-amber-400">{sendStats.reviewing}</p>

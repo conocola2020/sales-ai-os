@@ -202,21 +202,22 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
       )}
 
       {/* ── Header ──────────────────────────────────────────── */}
-      <div className="px-8 pt-8 pb-4">
-        <div className="flex items-center justify-between mb-6">
+      <div className="px-4 md:px-8 pt-6 md:pt-8 pb-4">
+        <div className="flex items-center justify-between mb-4 md:mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">リード管理</h1>
-            <p className="text-gray-400 text-sm mt-1">
+            <h1 className="text-xl md:text-2xl font-bold text-white">リード管理</h1>
+            <p className="text-gray-400 text-xs md:text-sm mt-1">
               {leads.length.toLocaleString()}件のリード
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <button
               onClick={() => setShowCSV(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 text-sm font-medium rounded-xl transition-all"
+              className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2 md:py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 text-xs md:text-sm font-medium rounded-xl transition-all"
             >
-              <Upload className="w-4 h-4" />
-              CSVインポート
+              <Upload className="w-3.5 md:w-4 h-3.5 md:h-4" />
+              <span className="hidden sm:inline">CSVインポート</span>
+              <span className="sm:hidden">CSV</span>
             </button>
             <button
               onClick={async () => {
@@ -238,17 +239,19 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
                   setToast({ msg: 'エクスポートに失敗しました', type: 'error' })
                 }
               }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 text-sm font-medium rounded-xl transition-all"
+              className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2 md:py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 text-xs md:text-sm font-medium rounded-xl transition-all"
             >
-              <Download className="w-4 h-4" />
-              エクスポート
+              <Download className="w-3.5 md:w-4 h-3.5 md:h-4" />
+              <span className="hidden sm:inline">エクスポート</span>
+              <span className="sm:hidden">出力</span>
             </button>
             <button
               onClick={() => setShowAdd(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-violet-500/20"
+              className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2 md:py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-xs md:text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-violet-500/20"
             >
-              <Plus className="w-4 h-4" />
-              リード追加
+              <Plus className="w-3.5 md:w-4 h-3.5 md:h-4" />
+              <span className="hidden sm:inline">リード追加</span>
+              <span className="sm:hidden">追加</span>
             </button>
           </div>
         </div>
@@ -309,7 +312,7 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
       </div>
 
       {/* ── Search + Filter bar ──────────────────────────────── */}
-      <div className="px-8 pb-4 flex items-center gap-3">
+      <div className="px-4 md:px-8 pb-4 flex flex-wrap items-center gap-2 md:gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input
@@ -368,9 +371,142 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
         </div>
       </div>
 
-      {/* ── Table ───────────────────────────────────────────── */}
-      <div className="flex-1 overflow-auto px-8 pb-8">
-        <div className="border border-gray-800 rounded-2xl overflow-hidden">
+      {/* ── Table (desktop) / Cards (mobile) ────────────────── */}
+      <div className="flex-1 overflow-auto px-4 md:px-8 pb-8">
+
+        {/* ── Mobile card view ──────────────────────────────── */}
+        <div className="md:hidden space-y-3">
+          {filtered.length === 0 ? (
+            <div className="px-4 py-16 text-center">
+              <Building2 className="w-8 h-8 text-gray-700 mx-auto mb-3" />
+              <p className="text-sm text-gray-500">
+                {search || statusFilter !== 'all' || industryFilter !== 'all'
+                  ? '条件に一致するリードがありません'
+                  : 'リードが登録されていません。'}
+              </p>
+            </div>
+          ) : (
+            filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((lead) => {
+              const method = lead.contact_method || detectContactMethod(lead)
+              const badge = CONTACT_METHOD_BADGE[method] || CONTACT_METHOD_BADGE.manual
+              return (
+                <div
+                  key={lead.id}
+                  className={clsx(
+                    'border border-gray-800 rounded-xl p-4 transition-colors',
+                    selected.has(lead.id) ? 'bg-violet-500/5 border-violet-500/20' : 'bg-gray-900/50'
+                  )}
+                >
+                  {/* Top: checkbox + company + status */}
+                  <div className="flex items-start gap-3">
+                    <button
+                      onClick={() => toggleOne(lead.id)}
+                      className="text-gray-500 hover:text-gray-300 transition-colors mt-0.5 flex-shrink-0"
+                    >
+                      {selected.has(lead.id)
+                        ? <CheckSquare className="w-4 h-4 text-violet-400" />
+                        : <Square className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => setActiveLead(lead)}
+                      className="flex-1 text-left min-w-0"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-7 h-7 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold text-gray-300">
+                          {lead.company_name[0]}
+                        </div>
+                        <span className="text-sm font-medium text-gray-200 truncate">
+                          {lead.company_name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 ml-9">
+                        <span className={clsx('inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border', badge.color)}>
+                          {badge.icon} {badge.label}
+                        </span>
+                        {lead.industry && (
+                          <span className="text-[10px] text-gray-500">{lead.industry}</span>
+                        )}
+                      </div>
+                    </button>
+                    <select
+                      value={lead.status}
+                      onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className={clsx(
+                        'text-[10px] rounded-lg border px-1.5 py-0.5 cursor-pointer transition-all focus:outline-none focus:ring-1 focus:ring-violet-500 flex-shrink-0',
+                        STATUS_CONFIG[lead.status].bg,
+                        STATUS_CONFIG[lead.status].border,
+                        STATUS_CONFIG[lead.status].color,
+                        'bg-transparent'
+                      )}
+                      style={{ backgroundColor: 'transparent' }}
+                    >
+                      {LEAD_STATUSES.map((s) => (
+                        <option key={s} value={s} className="bg-gray-900 text-gray-200">{s}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Contact info */}
+                  <div className="ml-7 mt-2 space-y-0.5">
+                    {lead.contact_name && (
+                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                        <User className="w-3 h-3 text-gray-600 flex-shrink-0" />
+                        {lead.contact_name}
+                      </div>
+                    )}
+                    {lead.email && (
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <Mail className="w-3 h-3 text-gray-600 flex-shrink-0" />
+                        <span className="truncate">{lead.email}</span>
+                      </div>
+                    )}
+                    {lead.phone && (
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <Phone className="w-3 h-3 text-gray-600 flex-shrink-0" />
+                        {lead.phone}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bottom: date + actions */}
+                  <div className="flex items-center justify-between ml-7 mt-2 pt-2 border-t border-gray-800/60">
+                    <span className="text-[10px] text-gray-600">
+                      {new Date(lead.created_at).toLocaleDateString('ja-JP')}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => router.push(`/dashboard/compose?leadId=${lead.id}`)}
+                        className="p-1.5 rounded-lg text-violet-500/60 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </button>
+                      {lead.website_url && (
+                        <a
+                          href={lead.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-gray-800 transition-all"
+                        >
+                          <Globe className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                      <button
+                        onClick={() => setActiveLead(lead)}
+                        className="p-1.5 rounded-lg text-gray-600 hover:text-violet-400 hover:bg-gray-800 transition-all"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        {/* ── Desktop table view ────────────────────────────── */}
+        <div className="hidden md:block border border-gray-800 rounded-2xl overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-900 border-b border-gray-800">

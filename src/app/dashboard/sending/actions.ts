@@ -83,7 +83,7 @@ export async function addToQueue(
       subject: item.subject ?? null,
       send_method: sendMethod,
       scheduled_at: item.scheduled_at ?? null,
-      status: '待機中',
+      status: '確認待ち',
     })
     .select(LEAD_SELECT)
     .single()
@@ -201,7 +201,7 @@ export async function markAsFailed(
 }
 
 // ──────────────────────────────────────────
-// Retry a failed item (reset to 待機中)
+// Retry a failed item (reset to 確認待ち)
 // ──────────────────────────────────────────
 export async function retryQueueItem(
   id: string
@@ -228,7 +228,7 @@ export async function retryQueueItem(
   const { error } = await supabase
     .from('send_queue')
     .update({
-      status: '待機中',
+      status: '確認待ち',
       error_message: null,
       retry_count: (current.retry_count as number) + 1,
     })
@@ -278,7 +278,7 @@ export async function getSendStats(): Promise<{
 
   if (!user) {
     return {
-      data: { total: 0, pending: 0, reviewing: 0, sent: 0, failed: 0 },
+      data: { total: 0, reviewing: 0, sent: 0, failed: 0 },
       error: null,
     }
   }
@@ -296,7 +296,6 @@ export async function getSendStats(): Promise<{
   const rows = data as { status: string }[]
   const stats: SendStats = {
     total: rows.length,
-    pending: rows.filter(r => r.status === '待機中').length,
     reviewing: rows.filter(r => r.status === '確認待ち').length,
     sent: rows.filter(r => r.status === '送信済み').length,
     failed: rows.filter(r => r.status === '失敗').length,

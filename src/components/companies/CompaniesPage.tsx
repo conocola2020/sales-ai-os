@@ -131,38 +131,52 @@ export default function CompaniesPage({ initialAnalyses, leads, isDemo }: Compan
     }
   }
 
+  const [showHistory, setShowHistory] = useState(false)
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
-        <div>
-          <h1 className="text-lg font-semibold text-white">企業分析AI</h1>
-          <p className="text-xs text-gray-500 mt-0.5">
+      <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-gray-800 flex-shrink-0">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-base md:text-lg font-semibold text-white">企業分析AI</h1>
+          <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 truncate">
             URLを入力するだけで企業情報・課題・提案ポイントをAIが自動分析します
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-500/10 border border-violet-500/20 rounded-lg text-xs font-medium text-violet-400">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-violet-500/10 border border-violet-500/20 rounded-lg text-xs font-medium text-violet-400">
             <Sparkles className="w-3 h-3" />
             claude-sonnet-4-6
           </span>
+          {/* Mobile: toggle history */}
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="md:hidden flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-400 hover:text-white transition-colors"
+          >
+            <Search className="w-3 h-3" />
+            履歴
+            {analyses.length > 0 && (
+              <span className="px-1 py-0.5 bg-violet-500/20 text-violet-400 rounded text-[10px]">{analyses.length}</span>
+            )}
+          </button>
         </div>
       </div>
 
       {/* Demo / API key banner */}
       {isDemo && (
-        <div className="mx-6 mt-4 flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
+        <div className="mx-4 md:mx-6 mt-3 md:mt-4 flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 md:px-4 py-2.5 md:py-3">
           <Info className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-400">
+          <p className="text-[10px] md:text-xs text-amber-400">
             <span className="font-semibold">デモモード:</span>{' '}
-            ANTHROPIC_API_KEY が未設定です。.env.local に設定するとリアルな分析が可能になります。現在はサンプル分析を表示します。
+            <span className="hidden sm:inline">ANTHROPIC_API_KEY が未設定です。.env.local に設定するとリアルな分析が可能になります。</span>
+            現在はサンプル分析を表示します。
           </p>
         </div>
       )}
 
       {/* Error banner */}
       {error && (
-        <div className="mx-6 mt-4 flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+        <div className="mx-4 md:mx-6 mt-3 md:mt-4 flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-3 md:px-4 py-2.5 md:py-3">
           <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
           <p className="text-xs text-red-400">{error}</p>
           <button
@@ -174,10 +188,21 @@ export default function CompaniesPage({ initialAnalyses, leads, isDemo }: Compan
         </div>
       )}
 
+      {/* Mobile: History panel (collapsible) */}
+      {showHistory && (
+        <div className="md:hidden border-b border-gray-800 p-4 max-h-64 overflow-y-auto bg-gray-900/50">
+          <AnalysisHistory
+            analyses={analyses}
+            onSelect={(analysis) => { handleSelectHistory(analysis); setShowHistory(false) }}
+            onDeleted={handleDeleteHistory}
+          />
+        </div>
+      )}
+
       {/* Main content */}
-      <div className="flex-1 min-h-0 grid grid-cols-[1fr_300px] gap-0 overflow-hidden">
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_300px] gap-0 overflow-hidden">
         {/* Left: Analysis area */}
-        <div className="flex flex-col overflow-y-auto p-6 space-y-5 border-r border-gray-800">
+        <div className="flex flex-col overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-5 md:border-r border-gray-800">
           {/* URL Input */}
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-1.5">
@@ -297,8 +322,8 @@ export default function CompaniesPage({ initialAnalyses, leads, isDemo }: Compan
           )}
         </div>
 
-        {/* Right: History panel */}
-        <div className="flex flex-col overflow-hidden p-5">
+        {/* Right: History panel (desktop only) */}
+        <div className="hidden md:flex flex-col overflow-hidden p-5">
           <AnalysisHistory
             analyses={analyses}
             onSelect={handleSelectHistory}
