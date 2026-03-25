@@ -79,6 +79,8 @@ export default function ComposePage({
     setGeneratedSubject('')
     subjectParsedRef.current = false
 
+    let accumulated = ''
+
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -100,7 +102,6 @@ export default function ComposePage({
       if (!reader) throw new Error('ストリームの取得に失敗しました')
 
       const decoder = new TextDecoder()
-      let accumulated = ''
 
       while (true) {
         const { done, value } = await reader.read()
@@ -109,32 +110,39 @@ export default function ComposePage({
         parseStreamingText(accumulated)
       }
 
-      // 生成完了後、自動で保存＆送信キューに追加
-      if (accumulated.trim()) {
-        const { subject: parsedSubject, body: parsedBody } = parseSubjectAndBody(accumulated)
-        const msgContent = parsedBody || accumulated
-        const msgSubject = parsedSubject || ''
-        setIsSaving(true)
+    } catch (err) {
+      console.error('Generate error:', err)
+      setError(err instanceof Error ? err.message : '生成に失敗しました')
+    } finally {
+      setIsStreaming(false)
+    }
+
+    // ストリーム完了後、自動で保存＆送信キューに追加
+    if (accumulated.trim()) {
+      const { subject: parsedSubject, body: parsedBody } = parseSubjectAndBody(accumulated)
+      const msgContent = parsedBody || accumulated
+      const msgSubject = parsedSubject || ''
+      setIsSaving(true)
+      try {
         const { data, error: saveErr } = await saveMessage({
           lead_id: selectedLeadId,
           subject: msgSubject || null,
           content: msgContent,
           tone,
         })
+        if (saveErr) console.error('saveMessage error:', saveErr)
         if (!saveErr && data) setMessages(prev => [data, ...prev])
-        await addToQueue({
+        const { error: queueErr } = await addToQueue({
           lead_id: selectedLeadId,
           message_content: msgContent,
           subject: msgSubject || undefined,
         })
+        if (queueErr) console.error('addToQueue error:', queueErr)
+      } catch (e) {
+        console.error('Auto save/queue error:', e)
+      } finally {
         setIsSaving(false)
       }
-    } catch (err) {
-      console.error('Generate error:', err)
-      setError(err instanceof Error ? err.message : '生成に失敗しました')
-    } finally {
-      setIsStreaming(false)
-      setIsSaving(false)
     }
   }, [selectedLeadId, tone, customInstructions, selectedTemplateId, parseStreamingText])
 
