@@ -108,11 +108,33 @@ export default function ComposePage({
         accumulated += decoder.decode(value, { stream: true })
         parseStreamingText(accumulated)
       }
+
+      // 生成完了後、自動で保存＆送信キューに追加
+      if (accumulated.trim()) {
+        const { subject: parsedSubject, body: parsedBody } = parseSubjectAndBody(accumulated)
+        const msgContent = parsedBody || accumulated
+        const msgSubject = parsedSubject || ''
+        setIsSaving(true)
+        const { data, error: saveErr } = await saveMessage({
+          lead_id: selectedLeadId,
+          subject: msgSubject || null,
+          content: msgContent,
+          tone,
+        })
+        if (!saveErr && data) setMessages(prev => [data, ...prev])
+        await addToQueue({
+          lead_id: selectedLeadId,
+          message_content: msgContent,
+          subject: msgSubject || undefined,
+        })
+        setIsSaving(false)
+      }
     } catch (err) {
       console.error('Generate error:', err)
       setError(err instanceof Error ? err.message : '生成に失敗しました')
     } finally {
       setIsStreaming(false)
+      setIsSaving(false)
     }
   }, [selectedLeadId, tone, customInstructions, selectedTemplateId, parseStreamingText])
 
@@ -282,26 +304,31 @@ export default function ComposePage({
                 onChange={e => setCustomInstructions(e.target.value)}
                 rows={2}
                 placeholder="例: 製品の無料トライアルを強調して、決裁者向けの内容にしてください"
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                style={{ fontSize: '16px' }}
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
               />
             </div>
 
-            <button
-              onClick={handleGenerate}
-              disabled={isStreaming || !selectedLeadId}
-              className={clsx(
-                'flex items-center justify-center gap-2.5 w-full py-3 rounded-xl text-sm font-semibold transition-all',
-                selectedLeadId && !isStreaming
-                  ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/30'
-                  : 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed'
-              )}
-            >
-              {isStreaming ? (
-                <><Loader2 className="w-4 h-4 animate-spin" />HP分析＆生成中...</>
-              ) : (
-                <><Sparkles className="w-4 h-4" />{selectedLead ? `「${selectedLead.company_name}」の文面を生成` : '✨ 生成する'}</>
-              )}
-            </button>
+            <div className="sticky bottom-0 -mx-4 px-4 py-3 bg-gray-950/95 backdrop-blur md:static md:bg-transparent md:mx-0 md:px-0 md:py-0">
+              <button
+                onClick={handleGenerate}
+                disabled={isStreaming || !selectedLeadId}
+                className={clsx(
+                  'flex items-center justify-center gap-2.5 w-full py-3 rounded-xl text-sm font-semibold transition-all',
+                  selectedLeadId && !isStreaming
+                    ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/30'
+                    : 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed'
+                )}
+              >
+                {isStreaming ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" />HP分析＆生成中...</>
+                ) : isSaving ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" />保存＆キュー追加中...</>
+                ) : (
+                  <><Sparkles className="w-4 h-4" />{selectedLead ? `「${selectedLead.company_name}」の文面を生成` : '✨ 生成する'}</>
+                )}
+              </button>
+            </div>
 
             <div className="flex flex-col flex-1 min-h-[220px]">
               <MessageEditor

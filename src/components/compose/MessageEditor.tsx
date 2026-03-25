@@ -64,8 +64,9 @@ export default function MessageEditor({
             onChange={e => onSubjectChange(e.target.value)}
             disabled={isStreaming}
             placeholder="件名"
+            style={{ fontSize: '16px' }}
             className={clsx(
-              'w-full rounded-lg border px-3 py-2 text-sm font-medium transition-all',
+              'w-full rounded-lg border px-3 py-2 font-medium transition-all',
               'bg-gray-800/80 text-white placeholder-gray-600',
               'focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent',
               isStreaming ? 'border-violet-500/50' : 'border-gray-700 hover:border-gray-600'
@@ -81,9 +82,9 @@ export default function MessageEditor({
           onChange={e => onChange(e.target.value)}
           disabled={isStreaming}
           placeholder="リードを選択して「✨ 生成する」をクリックしてください"
-          style={{ minHeight: '300px', maxHeight: '50vh', overflowY: 'auto' }}
+          style={{ minHeight: '300px', maxHeight: '50vh', overflowY: 'auto', fontSize: '16px' }}
           className={clsx(
-            'w-full resize-none rounded-xl border px-4 py-3.5 text-sm leading-relaxed transition-all',
+            'w-full resize-none rounded-xl border px-4 py-3.5 leading-relaxed transition-all',
             'bg-gray-800 text-white placeholder-gray-600',
             'focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent',
             isStreaming
@@ -100,7 +101,7 @@ export default function MessageEditor({
 
       {/* Toolbar */}
       {(value || isStreaming) && (
-        <div className="flex-shrink-0 flex items-center gap-2 mt-2.5 pt-2.5 border-t border-gray-800">
+        <div className="flex-shrink-0 flex items-center flex-wrap gap-2 mt-2.5 pt-2.5 border-t border-gray-800">
           <button
             onClick={onCopy}
             disabled={isStreaming || !value}

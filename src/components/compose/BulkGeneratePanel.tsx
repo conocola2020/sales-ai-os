@@ -181,14 +181,36 @@ export default function BulkGeneratePanel({
           try {
             const data = JSON.parse(line)
             if (data.type === 'result') {
-              // リードデータから正しい企業名を取得（デモモードの「デモ企業N」を上書き）
               const realLead = leads.find(l => l.id === data.leadId)
+              let autoSaved = false
+              let autoQueued = false
+
+              // 生成完了後、自動で保存＆送信キューに追加
+              if (!data.error && data.body) {
+                const { error: saveErr } = await saveMessage({
+                  lead_id: data.leadId,
+                  subject: data.subject || null,
+                  content: data.body,
+                  tone,
+                })
+                autoSaved = !saveErr
+
+                const { error: queueErr } = await addToQueue({
+                  lead_id: data.leadId,
+                  message_content: data.body,
+                  subject: data.subject || undefined,
+                })
+                autoQueued = !queueErr
+              }
+
               setResults(prev => [...prev, {
                 leadId: data.leadId,
                 companyName: realLead?.company_name ?? data.companyName,
                 subject: data.subject,
                 body: data.body,
                 error: data.error,
+                saved: autoSaved,
+                queued: autoQueued,
               }])
               setProgress(data.progress)
             } else if (data.type === 'progress') {
@@ -283,9 +305,9 @@ export default function BulkGeneratePanel({
   const unqueuedCount = results.filter(r => !r.error && r.body && !r.queued).length
 
   return (
-    <div className="flex-1 min-h-0 flex overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
       {/* Left: Selection & Controls */}
-      <div className="w-[360px] flex-shrink-0 border-r border-gray-800 flex flex-col overflow-hidden">
+      <div className="w-full md:w-[360px] flex-shrink-0 border-b border-gray-800 md:border-b-0 md:border-r flex flex-col overflow-hidden max-h-[50vh] md:max-h-none">
         <div className="p-4 space-y-4 overflow-y-auto flex-1">
           {/* Search */}
           <input
@@ -293,14 +315,16 @@ export default function BulkGeneratePanel({
             value={searchQuery}
             onChange={e => { setSearchQuery(e.target.value); setVisibleCount(VISIBLE_BATCH) }}
             placeholder="リードを検索..."
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
+            style={{ fontSize: '16px' }}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
           />
 
           {/* Prefecture filter */}
           <select
             value={prefectureFilter}
             onChange={e => { setPrefectureFilter(e.target.value); setVisibleCount(VISIBLE_BATCH) }}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+            style={{ fontSize: '16px' }}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
             <option value="all">都道府県: すべて</option>
             {(() => {
@@ -359,7 +383,8 @@ export default function BulkGeneratePanel({
               onChange={e => setCustomInstructions(e.target.value)}
               rows={2}
               placeholder="全リードに共通の追加指示..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              style={{ fontSize: '16px' }}
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
             />
           </div>
 

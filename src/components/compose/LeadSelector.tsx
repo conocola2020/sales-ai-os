@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { Search, Building2, ChevronDown, X } from 'lucide-react'
 import type { Lead } from '@/types/leads'
 import { STATUS_CONFIG } from '@/types/leads'
@@ -15,7 +16,11 @@ interface LeadSelectorProps {
 export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSelectorProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>({})
+  const [mounted, setMounted] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const selectedLead = leads.find(l => l.id === selectedLeadId) ?? null
@@ -28,20 +33,124 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
       )
     : leads
 
+  useEffect(() => { setMounted(true) }, [])
+
   useEffect(() => {
     if (open) inputRef.current?.focus()
   }, [open])
 
+  const updateDropdownPosition = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 6,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+      })
+    }
+  }
+
+  const handleToggle = () => {
+    if (!open) updateDropdownPosition()
+    setOpen(v => !v)
+  }
+
+  // Update dropdown position on scroll/resize
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-        setQuery('')
-      }
+    if (!open) return
+    const onUpdate = () => updateDropdownPosition()
+    window.addEventListener('scroll', onUpdate, true)
+    window.addEventListener('resize', onUpdate)
+    return () => {
+      window.removeEventListener('scroll', onUpdate, true)
+      window.removeEventListener('resize', onUpdate)
+    }
+  }, [open])
+
+  // Close on click/touch outside (mouse + mobile touch)
+  useEffect(() => {
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (!open) return
+      const target = e.target as Node
+      if (
+        containerRef.current?.contains(target) ||
+        dropdownRef.current?.contains(target)
+      ) return
+      setOpen(false)
+      setQuery('')
     }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
+    document.addEventListener('touchstart', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
+  }, [open])
+
+  const dropdown = open && mounted ? createPortal(
+    <div ref={dropdownRef} style={dropdownStyle} className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl overflow-hidden">
+      {/* Search */}
+      <div className="p-3 border-b border-gray-800">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="会社名・担当者・業種で検索..."
+            style={{ fontSize: '16px' }}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-8 pr-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      {/* List */}
+      <div className="max-h-56 overflow-y-auto">
+        {filtered.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm text-gray-500">
+            {leads.length === 0 ? 'リードが登録されていません' : '一致するリードが見つかりません'}
+          </div>
+        ) : (
+          filtered.map(lead => (
+            <button
+              key={lead.id}
+              onClick={() => { onSelect(lead.id); setOpen(false); setQuery('') }}
+              className={clsx(
+                'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-800',
+                lead.id === selectedLeadId && 'bg-violet-500/10'
+              )}
+            >
+              <div className="w-7 h-7 bg-gradient-to-br from-violet-500/70 to-indigo-600/70 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-xs">{lead.company_name[0]}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">{lead.company_name}</p>
+                <p className="text-xs text-gray-500 truncate">
+                  {lead.contact_name ?? '—'}{lead.industry ? ` · ${lead.industry}` : ''}
+                </p>
+              </div>
+              <span className={clsx(
+                'px-2 py-0.5 rounded text-xs font-medium flex-shrink-0',
+                STATUS_CONFIG[lead.status].bg,
+                STATUS_CONFIG[lead.status].color
+              )}>
+                {lead.status}
+              </span>
+            </button>
+          ))
+        )}
+      </div>
+
+      {leads.length > 0 && (
+        <div className="px-4 py-2 border-t border-gray-800 text-xs text-gray-600 text-right">
+          {filtered.length} 件
+        </div>
+      )}
+    </div>,
+    document.body
+  ) : null
 
   return (
     <div ref={containerRef} className="relative">
@@ -50,7 +159,8 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
       </label>
 
       <button
-        onClick={() => setOpen(!open)}
+        ref={buttonRef}
+        onClick={handleToggle}
         className={clsx(
           'w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all',
           open
@@ -97,66 +207,7 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
         )}
       </button>
 
-      {open && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden">
-          {/* Search */}
-          <div className="p-3 border-b border-gray-800">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="会社名・担当者・業種で検索..."
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          {/* List */}
-          <div className="max-h-56 overflow-y-auto">
-            {filtered.length === 0 ? (
-              <div className="px-4 py-6 text-center text-sm text-gray-500">
-                {leads.length === 0 ? 'リードが登録されていません' : '一致するリードが見つかりません'}
-              </div>
-            ) : (
-              filtered.map(lead => (
-                <button
-                  key={lead.id}
-                  onClick={() => { onSelect(lead.id); setOpen(false); setQuery('') }}
-                  className={clsx(
-                    'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-800',
-                    lead.id === selectedLeadId && 'bg-violet-500/10'
-                  )}
-                >
-                  <div className="w-7 h-7 bg-gradient-to-br from-violet-500/70 to-indigo-600/70 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold text-xs">{lead.company_name[0]}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{lead.company_name}</p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {lead.contact_name ?? '—'}{lead.industry ? ` · ${lead.industry}` : ''}
-                    </p>
-                  </div>
-                  <span className={clsx(
-                    'px-2 py-0.5 rounded text-xs font-medium flex-shrink-0',
-                    STATUS_CONFIG[lead.status].bg,
-                    STATUS_CONFIG[lead.status].color
-                  )}>
-                    {lead.status}
-                  </span>
-                </button>
-              ))
-            )}
-          </div>
-
-          {leads.length > 0 && (
-            <div className="px-4 py-2 border-t border-gray-800 text-xs text-gray-600 text-right">
-              {filtered.length} 件
-            </div>
-          )}
-        </div>
-      )}
+      {dropdown}
     </div>
   )
 }
