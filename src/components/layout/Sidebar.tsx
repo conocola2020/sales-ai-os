@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Settings,
   X,
+  ReceiptText,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -47,6 +48,12 @@ const navItems = [
     section: 'アナリティクス',
     items: [
       { label: 'レポート', href: '/dashboard/reports', icon: BarChart3, badge: null },
+    ],
+  },
+  {
+    section: '経費管理',
+    items: [
+      { label: 'レシート読み取り', href: '/dashboard/receipts', icon: ReceiptText, badge: 'AI' },
     ],
   },
 ]

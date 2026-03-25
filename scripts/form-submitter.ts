@@ -212,6 +212,68 @@ async function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+// ─── ページ遷移・描画完了の待機 ─────────────
+
+/**
+ * 送信ボタンクリック後のページ遷移またはDOM更新を待つ。
+ * ナビゲーション（リダイレクト）が発生する場合はそれを待ち、
+ * SPA的にDOMが更新される場合はnetworkidleを待つ。
+ */
+async function waitForPageTransition(page: Page) {
+  try {
+    // ナビゲーションが発生する場合を最大8秒待つ
+    await page.waitForLoadState('networkidle', { timeout: 8000 })
+  } catch {
+    // networkidle にならない場合はdomcontentloadedで妥協
+    try {
+      await page.waitForLoadState('domcontentloaded', { timeout: 3000 })
+    } catch {
+      // タイムアウトしても続行
+    }
+  }
+  // 最低限のレンダリング時間を確保
+  await delay(1500)
+}
+
+/**
+ * サンクスページの「ありがとう」「thank you」等の表示を待つ。
+ * 最大10秒間ポーリングし、成功パターンのテキストが出現したら返る。
+ * 出現しなくても10秒後に返る（スクリーンショットは撮る）。
+ */
+async function waitForThankYouContent(page: Page) {
+  const thankYouPatterns = [
+    'ありがとう', '送信完了', '送信しました', '受け付けました', '受付完了',
+    '完了しました', '送信いたしました', 'お問い合わせを承りました',
+    'thank you', 'thanks', 'successfully', 'submitted', 'complete',
+  ]
+
+  const maxWaitMs = 10000
+  const pollIntervalMs = 500
+  let elapsed = 0
+
+  while (elapsed < maxWaitMs) {
+    try {
+      const pageText = await page.evaluate(() =>
+        document.body.innerText.substring(0, 2000).toLowerCase()
+      )
+      for (const pattern of thankYouPatterns) {
+        if (pageText.includes(pattern)) {
+          console.log(`    ✓ サンクスページ検出（"${pattern}"）- ${elapsed}ms`)
+          // テキスト表示後、周辺の画像やアニメーションの描画を待つ
+          await delay(1500)
+          return
+        }
+      }
+    } catch {
+      // ページ遷移中などでevaluateが失敗する場合がある
+    }
+    await delay(pollIntervalMs)
+    elapsed += pollIntervalMs
+  }
+
+  console.log('    ⚠ サンクスページのテキスト未検出（タイムアウト）')
+}
+
 // ─── 問い合わせページ探索 ──────────────────
 
 async function findContactPage(page: Page, baseUrl: string): Promise<string | null> {
@@ -817,8 +879,8 @@ async function submitForm(
       return { success: false, formUrl, screenshotBase64: null, error: '送信ボタンが見つかりませんでした' }
     }
 
-    // ページ遷移を待つ
-    await delay(3000)
+    // ページ遷移またはDOM更新を待つ（ナビゲーション or networkidle）
+    await waitForPageTransition(page)
 
     // バリデーションエラーチェック（送信ボタン押下直後）
     const validationError = await detectValidationErrors(page)
@@ -827,7 +889,7 @@ async function submitForm(
       // スクリーンショットを取得
       if (SCREENSHOT_ENABLED) {
         try {
-          const buffer = await page.screenshot({ fullPage: false })
+          const buffer = await page.screenshot({ fullPage: true })
           screenshotBase64 = buffer.toString('base64')
         } catch {}
       }
@@ -837,19 +899,22 @@ async function submitForm(
     // 確認画面がある場合の処理
     const confirmResult = await handleConfirmationPage(page)
     if (confirmResult) {
-      await delay(3000)
-    } else {
-      await delay(2000)
+      await waitForPageTransition(page)
     }
+
+    // サンクスページの描画完了を待つ
+    await waitForThankYouContent(page)
 
     // 送信成功判定
     const verification = await verifySubmissionSuccess(page)
     console.log(`    ${verification.success ? '✓' : '✗'} ${verification.message}`)
 
-    // スクリーンショット保存
+    // スクリーンショット保存（描画完了後に撮影）
     if (SCREENSHOT_ENABLED) {
       try {
-        const buffer = await page.screenshot({ fullPage: false })
+        // アニメーションやフェードイン完了を待つ
+        await delay(1000)
+        const buffer = await page.screenshot({ fullPage: true })
         screenshotBase64 = buffer.toString('base64')
       } catch {
         console.log('    ⚠ スクリーンショット取得に失敗')
