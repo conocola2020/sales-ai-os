@@ -47,7 +47,13 @@ export default function QueueItem({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const cfg = SEND_STATUS_CONFIG[item.status]
+  const cfg = SEND_STATUS_CONFIG[item.status] ?? {
+    label: item.status,
+    color: 'text-gray-400',
+    bg: 'bg-gray-500/10',
+    border: 'border-gray-500/20',
+    dot: 'bg-gray-400',
+  }
 
   const handleMarkReady = async () => {
     setLoading(true)
