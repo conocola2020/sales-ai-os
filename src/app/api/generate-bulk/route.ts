@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const maxDuration = 300 // Vercel最大5分
 import Anthropic from '@anthropic-ai/sdk'
 import type { Tone } from '@/types/messages'
 import type { UserSettings, MessageTemplate } from '@/types/settings'
@@ -111,28 +113,31 @@ export async function POST(req: NextRequest) {
     const client = new Anthropic({ apiKey })
     const systemPrompt = buildSystemPrompt(settings, template, tone)
 
-    // Stream results as NDJSON (newline-delimited JSON)
+    // Stream results as NDJSON（並列処理 同時3件）
+    const CONCURRENCY = 3
     const encoder = new TextEncoder()
     const readableStream = new ReadableStream({
       async start(controller) {
         const total = leadIds.length
         let completed = 0
 
-        // Send initial progress
         controller.enqueue(encoder.encode(
           JSON.stringify({ type: 'progress', total, completed: 0 }) + '\n'
         ))
 
-        for (const leadId of leadIds) {
+        // 1件分の処理
+        const processLead = async (leadId: string) => {
           const lead = leadsMap.get(leadId) ?? { company_name: '不明' }
-
           try {
-            // HP取得 + 分析
             let hpContent: string | null = null
             let hpAnalysisText: string | null = null
             const hpUrl = lead.company_url || lead.website_url
             if (hpUrl) {
-              const structured = await fetchStructuredHpContent(hpUrl as string)
+              // HP取得は最大8秒でタイムアウト
+              const structured = await Promise.race([
+                fetchStructuredHpContent(hpUrl as string),
+                new Promise<null>(r => setTimeout(() => r(null), 8000)),
+              ])
               if (structured) {
                 hpContent = formatStructuredContent(structured)
                 const hpAnalysis = analyzeForConocola(structured)
@@ -140,7 +145,6 @@ export async function POST(req: NextRequest) {
               }
             }
 
-            // DB分析データ
             const { data: analysisData } = await supabase
               .from('company_analyses')
               .select('business_summary, challenges, proposal_points, keywords')
@@ -155,7 +159,6 @@ export async function POST(req: NextRequest) {
               hpContent, hpAnalysisText
             )
 
-            // Generate (non-streaming for bulk)
             const response = await client.messages.create({
               model: 'claude-sonnet-4-6',
               max_tokens: 1500,
@@ -169,17 +172,16 @@ export async function POST(req: NextRequest) {
               .join('')
 
             const { subject, body } = parseSubjectAndBody(fullText)
-
-            const result: BulkGenerateResult = {
-              leadId,
-              companyName: (lead.company_name as string) ?? '不明',
-              subject,
-              body,
-            }
-
             completed++
             controller.enqueue(encoder.encode(
-              JSON.stringify({ type: 'result', ...result, progress: { total, completed } }) + '\n'
+              JSON.stringify({
+                type: 'result',
+                leadId,
+                companyName: (lead.company_name as string) ?? '不明',
+                subject,
+                body,
+                progress: { total, completed },
+              }) + '\n'
             ))
           } catch (err) {
             completed++
@@ -198,7 +200,12 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Send completion
+        // 同時CONCURRENCY件ずつ並列処理
+        for (let i = 0; i < total; i += CONCURRENCY) {
+          const batch = leadIds.slice(i, i + CONCURRENCY)
+          await Promise.all(batch.map(processLead))
+        }
+
         controller.enqueue(encoder.encode(
           JSON.stringify({ type: 'done', total, completed }) + '\n'
         ))
