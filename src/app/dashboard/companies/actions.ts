@@ -1,8 +1,37 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, unstable_cache } from 'next/cache'
 import type { CompanyAnalysis, AnalysisResult } from '@/types/analyses'
+
+const fetchAnalyses = unstable_cache(
+  async (userId: string): Promise<{ data: CompanyAnalysis[] | null; error: string | null }> => {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('company_analyses')
+      .select(
+        `
+        *,
+        lead:lead_id (
+          company_name,
+          contact_name
+        )
+      `
+      )
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(30)
+
+    if (error) {
+      console.error('getAnalyses error:', error)
+      return { data: null, error: error.message }
+    }
+
+    return { data: data as CompanyAnalysis[], error: null }
+  },
+  ['companies'],
+  { revalidate: 60 }
+)
 
 export async function getAnalyses(): Promise<{ data: CompanyAnalysis[] | null; error: string | null }> {
   const supabase = await createClient()
@@ -14,27 +43,7 @@ export async function getAnalyses(): Promise<{ data: CompanyAnalysis[] | null; e
     return { data: [], error: null }
   }
 
-  const { data, error } = await supabase
-    .from('company_analyses')
-    .select(
-      `
-      *,
-      lead:lead_id (
-        company_name,
-        contact_name
-      )
-    `
-    )
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(30)
-
-  if (error) {
-    console.error('getAnalyses error:', error)
-    return { data: null, error: error.message }
-  }
-
-  return { data: data as CompanyAnalysis[], error: null }
+  return fetchAnalyses(user.id)
 }
 
 export async function saveAnalysis(

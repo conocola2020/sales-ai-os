@@ -3,7 +3,7 @@ import { getAnalyses } from '@/app/dashboard/companies/actions'
 import { getLeads } from '@/app/dashboard/leads/actions'
 import { getAnthropicApiKey } from '@/lib/env'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 export default async function CompaniesPageRoute() {
   const [analysesResult, leadsResult] = await Promise.all([

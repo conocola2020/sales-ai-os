@@ -1,7 +1,7 @@
 import SettingsPage from '@/components/settings/SettingsPage'
 import { getSettings, getTemplates, seedDefaultTemplates } from '@/app/dashboard/settings/actions'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 export default async function SettingsPageRoute() {
   const [settingsResult, templatesResult] = await Promise.all([
