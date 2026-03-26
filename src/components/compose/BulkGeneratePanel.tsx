@@ -99,6 +99,7 @@ export default function BulkGeneratePanel({
   const [isSavingAll, setIsSavingAll] = useState(false)
   const [isQueuingAll, setIsQueuingAll] = useState(false)
   const [autoQueue, setAutoQueue] = useState(false)
+  const [batchInfo, setBatchInfo] = useState<{ current: number; total: number } | null>(null)
 
   // Filtered leads（検索クエリ + 都道府県フィルター）
   const filteredLeads = useMemo(() => {
@@ -142,71 +143,87 @@ export default function BulkGeneratePanel({
 
   const handleBulkGenerate = useCallback(async () => {
     if (selectedLeadIds.size === 0) return
+
+    const BATCH_SIZE = 80 // 1バッチあたり80件（Vercel 300秒以内に収まる）
+    const allLeadIds = Array.from(selectedLeadIds)
+    const total = allLeadIds.length
+    const batches: string[][] = []
+    for (let i = 0; i < total; i += BATCH_SIZE) {
+      batches.push(allLeadIds.slice(i, i + BATCH_SIZE))
+    }
+
     setIsGenerating(true)
     setResults([])
-    setProgress({ total: selectedLeadIds.size, completed: 0 })
+    setProgress({ total, completed: 0 })
+    setBatchInfo(batches.length > 1 ? { current: 1, total: batches.length } : null)
 
-    const collectedResults: BulkResult[] = []
+    const allCollected: BulkResult[] = []
+    let totalCompleted = 0
 
     try {
-      const res = await fetch('/api/generate-bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          leadIds: Array.from(selectedLeadIds),
-          tone,
-          customInstructions,
-          templateId: selectedTemplateId || undefined,
-        }),
-      })
+      for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+        const batchLeadIds = batches[batchIdx]
+        if (batches.length > 1) {
+          setBatchInfo({ current: batchIdx + 1, total: batches.length })
+        }
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`)
-      }
+        const res = await fetch('/api/generate-bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            leadIds: batchLeadIds,
+            tone,
+            customInstructions,
+            templateId: selectedTemplateId || undefined,
+          }),
+        })
 
-      const reader = res.body?.getReader()
-      if (!reader) throw new Error('ストリーム取得に失敗')
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
-      const decoder = new TextDecoder()
-      let buffer = ''
+        const reader = res.body?.getReader()
+        if (!reader) throw new Error('ストリーム取得に失敗')
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
+        const decoder = new TextDecoder()
+        let buffer = ''
 
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
 
-        for (const line of lines) {
-          if (!line.trim()) continue
-          try {
-            const data = JSON.parse(line)
-            if (data.type === 'result') {
-              const realLead = leads.find(l => l.id === data.leadId)
-              const newResult: BulkResult = {
-                leadId: data.leadId,
-                companyName: realLead?.company_name ?? data.companyName,
-                subject: data.subject,
-                body: data.body,
-                error: data.error,
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? ''
+
+          for (const line of lines) {
+            if (!line.trim()) continue
+            try {
+              const data = JSON.parse(line)
+              if (data.type === 'result') {
+                const realLead = leads.find(l => l.id === data.leadId)
+                const newResult: BulkResult = {
+                  leadId: data.leadId,
+                  companyName: realLead?.company_name ?? data.companyName,
+                  subject: data.subject,
+                  body: data.body,
+                  error: data.error,
+                }
+                allCollected.push(newResult)
+                totalCompleted++
+                setResults(prev => [...prev, newResult])
+                // 全体の進捗で上書き
+                setProgress({ total, completed: totalCompleted })
               }
-              collectedResults.push(newResult)
-              setResults(prev => [...prev, newResult])
-              setProgress(data.progress)
-            } else if (data.type === 'progress') {
-              setProgress(data)
+            } catch {
+              // Skip malformed lines
             }
-          } catch {
-            // Skip malformed lines
           }
         }
       }
 
       // 自動キュー追加
-      if (autoQueue && collectedResults.length > 0) {
+      if (autoQueue && allCollected.length > 0) {
         setIsQueuingAll(true)
-        const targets = collectedResults.filter(r => !r.error && r.body)
+        const targets = allCollected.filter(r => !r.error && r.body)
         await Promise.all(
           targets.map(r =>
             addToQueue({
@@ -226,6 +243,7 @@ export default function BulkGeneratePanel({
       console.error('Bulk generate error:', err)
     } finally {
       setIsGenerating(false)
+      setBatchInfo(null)
     }
   }, [selectedLeadIds, tone, customInstructions, selectedTemplateId, leads, autoQueue])
 
@@ -427,7 +445,13 @@ export default function BulkGeneratePanel({
             )}
           >
             {isGenerating ? (
-              <><Loader2 className="w-4 h-4 animate-spin" />{isQueuingAll ? `キュー追加中...` : `生成中... (${progress.completed}/${progress.total})`}</>
+              <><Loader2 className="w-4 h-4 animate-spin" />
+                {isQueuingAll
+                  ? `キュー追加中...`
+                  : batchInfo
+                    ? `バッチ ${batchInfo.current}/${batchInfo.total}：${progress.completed}/${progress.total}件処理中`
+                    : `生成中... (${progress.completed}/${progress.total})`}
+              </>
             ) : (
               <>
                 {autoQueue ? <Zap className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
@@ -445,7 +469,11 @@ export default function BulkGeneratePanel({
           <div className="px-5 pt-4 flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-gray-400">
-                {isGenerating ? `生成中... ${progress.completed}/${progress.total}` : `生成完了: ${successCount}件成功 / ${errorCount}件エラー`}
+                {isGenerating
+                  ? batchInfo
+                    ? `バッチ ${batchInfo.current}/${batchInfo.total} 処理中... ${progress.completed}/${progress.total}件`
+                    : `生成中... ${progress.completed}/${progress.total}件`
+                  : `生成完了: ${successCount}件成功 / ${errorCount}件エラー`}
               </span>
               {results.length > 0 && !isGenerating && (
                 <div className="flex items-center gap-2">
