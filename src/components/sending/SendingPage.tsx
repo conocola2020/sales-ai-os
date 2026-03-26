@@ -64,6 +64,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
   const [queue, setQueue] = useState<SendQueueItem[]>(initialQueue)
   const [activeTab, setActiveTab] = useState<Tab>('全て')
   const [confirmItem, setConfirmItem] = useState<SendQueueItem | null>(null)
+  const [confirmQueue, setConfirmQueue] = useState<SendQueueItem[]>([]) // 一括送信キュー
   const [showAddModal, setShowAddModal] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [isBulkProcessing, setIsBulkProcessing] = useState(false)
@@ -98,11 +99,12 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
   }
 
   const handleBulkSendAll = () => {
-    // 選択した確認待ちアイテムを一括送信
     const reviewItems = filteredQueue.filter(i => i.status === '確認待ち' && selected.has(i.id))
     if (!reviewItems.length) return
-    if (!confirm(`${reviewItems.length}件を送信しますか？`)) return
-    reviewItems.forEach(item => setConfirmItem(item))
+    if (!confirm(`${reviewItems.length}件を順番に送信します。よろしいですか？`)) return
+    // 先頭を表示用、残りをキューに積む
+    setConfirmItem(reviewItems[0])
+    setConfirmQueue(reviewItems.slice(1))
     setSelected(new Set())
   }
 
@@ -133,7 +135,13 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
           : item
       )
     )
-    setConfirmItem(null)
+    // 一括送信キューが残っていれば次を表示、なければ閉じる
+    if (confirmQueue.length > 0) {
+      setConfirmItem(confirmQueue[0])
+      setConfirmQueue(prev => prev.slice(1))
+    } else {
+      setConfirmItem(null)
+    }
   }
 
   // Called after AddToQueueModal adds a new item
@@ -284,8 +292,9 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
       {confirmItem && (
         <SendConfirmModal
           item={confirmItem}
-          onClose={() => setConfirmItem(null)}
+          onClose={() => { setConfirmItem(null); setConfirmQueue([]) }}
           onSent={handleSent}
+          remainingCount={confirmQueue.length}
         />
       )}
 

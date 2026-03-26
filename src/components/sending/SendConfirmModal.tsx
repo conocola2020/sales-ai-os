@@ -9,11 +9,12 @@ interface SendConfirmModalProps {
   item: SendQueueItem
   onClose: () => void
   onSent: (id: string) => void
+  remainingCount?: number // 一括送信時の残り件数
 }
 
 type SendMethod = 'manual' | 'email' | 'form'
 
-export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmModalProps) {
+export default function SendConfirmModal({ item, onClose, onSent, remainingCount = 0 }: SendConfirmModalProps) {
   const [step, setStep] = useState<'confirm' | 'sending' | 'success' | 'error'>('confirm')
   const [errorMsg, setErrorMsg] = useState('')
   const [sendMethod, setSendMethod] = useState<SendMethod>(
@@ -117,6 +118,11 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
             <h2 className="text-sm font-semibold text-white">
               {step === 'success' ? '送信完了' : step === 'error' ? '送信エラー' : step === 'sending' ? '送信中...' : '送信確認'}
             </h2>
+            {remainingCount > 0 && step !== 'sending' && (
+              <span className="ml-2 px-2 py-0.5 bg-violet-500/20 border border-violet-500/30 rounded-full text-[10px] text-violet-300 font-medium">
+                残り{remainingCount}件
+              </span>
+            )}
           </div>
           {step !== 'sending' && (
             <button onClick={step === 'success' ? handleSuccess : onClose} className="p-1 text-gray-500 hover:text-gray-300 transition-colors">
