@@ -25,7 +25,8 @@ const MAX_NAVIGATE_DEPTH = 3 // お問い合わせページ探索の最大遷移
 console.log('環境変数チェック:')
 console.log(`  NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL ? SUPABASE_URL.substring(0, 30) + '...' : '未設定'}`)
 console.log(`  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_KEY ? '設定済み' : '未設定'}`)
-console.log(`  ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? '設定済み' : '未設定'}`)
+const rawKey = process.env.ANTHROPIC_API_KEY ?? ''
+console.log(`  ANTHROPIC_API_KEY: ${rawKey ? `設定済み (先頭20文字: ${rawKey.substring(0, 20)}, 長さ: ${rawKey.length})` : '未設定'}`)
 console.log(`  RESEND_API_KEY: ${process.env.RESEND_API_KEY ? '設定済み' : '未設定'}`)
 console.log(`  RESEND_FROM_EMAIL: ${process.env.RESEND_FROM_EMAIL || '未設定'}`)
 
