@@ -110,14 +110,18 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
       }
 
       // 問い合わせページ探索
+      const isReview = isReviewSite(baseUrl)
       const formUrl = item.form_url || await findContactPage(page, baseUrl)
       if (!formUrl) {
         // form_not_found ステータスに更新
+        const notFoundMsg = isReview
+          ? `レビューサイト(${new URL(baseUrl).hostname})のURLが設定されています。実際の企業公式サイトURLに変更してください。`
+          : '問い合わせフォームが見つかりませんでした。手動での対応が必要です。'
         await supabase
           .from('send_queue')
           .update({
             status: 'form_not_found',
-            error_message: '問い合わせフォームが見つかりませんでした。手動での対応が必要です。',
+            error_message: notFoundMsg,
           })
           .eq('id', item.id)
         return { success: false, error: 'form_not_found' }
@@ -423,9 +427,101 @@ function delay(ms: number) {
 
 const CONTACT_PATHS = ['/contact', '/contact/', '/inquiry', '/inquiry/', '/お問い合わせ', '/contact-us', '/form', '/toiawase', '/otoiawase']
 
-async function findContactPage(page: import('playwright').Page, baseUrl: string): Promise<string | null> {
+// レビューサイト・口コミサイトのドメイン一覧（これらは企業の公式サイトではない）
+const REVIEW_SITE_DOMAINS = [
+  'sauna-ikitai.com',
+  'tabelog.com',
+  'hotpepper.jp',
+  'jalan.net',
+  'rakuten.co.jp/travel',
+  'ikyu.com',
+  'booking.com',
+  'tripadvisor',
+  'google.com/maps',
+  'maps.google',
+  'yelp.com',
+  'retty.me',
+  'gurunavi.com',
+  'gnavi.co.jp',
+  'eonet.ne.jp',
+  'mapion.co.jp',
+]
+
+function isReviewSite(url: string): boolean {
+  const lower = url.toLowerCase()
+  return REVIEW_SITE_DOMAINS.some(domain => lower.includes(domain))
+}
+
+// レビューサイトのページから公式サイトURLを抽出する
+async function extractOfficialSiteFromReviewPage(page: import('playwright').Page, reviewUrl: string): Promise<string | null> {
   try {
-    await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
+    await page.goto(reviewUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
+    await delay(1500)
+
+    const officialUrl = await page.evaluate((reviewDomain: string) => {
+      const officialKeywords = ['公式サイト', '公式HP', 'ホームページ', '公式ページ', 'Official Site', 'ウェブサイト', 'WEB', 'Web', 'website', 'official']
+      const allLinks = Array.from(document.querySelectorAll('a[href]')) as HTMLAnchorElement[]
+      for (const link of allLinks) {
+        const href = link.href || ''
+        const text = (link.textContent || link.getAttribute('aria-label') || '').trim()
+        // 同じレビューサイトのリンクは除外
+        if (!href || href.includes(reviewDomain) || href.startsWith('#') || href.startsWith('javascript')) continue
+        // httpで始まる外部リンクかつ公式系キーワードがあれば採用
+        for (const kw of officialKeywords) {
+          if (text.includes(kw)) return href
+        }
+      }
+      // キーワードで見つからない場合は、外部リンクの中で最もそれらしいURLを探す
+      const externalLinks = allLinks.filter(a => {
+        const href = a.href || ''
+        return href.startsWith('http') &&
+          !href.includes(reviewDomain) &&
+          !href.includes('google.') &&
+          !href.includes('facebook.') &&
+          !href.includes('twitter.') &&
+          !href.includes('instagram.') &&
+          !href.includes('youtube.') &&
+          !href.includes('line.me') &&
+          !href.includes('amazon.')
+      })
+      // アイコン付きリンク・'link'クラスのリンクを優先
+      for (const a of externalLinks) {
+        const cls = a.className || ''
+        if (cls.includes('link') || cls.includes('official') || cls.includes('website') || cls.includes('url')) {
+          return a.href
+        }
+      }
+      return null
+    }, new URL(reviewUrl).hostname)
+
+    if (officialUrl) {
+      console.log(`  📎 レビューサイトから公式URLを抽出: ${officialUrl}`)
+    } else {
+      console.log(`  ⚠️ レビューサイト(${new URL(reviewUrl).hostname})から公式URLを抽出できませんでした`)
+    }
+    return officialUrl
+  } catch (err) {
+    console.log(`  ⚠️ 公式URL抽出エラー: ${err instanceof Error ? err.message : String(err)}`)
+    return null
+  }
+}
+
+async function findContactPage(page: import('playwright').Page, baseUrl: string): Promise<string | null> {
+  let targetUrl = baseUrl
+
+  // レビューサイトの場合、公式サイトURLを抽出してそちらを使う
+  if (isReviewSite(baseUrl)) {
+    console.log(`  🔍 レビューサイト検出: ${baseUrl} → 公式サイトを探します`)
+    const officialUrl = await extractOfficialSiteFromReviewPage(page, baseUrl)
+    if (!officialUrl) {
+      console.log(`  ❌ 公式サイトURL不明のため送信不可。company_urlを実際の企業サイトURLに更新してください。`)
+      return null
+    }
+    targetUrl = officialUrl
+  }
+
+  try {
+    await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
     await delay(1000)
   } catch {
     return null
@@ -448,7 +544,7 @@ async function findContactPage(page: import('playwright').Page, baseUrl: string)
 
   if (contactLink) return contactLink
 
-  const origin = new URL(baseUrl).origin
+  const origin = new URL(targetUrl).origin
   for (const path of CONTACT_PATHS) {
     const url = `${origin}${path}`
     try {

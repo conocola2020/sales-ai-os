@@ -13,6 +13,7 @@ import {
   Building2,
   RotateCcw,
   Globe,
+  TriangleAlert,
 } from 'lucide-react'
 import clsx from 'clsx'
 import type { SendQueueItem } from '@/types/sending'
@@ -24,6 +25,19 @@ interface QueueItemProps {
   onSendClick: (item: SendQueueItem) => void
   onDeleted: (id: string) => void
   onUpdated: (id: string, status: SendQueueItem['status']) => void
+}
+
+// フロント側でもレビューサイトを検出（ワーカーと同じリスト）
+const REVIEW_SITE_DOMAINS = [
+  'sauna-ikitai.com', 'tabelog.com', 'hotpepper.jp', 'jalan.net',
+  'ikyu.com', 'booking.com', 'tripadvisor', 'retty.me', 'gurunavi.com',
+  'gnavi.co.jp', 'mapion.co.jp', 'eonet.ne.jp',
+]
+
+function isReviewSiteUrl(url: string | null | undefined): boolean {
+  if (!url) return false
+  const lower = url.toLowerCase()
+  return REVIEW_SITE_DOMAINS.some(domain => lower.includes(domain))
 }
 
 function timeAgo(dateStr: string): string {
@@ -54,6 +68,9 @@ export default function QueueItem({
     border: 'border-gray-500/20',
     dot: 'bg-gray-400',
   }
+
+  // フォーム送信なのにレビューサイトURLが設定されている場合に警告
+  const hasReviewSiteUrl = item.send_method === 'form' && isReviewSiteUrl(item.lead?.company_url)
 
   const handleRetry = async () => {
     setLoading(true)
@@ -137,6 +154,15 @@ export default function QueueItem({
           <p className="text-xs text-gray-500 mt-1 line-clamp-1">
             {item.message_content.slice(0, 80)}…
           </p>
+          {/* レビューサイトURL警告 */}
+          {hasReviewSiteUrl && item.status === '確認待ち' && (
+            <div className="flex items-center gap-1 mt-1">
+              <TriangleAlert className="w-3 h-3 text-amber-400 flex-shrink-0" />
+              <span className="text-[10px] text-amber-400">
+                レビューサイトURL設定中。リード編集で企業公式URLに変更してください
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Status badge */}
@@ -247,6 +273,32 @@ export default function QueueItem({
                     {lead.website_url}
                     <ExternalLink className="w-3 h-3" />
                   </a>
+                )}
+                {lead.company_url && (
+                  <div className="flex items-center gap-1">
+                    {isReviewSiteUrl(lead.company_url) && item.send_method === 'form' ? (
+                      <>
+                        <TriangleAlert className="w-3 h-3 text-amber-400 flex-shrink-0" />
+                        <span className="text-[10px] text-amber-400">フォーム送信URL (レビューサイト):</span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-gray-500">企業HP:</span>
+                    )}
+                    <a
+                      href={lead.company_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={clsx(
+                        'text-xs flex items-center gap-1 truncate max-w-[200px]',
+                        isReviewSiteUrl(lead.company_url) && item.send_method === 'form'
+                          ? 'text-amber-400 hover:text-amber-300'
+                          : 'text-violet-400 hover:text-violet-300'
+                      )}
+                    >
+                      {lead.company_url}
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                    </a>
+                  </div>
                 )}
               </div>
             </div>
