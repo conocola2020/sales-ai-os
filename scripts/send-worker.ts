@@ -1,29 +1,31 @@
 /**
- * 送信ワーカー (Railway用)
+ * 送信ワーカー (Railway用) - Claude Vision AI対応版
  *
  * send_queue の status='確認待ち' アイテムを定期的にポーリングし、
- * send_method に応じて Resend (email) または Playwright (form) で送信する。
+ * send_method に応じて Resend (email) または Playwright+Claude Vision (form) で送信する。
  *
  * 環境変数:
  *   NEXT_PUBLIC_SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY
+ *   ANTHROPIC_API_KEY
  *   RESEND_API_KEY
  *   RESEND_FROM_EMAIL
  *   POLL_INTERVAL_MS (default: 30000)
- *   SCREENSHOT_ENABLED (default: true)
  */
 
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import Anthropic from '@anthropic-ai/sdk'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL_MS ?? '30000', 10)
+const MAX_NAVIGATE_DEPTH = 3 // お問い合わせページ探索の最大遷移回数
 
-// デバッグ: 環境変数の確認
 console.log('環境変数チェック:')
 console.log(`  NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL ? SUPABASE_URL.substring(0, 30) + '...' : '未設定'}`)
 console.log(`  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_KEY ? '設定済み' : '未設定'}`)
+console.log(`  ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? '設定済み' : '未設定'}`)
 console.log(`  RESEND_API_KEY: ${process.env.RESEND_API_KEY ? '設定済み' : '未設定'}`)
 console.log(`  RESEND_FROM_EMAIL: ${process.env.RESEND_FROM_EMAIL || '未設定'}`)
 
@@ -33,6 +35,9 @@ if (!SUPABASE_URL) {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+// ─── 型定義 ──────────────────────────────
 
 interface QueueItem {
   id: string
@@ -48,6 +53,279 @@ interface QueueItem {
     website_url: string | null
     company_url: string | null
   }
+}
+
+interface SenderInfo {
+  company_name: string
+  representative: string
+  email: string
+  phone: string
+}
+
+// Claudeが返すフォーム分析結果
+interface FormAnalysis {
+  isContactForm: boolean
+  contactPageUrl?: string       // isContactForm=false のとき、遷移先URL候補
+  contactPageLinkText?: string  // isContactForm=false のとき、リンクテキスト
+  isCookieBanner: boolean       // クッキーバナーが前面に表示されているか
+  cookieBannerAcceptText?: string // 「許可」ボタンのテキスト
+  selectors?: {
+    companyName?: string
+    name?: string
+    furigana?: string
+    email?: string
+    emailConfirm?: string
+    phone?: string
+    body?: string
+    category?: string
+    submitButton?: string
+    checkboxes?: string[]
+  }
+  notes?: string
+}
+
+// ─── ユーティリティ ───────────────────────
+
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+// ─── クッキーバナー自動処理 ───────────────
+
+async function handleCookieBanner(page: import('playwright').Page): Promise<void> {
+  try {
+    const clicked = await page.evaluate(() => {
+      const ACCEPT_TEXTS = ['すべて許可', '全て許可', 'すべてのCookieを許可', '同意する', '同意', 'Accept All', 'Accept', 'allow all', 'OK', 'I agree', '許可', '承諾']
+      const REJECT_TEXTS = ['拒否', '必要なCookieのみ', '拒否する', 'Reject', 'Decline']
+
+      const allButtons = Array.from(document.querySelectorAll('button, a, input[type="button"]')) as HTMLElement[]
+      // 同意系を優先してクリック
+      for (const text of ACCEPT_TEXTS) {
+        const el = allButtons.find(b => {
+          const t = (b.textContent || (b as HTMLInputElement).value || '').trim()
+          return t.includes(text) && b.getBoundingClientRect().height > 0
+        })
+        if (el) { el.click(); return `accepted: ${text}` }
+      }
+      // 拒否も試みる（バナーを消すため）
+      for (const text of REJECT_TEXTS) {
+        const el = allButtons.find(b => {
+          const t = (b.textContent || (b as HTMLInputElement).value || '').trim()
+          return t.includes(text) && b.getBoundingClientRect().height > 0
+        })
+        if (el) { el.click(); return `rejected: ${text}` }
+      }
+      return null
+    })
+    if (clicked) {
+      console.log(`  🍪 クッキーバナー処理: ${clicked}`)
+      await delay(800)
+    }
+  } catch { /* ignore */ }
+}
+
+// ─── Claude Vision によるフォーム分析 ─────
+
+async function analyzePageWithClaude(screenshotBase64: string, currentUrl: string): Promise<FormAnalysis> {
+  const prompt = `あなたはWebフォーム自動化の専門家です。このスクリーンショットを分析してください。
+
+現在のURL: ${currentUrl}
+
+以下をJSON形式で回答してください（余計なテキストなし、JSONのみ）:
+
+{
+  "isContactForm": true/false,  // お問い合わせ・問い合わせフォームのページか
+  "isCookieBanner": true/false, // クッキー同意バナーが前面に表示されているか
+  "cookieBannerAcceptText": "ボタンのテキスト",  // クッキーバナーの許可ボタンテキスト（あれば）
+  "contactPageUrl": "URL",       // isContactForm=falseのとき、お問い合わせページのURL（ページ内リンクから）
+  "contactPageLinkText": "テキスト",  // そのリンクのテキスト
+  "selectors": {                 // isContactForm=trueのとき
+    "companyName": "CSSセレクタ",  // 会社名・店舗名フィールド（ない場合はnull）
+    "name": "CSSセレクタ",         // 名前・担当者名フィールド
+    "furigana": "CSSセレクタ",     // フリガナフィールド（ない場合はnull）
+    "email": "CSSセレクタ",        // メールアドレスフィールド
+    "emailConfirm": "CSSセレクタ", // メールアドレス確認フィールド（ない場合はnull）
+    "phone": "CSSセレクタ",        // 電話番号フィールド（ない場合はnull）
+    "body": "CSSセレクタ",         // お問い合わせ内容・本文フィールド
+    "category": "CSSセレクタ",     // お問い合わせ種別セレクト（ない場合はnull）
+    "submitButton": "CSSセレクタ", // 送信・確認ボタン
+    "checkboxes": ["CSSセレクタ"]  // 個人情報同意チェックボックス（ない場合は[]）
+  },
+  "notes": "補足事項"
+}
+
+重要な判断基準:
+- ホテルの宿泊予約フォーム・レストラン予約フォームはisContactForm=false
+- 問い合わせ・お問い合わせ専用ページのみisContactForm=true
+- セレクタはできるだけ具体的に（name属性 > id属性 > class属性の順で優先）`
+
+  const response = await anthropic.messages.create({
+    model: 'claude-opus-4-5',
+    max_tokens: 1024,
+    messages: [{
+      role: 'user',
+      content: [
+        {
+          type: 'image',
+          source: { type: 'base64', media_type: 'image/png', data: screenshotBase64 }
+        },
+        { type: 'text', text: prompt }
+      ]
+    }]
+  })
+
+  const text = response.content[0].type === 'text' ? response.content[0].text : ''
+  // JSONブロックを抽出
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) {
+    throw new Error(`Claude応答のJSON解析失敗: ${text.substring(0, 200)}`)
+  }
+  return JSON.parse(jsonMatch[0]) as FormAnalysis
+}
+
+// ─── フォーム入力（AI指示セレクタ使用）──
+
+async function fillFormWithSelectors(
+  page: import('playwright').Page,
+  selectors: NonNullable<FormAnalysis['selectors']>,
+  sender: SenderInfo,
+  messageContent: string
+): Promise<{ filled: string[]; skipped: string[] }> {
+  const filled: string[] = []
+  const skipped: string[] = []
+
+  const tryFill = async (selectorKey: string, selector: string | null | undefined, value: string) => {
+    if (!selector || !value) { skipped.push(selectorKey); return }
+    try {
+      const el = await page.$(selector)
+      if (!el || !(await el.isVisible())) { skipped.push(selectorKey); return }
+      await el.scrollIntoViewIfNeeded()
+
+      const tagName = await el.evaluate(e => e.tagName.toLowerCase())
+      const inputType = await el.evaluate(e => (e as HTMLInputElement).type?.toLowerCase() ?? '')
+
+      if (tagName === 'select') {
+        // セレクトボックス: 最初の有効なオプションを選ぶ
+        await el.evaluate(e => {
+          const sel = e as HTMLSelectElement
+          const opts = Array.from(sel.options)
+          const first = opts.find(o => o.value && o.value !== '')
+          if (first) { sel.value = first.value; sel.dispatchEvent(new Event('change', { bubbles: true })) }
+        })
+      } else if (inputType === 'radio') {
+        await el.click()
+      } else {
+        await el.click()
+        await delay(100)
+        await el.fill(value)
+      }
+      filled.push(selectorKey)
+    } catch (e) {
+      console.log(`  ⚠️ ${selectorKey} 入力失敗 (${selector}): ${e instanceof Error ? e.message : e}`)
+      skipped.push(selectorKey)
+    }
+  }
+
+  await tryFill('companyName', selectors.companyName, sender.company_name)
+  await tryFill('name', selectors.name, sender.representative)
+  await tryFill('furigana', selectors.furigana, 'コウノダイチ')
+  await tryFill('email', selectors.email, sender.email)
+  await tryFill('emailConfirm', selectors.emailConfirm, sender.email)
+  await tryFill('phone', selectors.phone, '000-0000-0000')
+  await tryFill('body', selectors.body, messageContent)
+
+  // カテゴリ選択
+  if (selectors.category) {
+    await tryFill('category', selectors.category, '')
+  }
+
+  // チェックボックス
+  if (selectors.checkboxes && selectors.checkboxes.length > 0) {
+    for (const cbSel of selectors.checkboxes) {
+      try {
+        const cbs = await page.$$(cbSel)
+        for (const cb of cbs) {
+          if (await cb.isVisible()) {
+            const checked = await cb.evaluate(e => (e as HTMLInputElement).checked)
+            if (!checked) await cb.click()
+          }
+        }
+        filled.push('checkbox')
+      } catch { skipped.push('checkbox') }
+    }
+  }
+
+  return { filled, skipped }
+}
+
+// ─── 確認画面の「送信する」ボタンをクリック ──
+
+async function handleConfirmPage(page: import('playwright').Page): Promise<boolean> {
+  await delay(2000)
+
+  // まず確認画面かどうかチェック
+  const pageText = await page.evaluate(() => document.body.innerText || '')
+  const isConfirmPage =
+    pageText.includes('確認') || pageText.includes('ご確認') ||
+    pageText.includes('confirm') || pageText.includes('Confirm')
+
+  if (!isConfirmPage) return false
+
+  // Claude Visionで確認画面を分析（送信ボタン特定）
+  const screenshotBuf = await page.screenshot()
+  const screenshot = screenshotBuf.toString('base64')
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 256,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/png', data: screenshot } },
+          { type: 'text', text: '確認画面の「送信する」ボタンのCSSセレクタを1つだけ教えてください。JSONで {"selector": "..."} の形式で返してください。「戻る」「修正する」ボタンは選ばないでください。' }
+        ]
+      }]
+    })
+
+    const text = response.content[0].type === 'text' ? response.content[0].text : ''
+    const match = text.match(/\{[^}]+\}/)
+    if (match) {
+      const { selector } = JSON.parse(match[0]) as { selector: string }
+      const el = await page.$(selector)
+      if (el && await el.isVisible()) {
+        await el.scrollIntoViewIfNeeded()
+        await el.click()
+        console.log(`  ✅ 確認画面: Claudeが特定したボタン "${selector}" をクリック`)
+        await delay(4000)
+        return true
+      }
+    }
+  } catch (e) {
+    console.log(`  ⚠️ Claude確認画面解析失敗: ${e instanceof Error ? e.message : e}`)
+  }
+
+  // フォールバック: テキストマッチ
+  const clicked = await page.evaluate(() => {
+    const SEND_KW = ['送信する', '送信', 'submit', 'Submit', 'この内容で送信']
+    const EXCLUDE_KW = ['確認する', '入力に戻る', '戻る', '修正', 'キャンセル']
+    const els = Array.from(document.querySelectorAll('button, input[type="submit"]')) as HTMLElement[]
+    for (const el of els) {
+      const text = ((el as HTMLButtonElement).textContent || (el as HTMLInputElement).value || '').trim().replace(/\s+/g, '')
+      if (!el.getBoundingClientRect().height) continue
+      if (EXCLUDE_KW.some(kw => text.includes(kw))) continue
+      if (SEND_KW.some(kw => text.includes(kw))) { el.click(); return text }
+    }
+    return null
+  })
+
+  if (clicked) {
+    console.log(`  ✅ 確認画面: テキストマッチで "${clicked}" をクリック`)
+    await delay(4000)
+    return true
+  }
+
+  console.log('  ⚠️ 確認画面の送信ボタンが見つかりません')
+  return false
 }
 
 // ─── メール送信 ──────────────────────────
@@ -75,17 +353,13 @@ async function sendEmail(item: QueueItem): Promise<{ success: boolean; error?: s
     text: item.message_content,
   })
 
-  if (error) {
-    return { success: false, error: `Resendエラー: ${error.message}` }
-  }
-
+  if (error) return { success: false, error: `Resendエラー: ${error.message}` }
   return { success: true }
 }
 
-// ─── フォーム送信（Playwrightインポート） ──
+// ─── フォーム送信（Claude Vision AI版）──
 
-async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: string }> {
-  // Playwright は動的インポート（Railway で必要な場合のみ）
+async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: string; verified?: boolean; reason?: string }> {
   try {
     const { chromium } = await import('playwright')
 
@@ -100,7 +374,6 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
       locale: 'ja-JP',
     })
 
-    // form-submitter.ts のロジックを再利用（モジュール化は将来対応）
     const page = await context.newPage()
 
     try {
@@ -109,305 +382,235 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
         return { success: false, error: '企業HP URLが未設定です' }
       }
 
-      // 問い合わせページ探索
-      const isReview = isReviewSite(baseUrl)
-      const formUrl = item.form_url || await findContactPage(page, baseUrl)
-      if (!formUrl) {
-        // form_not_found ステータスに更新
-        const notFoundMsg = isReview
-          ? `レビューサイト(${new URL(baseUrl).hostname})のURLが設定されています。実際の企業公式サイトURLに変更してください。`
-          : '問い合わせフォームが見つかりませんでした。手動での対応が必要です。'
-        await supabase
-          .from('send_queue')
-          .update({
-            status: 'form_not_found',
-            error_message: notFoundMsg,
-          })
-          .eq('id', item.id)
-        return { success: false, error: 'form_not_found' }
-      }
-
-      // フォームページにアクセス
-      await page.goto(formUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
-      await delay(1500)
-
-      // 弊社情報を取得
+      // 送信者情報を取得
       const { data: settings } = await supabase
         .from('user_settings')
         .select('company_name, representative, company_email, company_phone')
         .eq('user_id', item.user_id)
         .single()
 
-      const senderInfo = {
+      const sender: SenderInfo = {
         company_name: settings?.company_name || '株式会社CONOCOLA',
         representative: settings?.representative || '河野大地',
         email: settings?.company_email || 'daichi@conocola.com',
-        phone: '', // 電話番号は記載しない
+        phone: '',
       }
 
-      // フィールド入力（詳細ログ付き）
-      console.log(`  フォームURL: ${formUrl}`)
+      // form_url が既知なら直接そこへ、未知なら起点URLから探索
+      let currentUrl = item.form_url || baseUrl
+      let analysis: FormAnalysis | null = null
+      let navigateDepth = 0
 
-      // デバッグ: フォーム上の全フィールドをダンプ
-      const allFields = await page.evaluate(() => {
-        const inputs = Array.from(document.querySelectorAll('input, textarea, select'))
-        return inputs.map(el => ({
-          tag: el.tagName,
-          type: (el as HTMLInputElement).type || '',
-          name: (el as HTMLInputElement).name || '',
-          id: el.id || '',
-          placeholder: (el as HTMLInputElement).placeholder || '',
-          visible: el.offsetParent !== null,
-        }))
-      })
-      console.log(`  フォームフィールド一覧: ${JSON.stringify(allFields.filter(f => f.visible))}`)
+      console.log(`  🌐 起点URL: ${currentUrl}`)
 
-      // JavaScript evaluateベースの汎用入力関数
-      const fillByJS = async (nameContains: string, value: string): Promise<boolean> => {
-        return page.evaluate(({ nameContains, value }) => {
-          const inputs = Array.from(document.querySelectorAll('input, textarea, select'))
-          const el = inputs.find(el => {
-            const name = (el as HTMLInputElement).name || ''
-            return name.includes(nameContains) && el.offsetParent !== null
-          }) as HTMLInputElement | HTMLTextAreaElement | null
-          if (!el) return false
-          if (el.tagName === 'SELECT') {
-            const select = el as unknown as HTMLSelectElement
-            const options = Array.from(select.options)
-            const match = options.find(o => o.value && o.value !== '')
-            if (match) { select.value = match.value; select.dispatchEvent(new Event('change', { bubbles: true })); return true }
+      while (navigateDepth < MAX_NAVIGATE_DEPTH) {
+        // ページに移動
+        try {
+          await page.goto(currentUrl, { waitUntil: 'domcontentloaded', timeout: 20000 })
+        } catch (e) {
+          return { success: false, error: `ページ読み込み失敗: ${currentUrl}` }
+        }
+        await delay(1500)
+
+        // クッキーバナーを事前処理
+        await handleCookieBanner(page)
+        await delay(500)
+
+        // スクリーンショットを撮ってClaudeに分析させる
+        console.log(`  📸 Claude Vision分析中... (depth=${navigateDepth})`)
+        const screenshotBuf = await page.screenshot({ fullPage: false })
+        const screenshot = screenshotBuf.toString('base64')
+        analysis = await analyzePageWithClaude(screenshot, currentUrl)
+
+        console.log(`  🤖 分析結果: isContactForm=${analysis.isContactForm}, isCookieBanner=${analysis.isCookieBanner}`)
+        if (analysis.notes) console.log(`  📝 メモ: ${analysis.notes}`)
+
+        // クッキーバナーが残っていれば再処理
+        if (analysis.isCookieBanner && analysis.cookieBannerAcceptText) {
+          console.log(`  🍪 クッキーバナー再処理: "${analysis.cookieBannerAcceptText}"`)
+          await page.evaluate((text) => {
+            const els = Array.from(document.querySelectorAll('button, a')) as HTMLElement[]
+            const el = els.find(e => e.textContent?.includes(text) && e.getBoundingClientRect().height > 0)
+            if (el) el.click()
+          }, analysis.cookieBannerAcceptText)
+          await delay(1000)
+          // 再スクリーンショット
+          const ss2Buf = await page.screenshot({ fullPage: false })
+          analysis = await analyzePageWithClaude(ss2Buf.toString('base64'), currentUrl)
+        }
+
+        if (analysis.isContactForm) {
+          console.log(`  ✅ お問い合わせフォームを確認`)
+          break
+        }
+
+        // お問い合わせページではない → リンクを辿る
+        if (analysis.contactPageUrl) {
+          console.log(`  🔗 お問い合わせページへ遷移: ${analysis.contactPageUrl} ("${analysis.contactPageLinkText}")`)
+          // ページ内のリンクをクリックするか、URLに直接移動
+          const linked = await page.evaluate((url: string) => {
+            const a = Array.from(document.querySelectorAll('a[href]')).find(
+              el => (el as HTMLAnchorElement).href === url
+            ) as HTMLAnchorElement | undefined
+            if (a) { a.click(); return true }
             return false
-          }
-          el.focus()
-          el.value = value
-          el.dispatchEvent(new Event('input', { bubbles: true }))
-          el.dispatchEvent(new Event('change', { bubbles: true }))
-          return true
-        }, { nameContains, value })
-      }
+          }, analysis.contactPageUrl)
 
-      // カテゴリ選択（select or radio）
-      let filledCategory = await trySelectField(page, 'category', '卸販売')
-      if (!filledCategory) {
-        // ラジオボタン対応
-        filledCategory = await page.evaluate(() => {
-          const radios = Array.from(document.querySelectorAll('input[type="radio"]')) as HTMLInputElement[]
-          for (const radio of radios) {
-            const label = radio.closest('label')?.textContent || radio.parentElement?.textContent || ''
-            if (label.includes('卸') || label.includes('その他')) {
-              radio.click()
-              radio.dispatchEvent(new Event('change', { bubbles: true }))
-              return true
+          if (!linked) {
+            // リンクが見つからなければURLに直接移動
+            currentUrl = analysis.contactPageUrl
+          } else {
+            await delay(2000)
+            currentUrl = page.url()
+          }
+        } else {
+          // Claudeもリンクを特定できなかった → DOM内のお問い合わせリンクを探す
+          const contactLink = await page.evaluate(() => {
+            const kws = ['お問い合わせ', '問い合わせ', 'contact', 'inquiry', 'toiawase']
+            const links = Array.from(document.querySelectorAll('a[href]')) as HTMLAnchorElement[]
+            for (const a of links) {
+              const text = a.textContent?.trim() ?? ''
+              const href = a.href
+              if (kws.some(kw => text.toLowerCase().includes(kw) || href.toLowerCase().includes(kw))) {
+                return href
+              }
             }
-          }
-          if (radios.length > 0) { radios[0].click(); return true }
-          return false
-        })
-      }
-      console.log(`  カテゴリ選択: ${filledCategory ? '✓' : '✗'}`)
-
-      // ラジオ選択後、条件付きフィールド表示を待機
-      await delay(1500)
-
-      // 会社名（条件付き表示フィールド対応）
-      let filledCompany = await tryFillField(page, 'company', senderInfo.company_name)
-      if (!filledCompany) filledCompany = await fillByJS('会社', senderInfo.company_name)
-      if (!filledCompany) filledCompany = await fillByJS('店舗', senderInfo.company_name)
-      // labelテキストから探す最終手段
-      if (!filledCompany) {
-        filledCompany = await page.evaluate(({ companyName }) => {
-          const allInputs = Array.from(document.querySelectorAll('input[type="text"]')) as HTMLInputElement[]
-          for (const input of allInputs) {
-            const name = input.name || ''
-            if ((name.includes('会社') || name.includes('店舗')) && input.offsetParent !== null) {
-              input.focus()
-              input.value = companyName
-              input.dispatchEvent(new Event('input', { bubbles: true }))
-              input.dispatchEvent(new Event('change', { bubbles: true }))
-              return true
-            }
-          }
-          return false
-        }, { companyName: senderInfo.company_name })
-      }
-      console.log(`  会社名入力: ${filledCompany ? '✓' : '✗'}`)
-
-      const filledName = await tryFillField(page, 'name', senderInfo.representative)
-      console.log(`  名前入力: ${filledName ? '✓' : '✗'}`)
-
-      // フリガナ
-      let filledFurigana = await tryFillField(page, 'furigana', 'コウノダイチ')
-      if (!filledFurigana) filledFurigana = await fillByJS('フリガナ', 'コウノダイチ')
-      console.log(`  フリガナ入力: ${filledFurigana ? '✓' : '✗'}`)
-
-      let filledEmail = await tryFillField(page, 'email', senderInfo.email)
-      if (!filledEmail) filledEmail = await fillByJS('メールアドレス', senderInfo.email)
-      console.log(`  メール入力: ${filledEmail ? '✓' : '✗'}`)
-
-      // メール確認用
-      let filledEmailConfirm = await tryFillField(page, 'email_confirm', senderInfo.email)
-      if (!filledEmailConfirm) {
-        // 「確認」を含むメールフィールドを探す
-        filledEmailConfirm = await page.evaluate(({ email }) => {
-          const inputs = Array.from(document.querySelectorAll('input'))
-          const el = inputs.find(el => {
-            const name = el.name || ''
-            return name.includes('確認') && name.includes('メール') && el.offsetParent !== null
+            return null
           })
-          if (!el) return false
-          el.focus(); el.value = email
-          el.dispatchEvent(new Event('input', { bubbles: true }))
-          el.dispatchEvent(new Event('change', { bubbles: true }))
-          return true
-        }, { email: senderInfo.email })
-      }
-      console.log(`  メール確認入力: ${filledEmailConfirm ? '✓' : '✗'}`)
 
-      // 電話番号: フォーム必須項目の場合があるので入力する（メール本文には含まない）
-      const filledPhone = await tryFillField(page, 'phone', '000-0000-0000')
-      console.log(`  電話入力: ${filledPhone ? '✓ (ダミー)' : '✗'}`)
-      const filledBody = await tryFillField(page, 'body', item.message_content)
-      console.log(`  本文入力: ${filledBody ? '✓' : '✗'}`)
-
-      // 個人情報保護方針等のチェックボックスを全てチェック
-      const checkedBoxes = await page.evaluate(() => {
-        const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]')) as HTMLInputElement[]
-        let count = 0
-        for (const cb of checkboxes) {
-          if (cb.offsetParent !== null && !cb.checked) {
-            cb.click()
-            cb.dispatchEvent(new Event('change', { bubbles: true }))
-            count++
+          if (contactLink) {
+            console.log(`  🔗 DOM検索でリンク発見: ${contactLink}`)
+            currentUrl = contactLink
+          } else {
+            // form_not_found
+            await supabase.from('send_queue').update({
+              status: 'form_not_found',
+              error_message: `お問い合わせフォームが見つかりませんでした (${currentUrl})。手動での対応が必要です。`,
+            }).eq('id', item.id)
+            return { success: false, error: 'form_not_found' }
           }
         }
-        return count
-      })
-      console.log(`  チェックボックス: ${checkedBoxes}件チェック`)
-      await delay(500)
 
-      if (!filledBody && !filledEmail) {
-        const pageTitle = await page.title()
+        navigateDepth++
+      }
+
+      if (!analysis?.isContactForm) {
+        await supabase.from('send_queue').update({
+          status: 'form_not_found',
+          error_message: `${MAX_NAVIGATE_DEPTH}回遷移してもお問い合わせフォームが見つかりませんでした。手動での対応が必要です。`,
+        }).eq('id', item.id)
+        return { success: false, error: 'form_not_found' }
+      }
+
+      const formUrl = page.url()
+
+      // フォームフィールドに入力
+      if (!analysis.selectors) {
+        return { success: false, error: 'フォームフィールドのセレクタが特定できませんでした' }
+      }
+
+      console.log(`  ✏️ フォーム入力開始...`)
+      const { filled, skipped } = await fillFormWithSelectors(page, analysis.selectors, sender, item.message_content)
+      console.log(`  ✏️ 入力済み: [${filled.join(', ')}]  スキップ: [${skipped.join(', ')}]`)
+
+      // メールと本文が入力できていないなら失敗
+      if (!filled.includes('email') && !filled.includes('body')) {
         const pageUrl = page.url()
-        console.log(`  ⚠️ 主要フィールドが入力できません (title: ${pageTitle}, url: ${pageUrl})`)
         return { success: false, error: `フォーム入力失敗: メールも本文も入力できませんでした (${pageUrl})` }
       }
 
-      // 送信（1回目: 「入力内容を確認する」ボタン）
-      const submitted = await clickSubmitButton(page)
-      console.log(`  送信ボタンクリック: ${submitted ? '✓' : '✗'}`)
+      await delay(500)
+
+      // 送信ボタンをクリック
+      const submitSelector = analysis.selectors.submitButton
+      let submitted = false
+
+      if (submitSelector) {
+        try {
+          const el = await page.$(submitSelector)
+          if (el && await el.isVisible()) {
+            await el.scrollIntoViewIfNeeded()
+            await delay(300)
+            await el.click()
+            submitted = true
+            console.log(`  🚀 送信ボタンクリック (Claude指定: ${submitSelector})`)
+          }
+        } catch { /* フォールバックへ */ }
+      }
+
+      if (!submitted) {
+        // フォールバック: テキストマッチ
+        submitted = await page.evaluate(() => {
+          const kws = ['確認する', '送信する', '送信', 'submit', 'Submit']
+          const els = Array.from(document.querySelectorAll('button[type="submit"], input[type="submit"], button')) as HTMLElement[]
+          for (const el of els) {
+            const text = ((el as HTMLButtonElement).textContent || (el as HTMLInputElement).value || '').trim()
+            if (kws.some(kw => text.includes(kw)) && el.getBoundingClientRect().height > 0) {
+              el.click()
+              return true
+            }
+          }
+          return false
+        })
+        if (submitted) console.log('  🚀 送信ボタンクリック (フォールバック)')
+      }
+
       if (!submitted) {
         return { success: false, error: '送信ボタンが見つかりませんでした' }
       }
 
-      // 確認画面が表示されるまで待つ（最大10秒）
-      console.log(`  確認画面の表示を待機中...`)
-      for (let i = 0; i < 10; i++) {
-        await delay(1000)
-        const hasSubmitButton = await page.evaluate(() => {
-          const buttons = Array.from(document.querySelectorAll('button, input[type="submit"]'))
-          return buttons.some(el => {
-            const text = ((el as HTMLElement).textContent || (el as HTMLInputElement).value || '').trim()
-            return text === '送信する' || (text.includes('送信') && !text.includes('確認') && !text.includes('入力'))
-          })
-        })
-        if (hasSubmitButton) {
-          console.log(`  「送信する」ボタン検出（${i + 1}秒後）`)
-          break
-        }
-        if (i === 9) console.log(`  10秒待機しても「送信する」ボタンが見つかりません`)
-      }
-
-      // 確認画面対応
-      const pageAfterSubmit = page.url()
-      const titleAfterSubmit = await page.title()
-      console.log(`  送信後URL: ${pageAfterSubmit}`)
-      console.log(`  送信後タイトル: ${titleAfterSubmit}`)
+      // 確認画面への対応
+      await delay(2000)
       await handleConfirmPage(page)
       await delay(2000)
 
+      // 送信完了判定
       const finalUrl = page.url()
-      const finalTitle = await page.title()
-      console.log(`  最終URL: ${finalUrl}`)
-      console.log(`  最終タイトル: ${finalTitle}`)
-
-      // 送信完了の判定（ページ内容から確認）
       const completionCheck = await page.evaluate(() => {
         const text = document.body.innerText || ''
-        const successKeywords = [
+        const successKws = [
           'ありがとうございます', 'ありがとう', '送信完了', '送信しました',
           '受付けました', '受け付けました', '受付完了', 'お問い合わせを受け付け',
           '完了しました', '送信いたしました', 'お問い合わせを承り', '承りました',
           'お問い合わせいただき', '確認のメールを', 'メールをお送り',
           'thank you', 'submitted', 'success', 'complete',
         ]
-        const errorKeywords = [
-          'エラー', '入力してください', '必須', '正しく入力',
-          'error', 'required', 'invalid',
-        ]
-        const foundSuccess = successKeywords.filter(kw => text.includes(kw))
-        const foundError = errorKeywords.filter(kw => text.includes(kw))
-        return { foundSuccess, foundError, textSnippet: text.substring(0, 500) }
+        const errorKws = ['エラー', '入力してください', '必須', '正しく入力', 'error', 'required', 'invalid']
+        return {
+          foundSuccess: successKws.filter(kw => text.toLowerCase().includes(kw.toLowerCase())),
+          foundError: errorKws.filter(kw => text.includes(kw)),
+          snippet: text.substring(0, 300),
+        }
       })
 
-      const urlChanged = finalUrl !== formUrl
       const hasSuccessText = completionCheck.foundSuccess.length > 0
       const hasErrorText = completionCheck.foundError.length > 0
+      const urlChanged = finalUrl !== formUrl
 
-      console.log(`  URL変化: ${urlChanged ? '✓ 遷移あり' : '✗ 変化なし'}`)
-      console.log(`  完了テキスト: ${hasSuccessText ? `✓ [${completionCheck.foundSuccess.join(', ')}]` : '✗ なし'}`)
-      console.log(`  エラーテキスト: ${hasErrorText ? `⚠️ [${completionCheck.foundError.join(', ')}]` : '✓ なし'}`)
-
-      // 判定ロジック
-      // ⚠️ urlChanged だけでは「確認画面への遷移」と区別できないため、
-      //    成功テキスト検出を必須条件にする。
-      let sendStatus: '送信済み' | '送信未確認' | '失敗'
-      let statusReason = ''
-
-      if (hasErrorText && !hasSuccessText) {
-        sendStatus = '失敗'
-        statusReason = `エラー検出: ${completionCheck.foundError.join(', ')}`
-      } else if (hasSuccessText) {
-        // 成功テキストが確認できた場合のみ「送信済み」
-        sendStatus = '送信済み'
-        statusReason = `完了テキスト検出: ${completionCheck.foundSuccess.join(', ')}`
-      } else if (urlChanged) {
-        // URLは遷移したが完了テキストなし → 確認画面で止まっている可能性
-        sendStatus = '送信未確認'
-        statusReason = 'URLは変化しましたが完了テキストが見つかりません。確認画面で止まっている可能性があります。手動確認が必要です。'
-      } else {
-        sendStatus = '送信未確認'
-        statusReason = '完了テキストもURL遷移も検出できず。手動確認が必要です。'
-      }
-
-      console.log(`  判定: ${sendStatus} (${statusReason})`)
+      console.log(`  📊 完了テキスト: ${hasSuccessText ? completionCheck.foundSuccess.join(', ') : 'なし'}`)
+      console.log(`  📊 エラーテキスト: ${hasErrorText ? completionCheck.foundError.join(', ') : 'なし'}`)
 
       // スクリーンショット保存
       try {
         const buffer = await page.screenshot({ fullPage: false })
         const filename = `form-submissions/${item.id}_${Date.now()}.png`
-        await supabase.storage
-          .from('screenshots')
-          .upload(filename, buffer, { contentType: 'image/png' })
-
-        const { data: urlData } = supabase.storage
-          .from('screenshots')
-          .getPublicUrl(filename)
-
-        await supabase
-          .from('send_queue')
-          .update({ form_url: formUrl, screenshot_url: urlData.publicUrl })
-          .eq('id', item.id)
+        await supabase.storage.from('screenshots').upload(filename, buffer, { contentType: 'image/png' })
+        const { data: urlData } = supabase.storage.from('screenshots').getPublicUrl(filename)
+        await supabase.from('send_queue').update({ form_url: formUrl, screenshot_url: urlData.publicUrl }).eq('id', item.id)
       } catch {
-        await supabase
-          .from('send_queue')
-          .update({ form_url: formUrl })
-          .eq('id', item.id)
+        await supabase.from('send_queue').update({ form_url: formUrl }).eq('id', item.id)
       }
 
-      if (sendStatus === '失敗') {
-        return { success: false, error: statusReason }
+      // 判定
+      if (hasErrorText && !hasSuccessText) {
+        return { success: false, error: `エラー検出: ${completionCheck.foundError.join(', ')}` }
+      } else if (hasSuccessText) {
+        return { success: true, verified: true, reason: `完了テキスト: ${completionCheck.foundSuccess.join(', ')}` }
+      } else if (urlChanged) {
+        return { success: true, verified: false, reason: 'URLは変化しましたが完了テキストが見つかりません。手動確認が必要です。' }
+      } else {
+        return { success: false, error: '完了テキストもURL遷移も検出できませんでした' }
       }
-      return { success: true, verified: sendStatus === '送信済み', reason: statusReason }
     } finally {
       await page.close()
       await context.close()
@@ -419,293 +622,15 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
   }
 }
 
-// ─── ヘルパー関数 ─────────────────────────
-
-function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-const CONTACT_PATHS = ['/contact', '/contact/', '/inquiry', '/inquiry/', '/お問い合わせ', '/contact-us', '/form', '/toiawase', '/otoiawase']
-
-// レビューサイト・口コミサイトのドメイン一覧（これらは企業の公式サイトではない）
-const REVIEW_SITE_DOMAINS = [
-  'sauna-ikitai.com',
-  'tabelog.com',
-  'hotpepper.jp',
-  'jalan.net',
-  'rakuten.co.jp/travel',
-  'ikyu.com',
-  'booking.com',
-  'tripadvisor',
-  'google.com/maps',
-  'maps.google',
-  'yelp.com',
-  'retty.me',
-  'gurunavi.com',
-  'gnavi.co.jp',
-  'eonet.ne.jp',
-  'mapion.co.jp',
-]
-
-function isReviewSite(url: string): boolean {
-  const lower = url.toLowerCase()
-  return REVIEW_SITE_DOMAINS.some(domain => lower.includes(domain))
-}
-
-// レビューサイトのページから公式サイトURLを抽出する
-async function extractOfficialSiteFromReviewPage(page: import('playwright').Page, reviewUrl: string): Promise<string | null> {
-  try {
-    await page.goto(reviewUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
-    await delay(1500)
-
-    const officialUrl = await page.evaluate((reviewDomain: string) => {
-      const officialKeywords = ['公式サイト', '公式HP', 'ホームページ', '公式ページ', 'Official Site', 'ウェブサイト', 'WEB', 'Web', 'website', 'official']
-      const allLinks = Array.from(document.querySelectorAll('a[href]')) as HTMLAnchorElement[]
-      for (const link of allLinks) {
-        const href = link.href || ''
-        const text = (link.textContent || link.getAttribute('aria-label') || '').trim()
-        // 同じレビューサイトのリンクは除外
-        if (!href || href.includes(reviewDomain) || href.startsWith('#') || href.startsWith('javascript')) continue
-        // httpで始まる外部リンクかつ公式系キーワードがあれば採用
-        for (const kw of officialKeywords) {
-          if (text.includes(kw)) return href
-        }
-      }
-      // キーワードで見つからない場合は、外部リンクの中で最もそれらしいURLを探す
-      const externalLinks = allLinks.filter(a => {
-        const href = a.href || ''
-        return href.startsWith('http') &&
-          !href.includes(reviewDomain) &&
-          !href.includes('google.') &&
-          !href.includes('facebook.') &&
-          !href.includes('twitter.') &&
-          !href.includes('instagram.') &&
-          !href.includes('youtube.') &&
-          !href.includes('line.me') &&
-          !href.includes('amazon.')
-      })
-      // アイコン付きリンク・'link'クラスのリンクを優先
-      for (const a of externalLinks) {
-        const cls = a.className || ''
-        if (cls.includes('link') || cls.includes('official') || cls.includes('website') || cls.includes('url')) {
-          return a.href
-        }
-      }
-      return null
-    }, new URL(reviewUrl).hostname)
-
-    if (officialUrl) {
-      console.log(`  📎 レビューサイトから公式URLを抽出: ${officialUrl}`)
-    } else {
-      console.log(`  ⚠️ レビューサイト(${new URL(reviewUrl).hostname})から公式URLを抽出できませんでした`)
-    }
-    return officialUrl
-  } catch (err) {
-    console.log(`  ⚠️ 公式URL抽出エラー: ${err instanceof Error ? err.message : String(err)}`)
-    return null
-  }
-}
-
-async function findContactPage(page: import('playwright').Page, baseUrl: string): Promise<string | null> {
-  let targetUrl = baseUrl
-
-  // レビューサイトの場合、公式サイトURLを抽出してそちらを使う
-  if (isReviewSite(baseUrl)) {
-    console.log(`  🔍 レビューサイト検出: ${baseUrl} → 公式サイトを探します`)
-    const officialUrl = await extractOfficialSiteFromReviewPage(page, baseUrl)
-    if (!officialUrl) {
-      console.log(`  ❌ 公式サイトURL不明のため送信不可。company_urlを実際の企業サイトURLに更新してください。`)
-      return null
-    }
-    targetUrl = officialUrl
-  }
-
-  try {
-    await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
-    await delay(1000)
-  } catch {
-    return null
-  }
-
-  const contactLink = await page.evaluate(() => {
-    const links = Array.from(document.querySelectorAll('a[href]'))
-    const keywords = ['問い合わせ', 'お問い合わせ', 'contact', 'inquiry', 'toiawase']
-    for (const link of links) {
-      const href = (link as HTMLAnchorElement).href
-      const text = link.textContent?.trim() ?? ''
-      for (const kw of keywords) {
-        if (href.toLowerCase().includes(kw) || text.toLowerCase().includes(kw)) {
-          return href
-        }
-      }
-    }
-    return null
-  })
-
-  if (contactLink) return contactLink
-
-  const origin = new URL(targetUrl).origin
-  for (const path of CONTACT_PATHS) {
-    const url = `${origin}${path}`
-    try {
-      const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 10000 })
-      if (response && response.status() < 400) {
-        const hasForm = await page.evaluate(() =>
-          document.querySelectorAll('form').length > 0 || document.querySelectorAll('textarea').length > 0
-        )
-        if (hasForm) return url
-      }
-    } catch { /* ignore */ }
-  }
-
-  return null
-}
-
-const FIELD_SELECTORS: Record<string, string[]> = {
-  company: ['input[name*="company" i]', 'input[name*="会社" i]', 'input[name*="店舗" i]', 'input[placeholder*="会社" i]', 'input[placeholder*="店舗" i]'],
-  name: ['input[name="お名前"]', 'input[name*="name" i]:not([name*="company" i]):not([name*="mail" i]):not([name*="会社" i]):not([name*="店舗" i]):not([type="email"]):not([name*="フリガナ" i])', 'input[name*="氏名" i]', 'input[name*="名前" i]:not([name*="フリガナ" i])', 'input[placeholder*="名前" i]:not([placeholder*="フリガナ" i])'],
-  furigana: ['input[name*="フリガナ" i]', 'input[name*="ふりがな" i]', 'input[name*="kana" i]', 'input[placeholder*="フリガナ" i]'],
-  email: ['input[type="email"]', 'input[name="メールアドレス"]', 'input[name*="mail" i]:not([name*="確認" i])', 'input[name*="email" i]:not([name*="confirm" i])', 'input[placeholder*="メール" i]:not([placeholder*="確認" i])'],
-  email_confirm: ['input[name*="メールアドレス(確認" i]', 'input[name*="mail_confirm" i]', 'input[name*="email_confirm" i]', 'input[name*="確認" i]'],
-  phone: ['input[type="tel"]', 'input[name*="phone" i]', 'input[name*="tel" i]', 'input[name*="電話" i]', 'input[placeholder*="電話" i]'],
-  body: ['textarea[name*="body" i]', 'textarea[name*="message" i]', 'textarea[name*="content" i]', 'textarea[name*="内容" i]', 'textarea[name*="inquiry" i]', 'textarea'],
-  category: ['select[name*="項目" i]', 'select[name*="category" i]', 'select[name*="type" i]', 'select[name*="種類" i]'],
-}
-
-async function tryFillField(page: import('playwright').Page, fieldType: string, value: string): Promise<boolean> {
-  if (!value) return false
-  const selectors = FIELD_SELECTORS[fieldType] ?? []
-  for (const sel of selectors) {
-    try {
-      const el = await page.$(sel)
-      if (el && await el.isVisible()) {
-        await el.scrollIntoViewIfNeeded()
-        await el.click()
-        await delay(100)
-        await el.fill(value)
-        return true
-      }
-    } catch { /* continue */ }
-  }
-  return false
-}
-
-async function trySelectField(page: import('playwright').Page, fieldType: string, valueOrLabel: string): Promise<boolean> {
-  const selectors = FIELD_SELECTORS[fieldType] ?? []
-  for (const sel of selectors) {
-    try {
-      const el = await page.$(sel)
-      if (el && await el.isVisible()) {
-        await el.scrollIntoViewIfNeeded()
-        // selectの場合、optionのテキストで部分一致選択
-        const options = await el.$$eval('option', (opts: HTMLOptionElement[]) =>
-          opts.map(o => ({ value: o.value, text: o.textContent?.trim() ?? '' }))
-        )
-        // 部分一致でオプションを探す
-        const match = options.find(o =>
-          o.text.includes(valueOrLabel) || valueOrLabel.includes(o.text)
-        )
-        if (match) {
-          await el.selectOption(match.value)
-          return true
-        }
-        // 見つからなければ最初の有効なオプション（空でない）を選択
-        const firstValid = options.find(o => o.value && o.value !== '')
-        if (firstValid) {
-          await el.selectOption(firstValid.value)
-          return true
-        }
-      }
-    } catch { /* continue */ }
-  }
-  return false
-}
-
-async function clickSubmitButton(page: import('playwright').Page): Promise<boolean> {
-  const selectors = [
-    'button[type="submit"]', 'input[type="submit"]',
-    'button:has-text("送信")', 'button:has-text("確認")',
-    'input[value*="送信"]', 'input[value*="確認"]',
-  ]
-  for (const sel of selectors) {
-    try {
-      const el = await page.$(sel)
-      if (el && await el.isVisible()) {
-        await el.scrollIntoViewIfNeeded()
-        await delay(300)
-        await el.click()
-        return true
-      }
-    } catch { /* continue */ }
-  }
-  return false
-}
-
-async function handleConfirmPage(page: import('playwright').Page): Promise<void> {
-  await delay(2000)
-
-  // 確認画面かどうかチェック（より広いキーワードで検出）
-  const pageText = await page.evaluate(() => document.body.innerText || '')
-  const isConfirmPage = pageText.includes('確認') || pageText.includes('内容をご確認') ||
-    pageText.includes('ご確認') || pageText.includes('confirm') || pageText.includes('Confirm')
-  console.log(`  確認画面検出: ${isConfirmPage ? 'はい' : 'いいえ'}`)
-
-  if (!isConfirmPage) return
-
-  // 全ボタンのテキストをログ出力
-  const allButtons = await page.evaluate(() => {
-    const elements = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"], a.btn, a.button'))
-    return elements.map(el => ({
-      tag: el.tagName,
-      text: ((el as HTMLElement).textContent || (el as HTMLInputElement).value || '').trim(),
-      visible: el.getBoundingClientRect().height > 0,
-    }))
-  })
-  console.log(`  確認画面のボタン一覧: ${JSON.stringify(allButtons)}`)
-
-  // 最終送信ボタンを探してクリック
-  const clicked = await page.evaluate(() => {
-    const elements = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"], a.btn, a.button, a[onclick]'))
-
-    const SEND_KEYWORDS = ['送信する', '送信', 'submit', 'Submit', '送信完了', '問い合わせを送信', 'この内容で送信']
-    const EXCLUDE_KEYWORDS = ['確認する', '入力に戻る', '戻る', '修正', 'back', 'Back', 'キャンセル', '内容を確認']
-
-    // 優先: 完全一致 or 除外ワードなし・送信ワードあり
-    for (const priority of [true, false]) {
-      for (const el of elements) {
-        const text = ((el as HTMLElement).textContent || (el as HTMLInputElement).value || '').trim().replace(/\s+/g, '')
-        const isVisible = el.getBoundingClientRect().height > 0
-        if (!isVisible) continue
-        const hasExclude = EXCLUDE_KEYWORDS.some(kw => text.includes(kw))
-        if (hasExclude) continue
-        const hasSend = SEND_KEYWORDS.some(kw => priority ? text === kw : text.includes(kw))
-        if (hasSend) {
-          (el as HTMLElement).click()
-          return text
-        }
-      }
-    }
-    return null
-  })
-
-  if (clicked) {
-    console.log(`  確認画面送信クリック: "${clicked}" ✓`)
-    await delay(4000) // 送信完了ページの読み込みを待つ
-  } else {
-    console.log(`  ⚠️ 確認画面の送信ボタンが見つかりません`)
-  }
-}
-
 // ─── メインループ ─────────────────────────
 
 async function pollAndProcess() {
-  console.log('🚀 送信ワーカー起動')
+  console.log('🚀 送信ワーカー起動 (Claude Vision AI版)')
   console.log(`  Supabase: ${SUPABASE_URL}`)
   console.log(`  ポーリング間隔: ${POLL_INTERVAL / 1000}秒\n`)
 
   while (true) {
     try {
-      // 確認待ちのアイテムを取得
       const { data: items, error } = await supabase
         .from('send_queue')
         .select(`
@@ -742,36 +667,26 @@ async function pollAndProcess() {
 
         if (result.success) {
           const status = result.verified === false ? '送信未確認' : '送信済み'
-          await supabase
-            .from('send_queue')
-            .update({
-              status,
-              sent_at: new Date().toISOString(),
-              error_message: result.verified === false ? (result.reason ?? '完了確認なし') : null,
-            })
-            .eq('id', item.id)
+          await supabase.from('send_queue').update({
+            status,
+            sent_at: new Date().toISOString(),
+            error_message: result.verified === false ? (result.reason ?? '完了確認なし') : null,
+          }).eq('id', item.id)
 
           if (result.verified !== false) {
-            await supabase
-              .from('leads')
-              .update({ status: '送信済み' })
-              .eq('id', item.lead_id)
+            await supabase.from('leads').update({ status: '送信済み' }).eq('id', item.lead_id)
           }
 
           console.log(`  ${result.verified !== false ? '✅ 送信成功（確認済み）' : '⚠️ 送信未確認（手動確認必要）'}`)
         } else if (result.error !== 'form_not_found') {
-          await supabase
-            .from('send_queue')
-            .update({
-              status: '失敗',
-              error_message: result.error ?? '不明なエラー',
-            })
-            .eq('id', item.id)
+          await supabase.from('send_queue').update({
+            status: '失敗',
+            error_message: result.error ?? '不明なエラー',
+          }).eq('id', item.id)
 
           console.log(`  ❌ 失敗: ${result.error}`)
         }
 
-        // アイテム間のインターバル
         await delay(3000)
       }
     } catch (err) {
