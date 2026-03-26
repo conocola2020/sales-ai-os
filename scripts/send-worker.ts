@@ -330,9 +330,11 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
       const completionCheck = await page.evaluate(() => {
         const text = document.body.innerText || ''
         const successKeywords = [
-          'ありがとう', '送信完了', '送信しました', '受付', '受け付け',
-          '完了しました', '送信いたしました', 'お問い合わせを承り',
-          'thank you', 'submitted', 'complete',
+          'ありがとうございます', 'ありがとう', '送信完了', '送信しました',
+          '受付けました', '受け付けました', '受付完了', 'お問い合わせを受け付け',
+          '完了しました', '送信いたしました', 'お問い合わせを承り', '承りました',
+          'お問い合わせいただき', '確認のメールを', 'メールをお送り',
+          'thank you', 'submitted', 'success', 'complete',
         ]
         const errorKeywords = [
           'エラー', '入力してください', '必須', '正しく入力',
@@ -352,17 +354,22 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
       console.log(`  エラーテキスト: ${hasErrorText ? `⚠️ [${completionCheck.foundError.join(', ')}]` : '✓ なし'}`)
 
       // 判定ロジック
+      // ⚠️ urlChanged だけでは「確認画面への遷移」と区別できないため、
+      //    成功テキスト検出を必須条件にする。
       let sendStatus: '送信済み' | '送信未確認' | '失敗'
       let statusReason = ''
 
       if (hasErrorText && !hasSuccessText) {
         sendStatus = '失敗'
         statusReason = `エラー検出: ${completionCheck.foundError.join(', ')}`
-      } else if (hasSuccessText || urlChanged) {
+      } else if (hasSuccessText) {
+        // 成功テキストが確認できた場合のみ「送信済み」
         sendStatus = '送信済み'
-        statusReason = hasSuccessText
-          ? `完了テキスト検出: ${completionCheck.foundSuccess.join(', ')}`
-          : 'サンクスページへ遷移'
+        statusReason = `完了テキスト検出: ${completionCheck.foundSuccess.join(', ')}`
+      } else if (urlChanged) {
+        // URLは遷移したが完了テキストなし → 確認画面で止まっている可能性
+        sendStatus = '送信未確認'
+        statusReason = 'URLは変化しましたが完了テキストが見つかりません。確認画面で止まっている可能性があります。手動確認が必要です。'
       } else {
         sendStatus = '送信未確認'
         statusReason = '完了テキストもURL遷移も検出できず。手動確認が必要です。'
@@ -541,9 +548,10 @@ async function clickSubmitButton(page: import('playwright').Page): Promise<boole
 async function handleConfirmPage(page: import('playwright').Page): Promise<void> {
   await delay(2000)
 
-  // 確認画面かどうかチェック
+  // 確認画面かどうかチェック（より広いキーワードで検出）
   const pageText = await page.evaluate(() => document.body.innerText || '')
-  const isConfirmPage = pageText.includes('確認') || pageText.includes('内容をご確認')
+  const isConfirmPage = pageText.includes('確認') || pageText.includes('内容をご確認') ||
+    pageText.includes('ご確認') || pageText.includes('confirm') || pageText.includes('Confirm')
   console.log(`  確認画面検出: ${isConfirmPage ? 'はい' : 'いいえ'}`)
 
   if (!isConfirmPage) return
@@ -559,36 +567,36 @@ async function handleConfirmPage(page: import('playwright').Page): Promise<void>
   })
   console.log(`  確認画面のボタン一覧: ${JSON.stringify(allButtons)}`)
 
-  // JSで「送信する」「送信」テキストのボタンを探す（「確認」「入力」を含むボタンは除外）
+  // 最終送信ボタンを探してクリック
   const clicked = await page.evaluate(() => {
-    const elements = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"], a.btn, a.button'))
+    const elements = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"], a.btn, a.button, a[onclick]'))
 
-    // 優先順位1: テキストが「送信する」のボタン
-    for (const el of elements) {
-      const text = ((el as HTMLElement).textContent || (el as HTMLInputElement).value || '').trim()
-      if (text === '送信する' && el.getBoundingClientRect().height > 0) {
-        (el as HTMLElement).click()
-        return text
+    const SEND_KEYWORDS = ['送信する', '送信', 'submit', 'Submit', '送信完了', '問い合わせを送信', 'この内容で送信']
+    const EXCLUDE_KEYWORDS = ['確認する', '入力に戻る', '戻る', '修正', 'back', 'Back', 'キャンセル', '内容を確認']
+
+    // 優先: 完全一致 or 除外ワードなし・送信ワードあり
+    for (const priority of [true, false]) {
+      for (const el of elements) {
+        const text = ((el as HTMLElement).textContent || (el as HTMLInputElement).value || '').trim().replace(/\s+/g, '')
+        const isVisible = el.getBoundingClientRect().height > 0
+        if (!isVisible) continue
+        const hasExclude = EXCLUDE_KEYWORDS.some(kw => text.includes(kw))
+        if (hasExclude) continue
+        const hasSend = SEND_KEYWORDS.some(kw => priority ? text === kw : text.includes(kw))
+        if (hasSend) {
+          (el as HTMLElement).click()
+          return text
+        }
       }
     }
-
-    // 優先順位2: 「送信」を含み「確認」「入力」を含まないボタン
-    for (const el of elements) {
-      const text = ((el as HTMLElement).textContent || (el as HTMLInputElement).value || '').trim()
-      if (text.includes('送信') && !text.includes('確認') && !text.includes('入力') && el.getBoundingClientRect().height > 0) {
-        (el as HTMLElement).click()
-        return text
-      }
-    }
-
     return null
   })
 
   if (clicked) {
     console.log(`  確認画面送信クリック: "${clicked}" ✓`)
-    await delay(3000)
+    await delay(4000) // 送信完了ページの読み込みを待つ
   } else {
-    console.log(`  ⚠️ 確認画面の「送信する」ボタンが見つかりません`)
+    console.log(`  ⚠️ 確認画面の送信ボタンが見つかりません`)
   }
 }
 
