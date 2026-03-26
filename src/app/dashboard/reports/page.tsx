@@ -1,5 +1,5 @@
 import ReportsPageComponent from '@/components/reports/ReportsPage'
-import { getLeads } from '@/app/dashboard/leads/actions'
+import { getLeadOptions } from '@/app/dashboard/leads/actions'
 import { getSendStats } from '@/app/dashboard/sending/actions'
 import { getReplyStats } from '@/app/dashboard/replies/actions'
 import { getDealStats } from '@/app/dashboard/deals/actions'
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function ReportsPage() {
   const [leadsResult, sendResult, replyResult, dealResult, igResult] = await Promise.all([
-    getLeads(),
+    getLeadOptions(),
     getSendStats(),
     getReplyStats(),
     getDealStats(),

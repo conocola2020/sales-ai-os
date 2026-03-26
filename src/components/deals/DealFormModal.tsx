@@ -5,13 +5,13 @@ import { X, Trash2, AlertCircle } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { Deal, DealInsert, DealStage } from '@/types/deals'
 import { DEAL_STAGES, STAGE_CONFIG } from '@/types/deals'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 import { createDeal, updateDeal, deleteDeal } from '@/app/dashboard/deals/actions'
 
 interface DealFormModalProps {
   deal?: Deal | null          // null = create mode, Deal = edit mode
-  initialLead?: Lead | null   // pre-fill lead when creating from 返信管理
-  leads: Lead[]
+  initialLead?: LeadOption | null   // pre-fill lead when creating from 返信管理
+  leads: LeadOption[]
   onClose: () => void
   onSaved: (deal: Deal) => void
   onDeleted?: (id: string) => void

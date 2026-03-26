@@ -10,25 +10,47 @@ import type { Lead, LeadInsert, LeadUpdate } from '@/types/leads'
 export async function getLeads(): Promise<{ data: Lead[]; error: string | null }> {
   const supabase = await createClient()
 
-  // Supabaseのデフォルト制限は1000件。全件取得するためページネーション
-  const all: Lead[] = []
-  const PAGE = 1000
-  let from = 0
-  while (true) {
-    const { data, error } = await supabase
+  // 最大5000件を2回のリクエストで取得（ループ削減）
+  const PAGE = 2500
+  const [page1, page2] = await Promise.all([
+    supabase
       .from('leads')
       .select('*')
       .order('created_at', { ascending: false })
-      .range(from, from + PAGE - 1)
+      .range(0, PAGE - 1),
+    supabase
+      .from('leads')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(PAGE, PAGE * 2 - 1),
+  ])
 
-    if (error) return { data: all, error: error.message }
-    if (!data || data.length === 0) break
-    all.push(...(data as Lead[]))
-    if (data.length < PAGE) break
-    from += PAGE
-  }
+  if (page1.error) return { data: [], error: page1.error.message }
+
+  const all = [
+    ...(page1.data ?? []),
+    ...(page2.data ?? []),
+  ] as Lead[]
 
   return { data: all, error: null }
+}
+
+// ──────────────────────────────────────────
+// 軽量版：ドロップダウン用（id・社名・担当者名のみ）
+// ──────────────────────────────────────────
+export async function getLeadOptions(): Promise<{
+  data: Pick<Lead, 'id' | 'company_name' | 'contact_name' | 'status' | 'industry' | 'prefecture' | 'notes' | 'website_url' | 'company_url' | 'email'>[]
+  error: string | null
+}> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('leads')
+    .select('id, company_name, contact_name, status, industry, prefecture, notes, website_url, company_url, email')
+    .order('created_at', { ascending: false })
+    .limit(2000)
+
+  if (error) return { data: [], error: error.message }
+  return { data: data ?? [], error: null }
 }
 
 // ──────────────────────────────────────────

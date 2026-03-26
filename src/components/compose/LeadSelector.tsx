@@ -2,12 +2,12 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Search, Building2, ChevronDown, X } from 'lucide-react'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 import { STATUS_CONFIG } from '@/types/leads'
 import clsx from 'clsx'
 
 interface LeadSelectorProps {
-  leads: Lead[]
+  leads: LeadOption[]
   selectedLeadId: string
   onSelect: (leadId: string) => void
 }

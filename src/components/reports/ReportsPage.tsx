@@ -7,14 +7,14 @@ import {
   ArrowUpRight, ArrowDownRight, Minus,
 } from 'lucide-react'
 import clsx from 'clsx'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 import type { SendStats } from '@/types/sending'
 import type { ReplyStats } from '@/types/replies'
 import type { DealStats } from '@/types/deals'
 import type { InstagramStats } from '@/types/instagram'
 
 interface ReportsPageProps {
-  leads: Lead[]
+  leads: LeadOption[]
   sendStats: SendStats
   replyStats: ReplyStats
   dealStats: DealStats

@@ -1,6 +1,6 @@
 import DealsPageComponent from '@/components/deals/DealsPage'
 import { getDeals } from './actions'
-import { getLeads } from '@/app/dashboard/leads/actions'
+import { getLeadOptions } from '@/app/dashboard/leads/actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +11,7 @@ interface DealsPageProps {
 export default async function DealsPage({ searchParams }: DealsPageProps) {
   const [dealsResult, leadsResult, params] = await Promise.all([
     getDeals(),
-    getLeads(),
+    getLeadOptions(),
     searchParams,
   ])
 

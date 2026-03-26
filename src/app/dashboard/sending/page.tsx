@@ -1,6 +1,6 @@
 import SendingPageComponent from '@/components/sending/SendingPage'
 import { getSendQueue } from './actions'
-import { getLeads } from '@/app/dashboard/leads/actions'
+import { getLeadOptions } from '@/app/dashboard/leads/actions'
 import { getMessages } from '@/app/dashboard/compose/actions'
 
 export const dynamic = 'force-dynamic'
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 export default async function SendingPage() {
   const [queueResult, leadsResult, messagesResult] = await Promise.all([
     getSendQueue(),
-    getLeads(),
+    getLeadOptions(),
     getMessages(),
   ])
 

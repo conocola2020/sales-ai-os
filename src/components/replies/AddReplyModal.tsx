@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { X, Search, Building2, Loader2, Sparkles } from 'lucide-react'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 import type { Sentiment } from '@/types/replies'
 import { SENTIMENT_CONFIG } from '@/types/replies'
 import { createReply } from '@/app/dashboard/replies/actions'
@@ -10,7 +10,7 @@ import type { Reply } from '@/types/replies'
 import clsx from 'clsx'
 
 interface AddReplyModalProps {
-  leads: Lead[]
+  leads: LeadOption[]
   sentLeadIds?: string[]
   onClose: () => void
   onAdded: (reply: Reply) => void
@@ -18,7 +18,7 @@ interface AddReplyModalProps {
 
 export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdded }: AddReplyModalProps) {
   const [leadSearch, setLeadSearch] = useState('')
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+  const [selectedLead, setSelectedLead] = useState<LeadOption | null>(null)
   const [content, setContent] = useState('')
   const [isClassifying, setIsClassifying] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)

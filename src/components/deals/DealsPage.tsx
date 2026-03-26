@@ -5,7 +5,7 @@ import { Plus, LayoutList, Columns, CalendarDays, AlertTriangle, TrendingUp, Dol
 import { clsx } from 'clsx'
 import type { Deal, DealStage, DealStats } from '@/types/deals'
 import { DEAL_STAGES, STAGE_CONFIG, ACTIVE_STAGES } from '@/types/deals'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 import DealCard from './DealCard'
 import DealFormModal from './DealFormModal'
 import KanbanBoard from './KanbanBoard'
@@ -13,8 +13,8 @@ import DealsCalendar from './DealsCalendar'
 
 interface DealsPageProps {
   initialDeals: Deal[]
-  leads: Lead[]
-  initialLead?: Lead | null
+  leads: LeadOption[]
+  initialLead?: LeadOption | null
 }
 
 type ViewMode = 'list' | 'kanban' | 'calendar'
@@ -85,7 +85,7 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(!!initialLead)
   const [createInitialStage, setCreateInitialStage] = useState<DealStage>('初回接触')
-  const [createInitialLead, setCreateInitialLead] = useState<Lead | null>(initialLead ?? null)
+  const [createInitialLead, setCreateInitialLead] = useState<LeadOption | null>(initialLead ?? null)
 
   const stats = useMemo(() => buildStats(deals), [deals])
 

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import clsx from 'clsx'
 import type { SendQueueItem, SendStats } from '@/types/sending'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 import type { Message } from '@/types/messages'
 import StatsPanel from './StatsPanel'
 import QueueItem from './QueueItem'
@@ -53,7 +53,7 @@ function buildStats(items: SendQueueItem[]): SendStats {
 // ──────────────────────────────────────────
 interface SendingPageProps {
   initialQueue: SendQueueItem[]
-  leads: Lead[]
+  leads: LeadOption[]
   messages: Message[]
 }
 

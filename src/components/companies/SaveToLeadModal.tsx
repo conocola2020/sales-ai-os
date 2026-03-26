@@ -5,13 +5,13 @@ import { X, UserPlus, Link2, Search, Loader2 } from 'lucide-react'
 import { saveAnalysis } from '@/app/dashboard/companies/actions'
 import { createLead } from '@/app/dashboard/leads/actions'
 import type { AnalysisResult } from '@/types/analyses'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 import clsx from 'clsx'
 
 interface SaveToLeadModalProps {
   analysisResult: AnalysisResult
   url: string
-  leads: Lead[]
+  leads: LeadOption[]
   onClose: () => void
   onSaved: (leadId: string, leadName: string) => void
 }
@@ -83,7 +83,7 @@ export default function SaveToLeadModal({
     }
   }
 
-  const handleLinkExisting = async (lead: Lead) => {
+  const handleLinkExisting = async (lead: LeadOption) => {
     setLoading(true)
     setError('')
     try {

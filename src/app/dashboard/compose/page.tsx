@@ -1,5 +1,5 @@
 import ComposePage from '@/components/compose/ComposePage'
-import { getLeads } from '@/app/dashboard/leads/actions'
+import { getLeadOptions } from '@/app/dashboard/leads/actions'
 import { getMessages } from './actions'
 import { getTemplates, seedDefaultTemplates } from '@/app/dashboard/settings/actions'
 
@@ -11,7 +11,7 @@ interface Props {
 
 export default async function ComposePageRoute({ searchParams }: Props) {
   const [leadsResult, messagesResult, templatesResult, params] = await Promise.all([
-    getLeads(),
+    getLeadOptions(),
     getMessages(),
     getTemplates(),
     searchParams,

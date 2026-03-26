@@ -2,14 +2,14 @@
 
 import { useState, useMemo } from 'react'
 import { X, Search, Plus, Loader2, FileText, Building2 } from 'lucide-react'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 import type { Message } from '@/types/messages'
 import type { SendQueueItem } from '@/types/sending'
 import { addToQueue } from '@/app/dashboard/sending/actions'
 import clsx from 'clsx'
 
 interface AddToQueueModalProps {
-  leads: Lead[]
+  leads: LeadOption[]
   messages: Message[]
   onClose: () => void
   onAdded: (item: SendQueueItem) => void
@@ -22,7 +22,7 @@ export default function AddToQueueModal({
   onAdded,
 }: AddToQueueModalProps) {
   const [step, setStep] = useState<'lead' | 'message'>('lead')
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+  const [selectedLead, setSelectedLead] = useState<LeadOption | null>(null)
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
   const [customMessage, setCustomMessage] = useState('')
   const [useCustom, setUseCustom] = useState(false)
@@ -50,7 +50,7 @@ export default function AddToQueueModal({
     [messages, selectedLead]
   )
 
-  const handleSelectLead = (lead: Lead) => {
+  const handleSelectLead = (lead: LeadOption) => {
     setSelectedLead(lead)
     setSelectedMessage(null)
     setStep('message')

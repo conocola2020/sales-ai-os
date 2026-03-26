@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { Plus, MailOpen, RefreshCw } from 'lucide-react'
 import type { Reply, Sentiment, ReplyStats } from '@/types/replies'
 import { SENTIMENTS, SENTIMENT_CONFIG } from '@/types/replies'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 import { markAllAsRead } from '@/app/dashboard/replies/actions'
 import ReplyCard from './ReplyCard'
 import ReplyDetailModal from './ReplyDetailModal'
@@ -13,7 +13,7 @@ import clsx from 'clsx'
 
 interface RepliesPageProps {
   initialReplies: Reply[]
-  leads: Lead[]
+  leads: LeadOption[]
   sentLeadIds?: string[]
 }
 

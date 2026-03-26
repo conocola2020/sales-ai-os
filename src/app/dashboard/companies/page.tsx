@@ -1,6 +1,6 @@
 import CompaniesPage from '@/components/companies/CompaniesPage'
 import { getAnalyses } from '@/app/dashboard/companies/actions'
-import { getLeads } from '@/app/dashboard/leads/actions'
+import { getLeadOptions } from '@/app/dashboard/leads/actions'
 import { getAnthropicApiKey } from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 export default async function CompaniesPageRoute() {
   const [analysesResult, leadsResult] = await Promise.all([
     getAnalyses(),
-    getLeads(),
+    getLeadOptions(),
   ])
 
   const analyses = analysesResult.data ?? []

@@ -27,11 +27,11 @@ import {
   linkReplyToLead,
 } from '@/app/dashboard/replies/actions'
 import { createDealFromReply } from '@/app/dashboard/deals/actions'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 
 interface ReplyDetailModalProps {
   reply: Reply
-  leads?: Lead[]
+  leads?: LeadOption[]
   onClose: () => void
   onUpdated: (id: string, changes: Partial<Reply>) => void
   onDeleted: (id: string) => void
@@ -152,7 +152,7 @@ export default function ReplyDetailModal({
   }
 
   // ── Auto-match lead from reply content ─────
-  const findMatchingLead = (): Lead | null => {
+  const findMatchingLead = (): LeadOption | null => {
     if (leads.length === 0) return null
 
     // Extract sender email domain from content
@@ -201,7 +201,7 @@ export default function ReplyDetailModal({
   }
 
   // ── Link reply to a lead ───────────────────
-  const handleLinkLead = async (selectedLead: Lead) => {
+  const handleLinkLead = async (selectedLead: LeadOption) => {
     setIsLinking(true)
     setError('')
     const { data, error: err } = await linkReplyToLead(reply.id, selectedLead.id)

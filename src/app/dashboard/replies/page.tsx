@@ -1,6 +1,6 @@
 import RepliesPageComponent from '@/components/replies/RepliesPage'
 import { getReplies } from './actions'
-import { getLeads } from '@/app/dashboard/leads/actions'
+import { getLeadOptions } from '@/app/dashboard/leads/actions'
 import { getSendQueue } from '@/app/dashboard/sending/actions'
 
 export const dynamic = 'force-dynamic'
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 export default async function RepliesPage() {
   const [repliesResult, leadsResult, sendResult] = await Promise.all([
     getReplies(),
-    getLeads(),
+    getLeadOptions(),
     getSendQueue(),
   ])
 

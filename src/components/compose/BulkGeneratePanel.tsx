@@ -9,7 +9,7 @@ import ToneSelector from './ToneSelector'
 import TemplateSelector from './TemplateSelector'
 import { saveMessage } from '@/app/dashboard/compose/actions'
 import { addToQueue } from '@/app/dashboard/sending/actions'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 import type { Tone } from '@/types/messages'
 import type { MessageTemplate } from '@/types/settings'
 import clsx from 'clsx'
@@ -42,7 +42,7 @@ const LeadRow = memo(function LeadRow({
   isSelected,
   onToggle,
 }: {
-  lead: Lead
+  lead: LeadOption
   isSelected: boolean
   onToggle: (id: string) => void
 }) {
@@ -67,7 +67,7 @@ const LeadRow = memo(function LeadRow({
 const VISIBLE_BATCH = 50 // 1回に表示する件数
 
 interface BulkGeneratePanelProps {
-  leads: Lead[]
+  leads: LeadOption[]
   templates: MessageTemplate[]
   tone: Tone
   onToneChange: (tone: Tone) => void

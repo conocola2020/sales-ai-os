@@ -11,7 +11,7 @@ import BulkGeneratePanel from './BulkGeneratePanel'
 import { saveMessage } from '@/app/dashboard/compose/actions'
 import { addToQueue } from '@/app/dashboard/sending/actions'
 import { parseSubjectAndBody } from '@/lib/prompt-builder'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 import type { Message, Tone } from '@/types/messages'
 import type { MessageTemplate } from '@/types/settings'
 import clsx from 'clsx'
@@ -19,7 +19,7 @@ import clsx from 'clsx'
 type Mode = 'single' | 'bulk'
 
 interface ComposePageProps {
-  leads: Lead[]
+  leads: LeadOption[]
   initialMessages: Message[]
   isDemo: boolean
   initialLeadId?: string

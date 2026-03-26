@@ -18,12 +18,12 @@ import AnalysisResultComponent from './AnalysisResult'
 import SaveToLeadModal from './SaveToLeadModal'
 import AnalysisHistory from './AnalysisHistory'
 import type { AnalysisResult, CompanyAnalysis } from '@/types/analyses'
-import type { Lead } from '@/types/leads'
+import type { Lead, LeadOption } from '@/types/leads'
 import clsx from 'clsx'
 
 interface CompaniesPageProps {
   initialAnalyses: CompanyAnalysis[]
-  leads: Lead[]
+  leads: LeadOption[]
   isDemo: boolean
 }
 

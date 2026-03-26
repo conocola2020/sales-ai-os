@@ -30,6 +30,9 @@ export const PREFECTURES = [
 ] as const
 
 export type LeadInsert = Pick<Lead, 'company_name' | 'status'> & Partial<Omit<Lead, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'company_name' | 'status'>>
+
+// ドロップダウン・紐付け用の軽量型
+export type LeadOption = Pick<Lead, 'id' | 'company_name' | 'contact_name' | 'status' | 'industry' | 'prefecture' | 'notes' | 'website_url' | 'company_url' | 'email'>
 export type LeadUpdate = Partial<LeadInsert>
 
 export const LEAD_STATUSES: LeadStatus[] = [
