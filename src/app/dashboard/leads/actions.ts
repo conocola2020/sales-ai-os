@@ -10,27 +10,33 @@ import type { Lead, LeadInsert, LeadUpdate } from '@/types/leads'
 export async function getLeads(): Promise<{ data: Lead[]; error: string | null }> {
   const supabase = await createClient()
 
-  // 最大5000件を2回のリクエストで取得（ループ削減）
-  const PAGE = 2500
-  const [page1, page2] = await Promise.all([
-    supabase
-      .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(0, PAGE - 1),
-    supabase
-      .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(PAGE, PAGE * 2 - 1),
-  ])
+  const PAGE = 1000
 
-  if (page1.error) return { data: [], error: page1.error.message }
+  // まず総件数を取得（HEADリクエスト・高速）
+  const { count, error: countError } = await supabase
+    .from('leads')
+    .select('*', { count: 'exact', head: true })
 
-  const all = [
-    ...(page1.data ?? []),
-    ...(page2.data ?? []),
-  ] as Lead[]
+  if (countError) return { data: [], error: countError.message }
+  if (!count) return { data: [], error: null }
+
+  // 全ページを並列取得
+  const pageCount = Math.ceil(count / PAGE)
+  const results = await Promise.all(
+    Array.from({ length: pageCount }, (_, i) =>
+      supabase
+        .from('leads')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(i * PAGE, (i + 1) * PAGE - 1)
+    )
+  )
+
+  const all: Lead[] = []
+  for (const result of results) {
+    if (result.error) return { data: all, error: result.error.message }
+    all.push(...(result.data as Lead[]))
+  }
 
   return { data: all, error: null }
 }
