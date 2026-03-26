@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, memo } from 'react'
 import {
   Sparkles, Loader2, Check, X, Globe, Mail, Send,
-  ChevronDown, ChevronUp, RefreshCw, Save, CheckSquare, Square,
+  ChevronDown, ChevronUp, RefreshCw, Save, CheckSquare, Square, Zap,
 } from 'lucide-react'
 import ToneSelector from './ToneSelector'
 import TemplateSelector from './TemplateSelector'
@@ -98,6 +98,7 @@ export default function BulkGeneratePanel({
   const [visibleCount, setVisibleCount] = useState(VISIBLE_BATCH)
   const [isSavingAll, setIsSavingAll] = useState(false)
   const [isQueuingAll, setIsQueuingAll] = useState(false)
+  const [autoQueue, setAutoQueue] = useState(false)
 
   // Filtered leads（検索クエリ + 都道府県フィルター）
   const filteredLeads = useMemo(() => {
@@ -145,6 +146,8 @@ export default function BulkGeneratePanel({
     setResults([])
     setProgress({ total: selectedLeadIds.size, completed: 0 })
 
+    const collectedResults: BulkResult[] = []
+
     try {
       const res = await fetch('/api/generate-bulk', {
         method: 'POST',
@@ -172,7 +175,6 @@ export default function BulkGeneratePanel({
         if (done) break
         buffer += decoder.decode(value, { stream: true })
 
-        // Parse NDJSON lines
         const lines = buffer.split('\n')
         buffer = lines.pop() ?? ''
 
@@ -181,15 +183,16 @@ export default function BulkGeneratePanel({
           try {
             const data = JSON.parse(line)
             if (data.type === 'result') {
-              // リードデータから正しい企業名を取得（デモモードの「デモ企業N」を上書き）
               const realLead = leads.find(l => l.id === data.leadId)
-              setResults(prev => [...prev, {
+              const newResult: BulkResult = {
                 leadId: data.leadId,
                 companyName: realLead?.company_name ?? data.companyName,
                 subject: data.subject,
                 body: data.body,
                 error: data.error,
-              }])
+              }
+              collectedResults.push(newResult)
+              setResults(prev => [...prev, newResult])
               setProgress(data.progress)
             } else if (data.type === 'progress') {
               setProgress(data)
@@ -199,12 +202,32 @@ export default function BulkGeneratePanel({
           }
         }
       }
+
+      // 自動キュー追加
+      if (autoQueue && collectedResults.length > 0) {
+        setIsQueuingAll(true)
+        const targets = collectedResults.filter(r => !r.error && r.body)
+        await Promise.all(
+          targets.map(r =>
+            addToQueue({
+              lead_id: r.leadId,
+              message_content: r.body,
+              subject: r.subject || undefined,
+            }).then(({ error }) => {
+              if (!error) {
+                setResults(prev => prev.map(p => p.leadId === r.leadId ? { ...p, queued: true } : p))
+              }
+            })
+          )
+        )
+        setIsQueuingAll(false)
+      }
     } catch (err) {
       console.error('Bulk generate error:', err)
     } finally {
       setIsGenerating(false)
     }
-  }, [selectedLeadIds, tone, customInstructions, selectedTemplateId])
+  }, [selectedLeadIds, tone, customInstructions, selectedTemplateId, leads, autoQueue])
 
   const handleSaveAll = async () => {
     setIsSavingAll(true)
@@ -363,6 +386,33 @@ export default function BulkGeneratePanel({
             />
           </div>
 
+          {/* 自動キュー追加トグル */}
+          <div
+            onClick={() => setAutoQueue(v => !v)}
+            className={clsx(
+              'flex items-center justify-between px-3 py-2.5 rounded-xl border cursor-pointer transition-all select-none',
+              autoQueue
+                ? 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/15'
+                : 'bg-gray-800/60 border-gray-700 hover:border-gray-600'
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <Zap className={clsx('w-3.5 h-3.5', autoQueue ? 'text-emerald-400' : 'text-gray-500')} />
+              <p className={clsx('text-xs font-medium', autoQueue ? 'text-emerald-300' : 'text-gray-300')}>
+                {autoQueue ? '生成後に自動でキュー追加' : '自動キュー追加：OFF'}
+              </p>
+            </div>
+            <div className={clsx(
+              'relative w-9 h-4.5 rounded-full transition-colors flex-shrink-0',
+              autoQueue ? 'bg-emerald-500' : 'bg-gray-600'
+            )}>
+              <div className={clsx(
+                'absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow transition-transform',
+                autoQueue ? 'translate-x-4.5' : 'translate-x-0.5'
+              )} />
+            </div>
+          </div>
+
           {/* Generate button */}
           <button
             onClick={handleBulkGenerate}
@@ -370,14 +420,19 @@ export default function BulkGeneratePanel({
             className={clsx(
               'flex items-center justify-center gap-2.5 w-full py-3 rounded-xl text-sm font-semibold transition-all',
               selectedLeadIds.size > 0 && !isGenerating
-                ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/30'
+                ? autoQueue
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30'
+                  : 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/30'
                 : 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed'
             )}
           >
             {isGenerating ? (
-              <><Loader2 className="w-4 h-4 animate-spin" />生成中... ({progress.completed}/{progress.total})</>
+              <><Loader2 className="w-4 h-4 animate-spin" />{isQueuingAll ? `キュー追加中...` : `生成中... (${progress.completed}/${progress.total})`}</>
             ) : (
-              <><Sparkles className="w-4 h-4" />{selectedLeadIds.size}件の文面を一括生成</>
+              <>
+                {autoQueue ? <Zap className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                {selectedLeadIds.size}件を一括生成{autoQueue ? '＆キュー追加' : ''}
+              </>
             )}
           </button>
         </div>

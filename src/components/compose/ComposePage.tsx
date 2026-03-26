@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import { Sparkles, Loader2, AlertCircle, Info, Users, User } from 'lucide-react'
+import { Sparkles, Loader2, AlertCircle, Info, Users, User, Zap } from 'lucide-react'
 import LeadSelector from './LeadSelector'
 import ToneSelector from './ToneSelector'
 import TemplateSelector from './TemplateSelector'
@@ -51,6 +51,8 @@ export default function ComposePage({
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
   const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const [autoQueue, setAutoQueue] = useState(false)
+  const [autoQueueStatus, setAutoQueueStatus] = useState<'idle' | 'queued' | 'error'>('idle')
   const subjectParsedRef = useRef(false)
 
   const selectedLead = leads.find(l => l.id === selectedLeadId) ?? null
@@ -77,7 +79,12 @@ export default function ComposePage({
     setIsStreaming(true)
     setGeneratedMessage('')
     setGeneratedSubject('')
+    setAutoQueueStatus('idle')
     subjectParsedRef.current = false
+
+    let finalMessage = ''
+    let finalSubject = ''
+    let generateSuccess = false
 
     try {
       const res = await fetch('/api/generate', {
@@ -108,13 +115,35 @@ export default function ComposePage({
         accumulated += decoder.decode(value, { stream: true })
         parseStreamingText(accumulated)
       }
+
+      finalMessage = accumulated
+      const parsed = parseSubjectAndBody ? parseSubjectAndBody(accumulated) : { subject: '', body: accumulated }
+      finalSubject = parsed.subject ?? ''
+      finalMessage = parsed.body || accumulated
+      generateSuccess = true
     } catch (err) {
       console.error('Generate error:', err)
       setError(err instanceof Error ? err.message : '生成に失敗しました')
     } finally {
       setIsStreaming(false)
+
+      // 自動キュー追加
+      if (generateSuccess && autoQueue && selectedLeadId && finalMessage) {
+        const { error: qErr } = await addToQueue({
+          lead_id: selectedLeadId,
+          message_content: finalMessage,
+          subject: finalSubject || undefined,
+        })
+        if (qErr) {
+          setAutoQueueStatus('error')
+          setError(`自動キュー追加失敗: ${qErr}`)
+        } else {
+          setAutoQueueStatus('queued')
+          setTimeout(() => setAutoQueueStatus('idle'), 3000)
+        }
+      }
     }
-  }, [selectedLeadId, tone, customInstructions, selectedTemplateId, parseStreamingText])
+  }, [selectedLeadId, tone, customInstructions, selectedTemplateId, parseStreamingText, autoQueue])
 
   const handleSave = async () => {
     if (!generatedMessage) return
@@ -286,22 +315,68 @@ export default function ComposePage({
               />
             </div>
 
+            {/* 自動キュー追加トグル */}
+            <div
+              onClick={() => setAutoQueue(v => !v)}
+              className={clsx(
+                'flex items-center justify-between px-4 py-3 rounded-xl border cursor-pointer transition-all select-none',
+                autoQueue
+                  ? 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/15'
+                  : 'bg-gray-800/60 border-gray-700 hover:border-gray-600'
+              )}
+            >
+              <div className="flex items-center gap-2.5">
+                <Zap className={clsx('w-4 h-4', autoQueue ? 'text-emerald-400' : 'text-gray-500')} />
+                <div>
+                  <p className={clsx('text-xs font-medium', autoQueue ? 'text-emerald-300' : 'text-gray-300')}>
+                    生成後に自動で送信キューへ追加
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    {autoQueue ? 'ON：生成完了と同時に待機中へ移動' : 'OFF：手動でキューに追加'}
+                  </p>
+                </div>
+              </div>
+              <div className={clsx(
+                'relative w-10 h-5 rounded-full transition-colors flex-shrink-0',
+                autoQueue ? 'bg-emerald-500' : 'bg-gray-600'
+              )}>
+                <div className={clsx(
+                  'absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform',
+                  autoQueue ? 'translate-x-5' : 'translate-x-0.5'
+                )} />
+              </div>
+            </div>
+
             <button
               onClick={handleGenerate}
               disabled={isStreaming || !selectedLeadId}
               className={clsx(
                 'flex items-center justify-center gap-2.5 w-full py-3 rounded-xl text-sm font-semibold transition-all',
                 selectedLeadId && !isStreaming
-                  ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/30'
+                  ? autoQueue
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30'
+                    : 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/30'
                   : 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed'
               )}
             >
               {isStreaming ? (
-                <><Loader2 className="w-4 h-4 animate-spin" />HP分析＆生成中...</>
+                <><Loader2 className="w-4 h-4 animate-spin" />HP分析＆生成中{autoQueue ? '→自動キュー追加...' : '...'}</>
               ) : (
-                <><Sparkles className="w-4 h-4" />{selectedLead ? `「${selectedLead.company_name}」の文面を生成` : '✨ 生成する'}</>
+                <>
+                  {autoQueue ? <Zap className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                  {selectedLead
+                    ? `「${selectedLead.company_name}」を生成${autoQueue ? '＆キュー追加' : ''}`
+                    : autoQueue ? '⚡ 生成＆キュー追加' : '✨ 生成する'}
+                </>
               )}
             </button>
+
+            {/* 自動キュー追加結果 */}
+            {autoQueueStatus === 'queued' && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                <span className="text-emerald-400 text-xs">✅ 送信キューに自動追加しました</span>
+              </div>
+            )}
 
             <div className="flex flex-col flex-1 min-h-[220px]">
               <MessageEditor
