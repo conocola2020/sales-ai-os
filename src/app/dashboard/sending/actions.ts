@@ -83,7 +83,7 @@ export async function addToQueue(
       subject: item.subject ?? null,
       send_method: sendMethod,
       scheduled_at: item.scheduled_at ?? null,
-      status: '確認待ち',
+      status: '待機中',
     })
     .select(LEAD_SELECT)
     .single()
@@ -278,7 +278,7 @@ export async function getSendStats(): Promise<{
 
   if (!user) {
     return {
-      data: { total: 0, reviewing: 0, sent: 0, failed: 0 },
+      data: { total: 0, waiting: 0, reviewing: 0, sent: 0, failed: 0 },
       error: null,
     }
   }
@@ -296,6 +296,7 @@ export async function getSendStats(): Promise<{
   const rows = data as { status: string }[]
   const stats: SendStats = {
     total: rows.length,
+    waiting: rows.filter(r => r.status === '待機中').length,
     reviewing: rows.filter(r => r.status === '確認待ち').length,
     sent: rows.filter(r => r.status === '送信済み').length,
     failed: rows.filter(r => r.status === '失敗').length,

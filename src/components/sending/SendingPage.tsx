@@ -13,6 +13,7 @@ import {
   CheckSquare,
   Square,
   Rocket,
+  Clock,
 } from 'lucide-react'
 import clsx from 'clsx'
 import type { SendQueueItem, SendStats } from '@/types/sending'
@@ -27,10 +28,11 @@ import { deleteQueueItem } from '@/app/dashboard/sending/actions'
 // ──────────────────────────────────────────
 // Tab definitions
 // ──────────────────────────────────────────
-type Tab = '全て' | '確認待ち' | '送信済み' | '失敗'
+type Tab = '全て' | '待機中' | '確認待ち' | '送信済み' | '失敗'
 
 const TABS: { label: Tab; icon: React.ReactNode; count?: (s: SendStats) => number }[] = [
   { label: '全て', icon: <Send className="w-3.5 h-3.5" />, count: s => s.total },
+  { label: '待機中', icon: <Clock className="w-3.5 h-3.5" />, count: s => s.waiting },
   { label: '確認待ち', icon: <Eye className="w-3.5 h-3.5" />, count: s => s.reviewing },
   { label: '送信済み', icon: <CheckCircle2 className="w-3.5 h-3.5" />, count: s => s.sent },
   { label: '失敗', icon: <XCircle className="w-3.5 h-3.5" />, count: s => s.failed },
@@ -42,6 +44,7 @@ const TABS: { label: Tab; icon: React.ReactNode; count?: (s: SendStats) => numbe
 function buildStats(items: SendQueueItem[]): SendStats {
   return {
     total: items.length,
+    waiting: items.filter(i => i.status === '待機中').length,
     reviewing: items.filter(i => i.status === '確認待ち').length,
     sent: items.filter(i => i.status === '送信済み').length,
     failed: items.filter(i => i.status === '失敗').length,
@@ -99,7 +102,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
   }
 
   const handleBulkSendAll = () => {
-    const reviewItems = filteredQueue.filter(i => i.status === '確認待ち' && selected.has(i.id))
+    const reviewItems = filteredQueue.filter(i => (i.status === '確認待ち' || i.status === '待機中') && selected.has(i.id))
     if (!reviewItems.length) return
     if (!confirm(`${reviewItems.length}件を順番に送信します。よろしいですか？`)) return
     // 先頭を表示用、残りをキューに積む
