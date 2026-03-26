@@ -17,7 +17,7 @@ import {
 import clsx from 'clsx'
 import type { SendQueueItem } from '@/types/sending'
 import { SEND_STATUS_CONFIG, SEND_METHOD_CONFIG } from '@/types/sending'
-import { markAsReady, deleteQueueItem, retryQueueItem } from '@/app/dashboard/sending/actions'
+import { deleteQueueItem, retryQueueItem } from '@/app/dashboard/sending/actions'
 
 interface QueueItemProps {
   item: SendQueueItem
@@ -53,13 +53,6 @@ export default function QueueItem({
     bg: 'bg-gray-500/10',
     border: 'border-gray-500/20',
     dot: 'bg-gray-400',
-  }
-
-  const handleMarkReady = async () => {
-    setLoading(true)
-    const { error } = await markAsReady(item.id)
-    setLoading(false)
-    if (!error) onUpdated(item.id, '確認待ち')
   }
 
   const handleRetry = async () => {
@@ -289,24 +282,6 @@ export default function QueueItem({
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* 待機中 → 確認待ち */}
-            {item.status === '待機中' && (
-              <button
-                onClick={async (e) => {
-                  e.stopPropagation()
-                  setLoading(true)
-                  const { error } = await markAsReady(item.id)
-                  setLoading(false)
-                  if (!error) onUpdated(item.id, '確認待ち')
-                }}
-                disabled={loading}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 transition-colors disabled:opacity-40"
-              >
-                <Send className="w-3 h-3" />
-                送信準備完了
-              </button>
-            )}
-
             {/* 確認待ち → 送信 (opens modal) */}
             {item.status === '確認待ち' && (
               <button

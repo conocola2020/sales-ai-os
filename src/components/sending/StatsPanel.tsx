@@ -1,10 +1,10 @@
 'use client'
 
-import { Eye, CheckCircle2, XCircle, Send, Clock } from 'lucide-react'
+import { Eye, CheckCircle2, XCircle, Send } from 'lucide-react'
 import type { SendStats } from '@/types/sending'
 import clsx from 'clsx'
 
-type Tab = '全て' | '待機中' | '確認待ち' | '送信済み' | '失敗'
+type Tab = '全て' | '確認待ち' | '送信済み' | '失敗'
 
 interface StatCardProps {
   label: string
@@ -48,7 +48,7 @@ interface StatsPanelProps {
 
 export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanelProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       <StatCard
         label="合計"
         tab="全て"
@@ -59,17 +59,6 @@ export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanel
         border="border-violet-500/20"
         isActive={activeTab === '全て'}
         onClick={() => onTabChange('全て')}
-      />
-      <StatCard
-        label="待機中"
-        tab="待機中"
-        value={stats.waiting}
-        icon={<Clock className="w-4 h-4" />}
-        color="text-gray-400"
-        bg="bg-gray-500/10"
-        border="border-gray-500/20"
-        isActive={activeTab === '待機中'}
-        onClick={() => onTabChange('待機中')}
       />
       <StatCard
         label="確認待ち"
