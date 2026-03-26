@@ -1,5 +1,5 @@
 export type SendStatus = '確認待ち' | '送信済み' | '失敗' | 'form_not_found'
-export type SendMethod = 'email' | 'form'
+export type SendMethod = 'email' | 'form' | 'manual'
 
 export interface SendQueueItem {
   id: string
@@ -83,6 +83,12 @@ export const SEND_METHOD_CONFIG: Record<
     color: 'text-cyan-400',
     bg: 'bg-cyan-500/10',
     border: 'border-cyan-500/20',
+  },
+  manual: {
+    label: '手動',
+    color: 'text-gray-400',
+    bg: 'bg-gray-500/10',
+    border: 'border-gray-500/20',
   },
 }
 

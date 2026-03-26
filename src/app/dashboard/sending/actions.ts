@@ -38,7 +38,7 @@ export async function getSendQueue(): Promise<{
     .select(LEAD_SELECT)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
-    .limit(200)
+    .limit(1000)
 
   if (error) {
     console.error('getSendQueue error:', error)
@@ -193,6 +193,73 @@ export async function markAsFailed(
       error_message: errorMessage,
     })
     .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/sending')
+  return { error: null }
+}
+
+// ──────────────────────────────────────────
+// 送信済み → 確認待ちに戻す（誤判定のリセット用）
+// ──────────────────────────────────────────
+export async function resetToReview(
+  ids: string[]
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: '認証が必要です' }
+
+  const { error } = await supabase
+    .from('send_queue')
+    .update({
+      status: '確認待ち',
+      error_message: null,
+      sent_at: null,
+      retry_count: 0,
+    })
+    .in('id', ids)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+
+  // リードのステータスも「未着手」に戻す
+  const { data: items } = await supabase
+    .from('send_queue')
+    .select('lead_id')
+    .in('id', ids)
+    .eq('user_id', user.id)
+  if (items) {
+    const leadIds = items.map(i => i.lead_id).filter(Boolean)
+    if (leadIds.length > 0) {
+      await supabase
+        .from('leads')
+        .update({ status: '未着手' })
+        .in('id', leadIds)
+        .eq('user_id', user.id)
+    }
+  }
+
+  revalidatePath('/dashboard/sending')
+  revalidatePath('/dashboard/leads')
+  return { error: null }
+}
+
+// ──────────────────────────────────────────
+// 送信方法を変更 (form ↔ manual ↔ email)
+// ──────────────────────────────────────────
+export async function changeSendMethod(
+  ids: string[],
+  method: 'form' | 'manual' | 'email'
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: '認証が必要です' }
+
+  const { error } = await supabase
+    .from('send_queue')
+    .update({ send_method: method, status: '確認待ち', error_message: null })
+    .in('id', ids)
     .eq('user_id', user.id)
 
   if (error) return { error: error.message }

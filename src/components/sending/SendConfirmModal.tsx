@@ -7,13 +7,15 @@ import { markAsSent, markAsFailed } from '@/app/dashboard/sending/actions'
 
 interface SendConfirmModalProps {
   item: SendQueueItem
-  onClose: () => void
+  onClose: () => void        // ✕ ボタン: 全てキャンセル
   onSent: (id: string) => void
+  onSkip?: (id: string) => void  // エラー時にスキップして次へ
+  remainingCount?: number
 }
 
 type SendMethod = 'manual' | 'email' | 'form'
 
-export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmModalProps) {
+export default function SendConfirmModal({ item, onClose, onSent, onSkip, remainingCount = 0 }: SendConfirmModalProps) {
   const [step, setStep] = useState<'confirm' | 'sending' | 'success' | 'error'>('confirm')
   const [errorMsg, setErrorMsg] = useState('')
   const [sendMethod, setSendMethod] = useState<SendMethod>(
@@ -35,15 +37,23 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ queueItemId: item.id }),
         })
-        const data = await res.json()
+        let data: { error?: string; success?: boolean } = {}
+        try {
+          data = await res.json()
+        } catch {
+          // JSONパース失敗 = サーバーがHTMLエラーページを返した
+          setErrorMsg(`サーバーエラー (HTTP ${res.status}) — フォーム送信APIが応答しませんでした`)
+          setStep('error')
+          return
+        }
         if (!res.ok || data.error) {
-          setErrorMsg(data.error || 'フォーム送信の登録に失敗しました')
+          setErrorMsg(data.error || `フォーム送信の登録に失敗しました (HTTP ${res.status})`)
           setStep('error')
           return
         }
         setStep('success')
-      } catch {
-        setErrorMsg('ネットワークエラーが発生しました')
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : 'ネットワークエラーが発生しました')
         setStep('error')
       }
     } else if (sendMethod === 'email' && lead?.email) {
@@ -92,8 +102,9 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
   }
 
   const handleSuccess = () => {
+    // onSent だけ呼ぶ。親の handleSent がキューの次アイテムを表示するか
+    // confirmItem(null) でモーダルを閉じるかを制御するため onClose は呼ばない。
     onSent(item.id)
-    onClose()
   }
 
   return (
@@ -117,6 +128,11 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
             <h2 className="text-sm font-semibold text-white">
               {step === 'success' ? '送信完了' : step === 'error' ? '送信エラー' : step === 'sending' ? '送信中...' : '送信確認'}
             </h2>
+            {remainingCount > 0 && step !== 'sending' && (
+              <span className="ml-2 px-2 py-0.5 bg-violet-500/20 border border-violet-500/30 rounded-full text-[10px] text-violet-300 font-medium">
+                残り{remainingCount}件
+              </span>
+            )}
           </div>
           {step !== 'sending' && (
             <button onClick={step === 'success' ? handleSuccess : onClose} className="p-1 text-gray-500 hover:text-gray-300 transition-colors">
@@ -138,7 +154,7 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
                   {sendMethod === 'form'
-                    ? `${lead?.company_name ?? '企業'} への問い合わせフォーム送信はワーカーが自動処理します。`
+                    ? `${lead?.company_name ?? '企業'} への送信はワーカーが処理します。結果はページ更新後に「送信済み」または「失敗」として反映されます。`
                     : `${lead?.company_name ?? '企業'} への${sendMethod === 'email' ? 'メール' : ''}送信が完了し、ステータスを「送信済み」に更新しました。`
                   }
                 </p>
@@ -341,14 +357,17 @@ export default function SendConfirmModal({ item, onClose, onSent }: SendConfirmM
 
           {step === 'success' && (
             <button onClick={handleSuccess} className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl transition-colors">
-              閉じる
+              {remainingCount > 0 ? `次へ → (残り${remainingCount}件)` : '閉じる'}
             </button>
           )}
 
           {step === 'error' && (
             <div className="flex gap-3">
-              <button onClick={onClose} className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-xl transition-colors">
-                閉じる
+              <button
+                onClick={() => onSkip ? onSkip(item.id) : onClose()}
+                className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-xl transition-colors"
+              >
+                {remainingCount > 0 ? `スキップ → 次へ (残り${remainingCount}件)` : '閉じる'}
               </button>
               <button onClick={() => setStep('confirm')} className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-colors">
                 再試行
