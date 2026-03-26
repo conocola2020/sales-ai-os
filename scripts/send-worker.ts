@@ -35,7 +35,8 @@ if (!SUPABASE_URL) {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+// ANTHROPIC_API_KEY は SDK が process.env から自動読み込み
+const anthropic = new Anthropic()
 
 // ─── 型定義 ──────────────────────────────
 
