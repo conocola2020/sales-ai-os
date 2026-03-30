@@ -42,6 +42,35 @@ export async function getLeads(): Promise<{ data: Lead[]; error: string | null }
 }
 
 // ──────────────────────────────────────────
+// 送信キューのステータスをリードIDでマッピング
+// 失敗 > 確認待ち の優先順位で返す
+// ──────────────────────────────────────────
+export async function getLeadQueueStatuses(): Promise<Record<string, string>> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return {}
+
+  const { data } = await supabase
+    .from('send_queue')
+    .select('lead_id, status')
+    .eq('user_id', user.id)
+    .neq('status', '送信済み') // 送信済みは表示不要
+
+  if (!data) return {}
+
+  const map: Record<string, string> = {}
+  for (const item of data) {
+    if (!item.lead_id) continue
+    const prev = map[item.lead_id]
+    // 失敗・form_not_found が最優先、次に確認待ち
+    if (!prev || item.status === '失敗' || item.status === 'form_not_found') {
+      map[item.lead_id] = item.status
+    }
+  }
+  return map
+}
+
+// ──────────────────────────────────────────
 // 軽量版：ドロップダウン用（id・社名・担当者名のみ）
 // ──────────────────────────────────────────
 export async function getLeadOptions(): Promise<{

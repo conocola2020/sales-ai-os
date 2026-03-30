@@ -28,11 +28,19 @@ type SortDir = 'asc' | 'desc'
 
 interface LeadsTableProps {
   initialLeads: Lead[]
+  queueStatusMap?: Record<string, string>
+}
+
+// 送信キューステータスバッジの設定
+const QUEUE_STATUS_BADGE: Record<string, { label: string; color: string }> = {
+  '確認待ち': { label: '確認待ち', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+  '失敗':     { label: '送信失敗', color: 'text-red-400 bg-red-500/10 border-red-500/20' },
+  'form_not_found': { label: 'フォーム未検出', color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
 }
 
 const inputCls = 'bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all'
 
-export default function LeadsTable({ initialLeads }: LeadsTableProps) {
+export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsTableProps) {
   const router = useRouter()
   const [leads, setLeads] = useState<Lead[]>(initialLeads)
   const [search, setSearch] = useState('')
@@ -428,23 +436,33 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
                         )}
                       </div>
                     </button>
-                    <select
-                      value={lead.status}
-                      onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      className={clsx(
-                        'text-[10px] rounded-lg border px-1.5 py-0.5 cursor-pointer transition-all focus:outline-none focus:ring-1 focus:ring-violet-500 flex-shrink-0',
-                        STATUS_CONFIG[lead.status].bg,
-                        STATUS_CONFIG[lead.status].border,
-                        STATUS_CONFIG[lead.status].color,
-                        'bg-transparent'
+                    <div className="flex flex-col items-end gap-1">
+                      <select
+                        value={lead.status}
+                        onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        className={clsx(
+                          'text-[10px] rounded-lg border px-1.5 py-0.5 cursor-pointer transition-all focus:outline-none focus:ring-1 focus:ring-violet-500 flex-shrink-0',
+                          STATUS_CONFIG[lead.status].bg,
+                          STATUS_CONFIG[lead.status].border,
+                          STATUS_CONFIG[lead.status].color,
+                          'bg-transparent'
+                        )}
+                        style={{ backgroundColor: 'transparent' }}
+                      >
+                        {LEAD_STATUSES.map((s) => (
+                          <option key={s} value={s} className="bg-gray-900 text-gray-200">{s}</option>
+                        ))}
+                      </select>
+                      {queueStatusMap[lead.id] && QUEUE_STATUS_BADGE[queueStatusMap[lead.id]] && (
+                        <span className={clsx(
+                          'inline-flex items-center text-[10px] px-1.5 py-0.5 rounded border',
+                          QUEUE_STATUS_BADGE[queueStatusMap[lead.id]].color
+                        )}>
+                          {QUEUE_STATUS_BADGE[queueStatusMap[lead.id]].label}
+                        </span>
                       )}
-                      style={{ backgroundColor: 'transparent' }}
-                    >
-                      {LEAD_STATUSES.map((s) => (
-                        <option key={s} value={s} className="bg-gray-900 text-gray-200">{s}</option>
-                      ))}
-                    </select>
+                    </div>
                   </div>
 
                   {/* Contact info */}
@@ -634,23 +652,33 @@ export default function LeadsTable({ initialLeads }: LeadsTableProps) {
 
                     {/* Status dropdown */}
                     <td className="px-4 py-3">
-                      <select
-                        value={lead.status}
-                        onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        className={clsx(
-                          'text-xs rounded-lg border px-2 py-1 cursor-pointer transition-all focus:outline-none focus:ring-1 focus:ring-violet-500',
-                          STATUS_CONFIG[lead.status].bg,
-                          STATUS_CONFIG[lead.status].border,
-                          STATUS_CONFIG[lead.status].color,
-                          'bg-transparent'
+                      <div className="flex flex-col gap-1">
+                        <select
+                          value={lead.status}
+                          onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className={clsx(
+                            'text-xs rounded-lg border px-2 py-1 cursor-pointer transition-all focus:outline-none focus:ring-1 focus:ring-violet-500',
+                            STATUS_CONFIG[lead.status].bg,
+                            STATUS_CONFIG[lead.status].border,
+                            STATUS_CONFIG[lead.status].color,
+                            'bg-transparent'
+                          )}
+                          style={{ backgroundColor: 'transparent' }}
+                        >
+                          {LEAD_STATUSES.map((s) => (
+                            <option key={s} value={s} className="bg-gray-900 text-gray-200">{s}</option>
+                          ))}
+                        </select>
+                        {queueStatusMap[lead.id] && QUEUE_STATUS_BADGE[queueStatusMap[lead.id]] && (
+                          <span className={clsx(
+                            'inline-flex items-center text-[10px] px-1.5 py-0.5 rounded border w-fit',
+                            QUEUE_STATUS_BADGE[queueStatusMap[lead.id]].color
+                          )}>
+                            {QUEUE_STATUS_BADGE[queueStatusMap[lead.id]].label}
+                          </span>
                         )}
-                        style={{ backgroundColor: 'transparent' }}
-                      >
-                        {LEAD_STATUSES.map((s) => (
-                          <option key={s} value={s} className="bg-gray-900 text-gray-200">{s}</option>
-                        ))}
-                      </select>
+                      </div>
                     </td>
 
                     {/* Date */}

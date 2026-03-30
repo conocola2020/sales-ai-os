@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo, memo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Sparkles, Loader2, Check, X, Globe, Mail, Send,
   ChevronDown, ChevronUp, RefreshCw, Save, CheckSquare, Square, Zap,
@@ -85,6 +86,7 @@ export default function BulkGeneratePanel({
   onTemplateChange,
   initialSelectedIds,
 }: BulkGeneratePanelProps) {
+  const router = useRouter()
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(
     new Set(initialSelectedIds ?? [])
   )
@@ -288,35 +290,40 @@ export default function BulkGeneratePanel({
     setIsSavingAll(true)
     setIsQueuingAll(true)
     const targets = results.filter(r => !r.error && r.body && !r.queued)
-    for (const result of targets) {
-      // Save
-      if (!result.saved) {
-        const { error } = await saveMessage({
+    // Promise.all で並列処理（全件同時に送信）
+    await Promise.all(
+      targets.map(async (result) => {
+        // Save（未保存の場合のみ）
+        if (!result.saved) {
+          const { error } = await saveMessage({
+            lead_id: result.leadId,
+            subject: result.subject || null,
+            content: result.body,
+            tone,
+          })
+          if (!error) {
+            setResults(prev => prev.map(r =>
+              r.leadId === result.leadId ? { ...r, saved: true } : r
+            ))
+          }
+        }
+        // Queue
+        const { error: qErr } = await addToQueue({
           lead_id: result.leadId,
-          subject: result.subject || null,
-          content: result.body,
-          tone,
+          message_content: result.body,
+          subject: result.subject || undefined,
         })
-        if (!error) {
+        if (!qErr) {
           setResults(prev => prev.map(r =>
-            r.leadId === result.leadId ? { ...r, saved: true } : r
+            r.leadId === result.leadId ? { ...r, queued: true } : r
           ))
         }
-      }
-      // Queue
-      const { error: qErr } = await addToQueue({
-        lead_id: result.leadId,
-        message_content: result.body,
-        subject: result.subject || undefined,
       })
-      if (!qErr) {
-        setResults(prev => prev.map(r =>
-          r.leadId === result.leadId ? { ...r, queued: true } : r
-        ))
-      }
-    }
+    )
     setIsSavingAll(false)
     setIsQueuingAll(false)
+    // 完了後に送信管理画面へ自動遷移
+    router.push('/dashboard/sending')
   }
 
   const successCount = results.filter(r => !r.error && r.body).length

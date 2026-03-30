@@ -1,10 +1,10 @@
 'use client'
 
-import { Eye, CheckCircle2, XCircle, Send } from 'lucide-react'
+import { Eye, CheckCircle2, XCircle, Send, AlertTriangle } from 'lucide-react'
 import type { SendStats } from '@/types/sending'
 import clsx from 'clsx'
 
-type Tab = '全て' | '確認待ち' | '送信済み' | '失敗'
+type Tab = '全て' | '確認待ち' | '手動対応' | '送信済み' | '失敗'
 
 interface StatCardProps {
   label: string
@@ -16,19 +16,25 @@ interface StatCardProps {
   border: string
   isActive: boolean
   onClick: () => void
+  urgent?: boolean
 }
 
-function StatCard({ label, value, icon, color, bg, border, isActive, onClick }: StatCardProps) {
+function StatCard({ label, value, icon, color, bg, border, isActive, onClick, urgent }: StatCardProps) {
   return (
     <button
       onClick={onClick}
       className={clsx(
-        'rounded-xl border p-4 flex items-center gap-4 transition-all cursor-pointer text-left w-full',
+        'rounded-xl border p-4 flex items-center gap-4 transition-all cursor-pointer text-left w-full relative',
         isActive
           ? clsx(bg, border, 'ring-2 ring-offset-1 ring-offset-gray-950', border.replace('/20', '/50'))
           : clsx(bg, border, 'hover:brightness-125 opacity-70 hover:opacity-100')
       )}
     >
+      {urgent && value > 0 && (
+        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+          <span className="text-[9px] font-bold text-gray-900">{value}</span>
+        </span>
+      )}
       <div className={clsx('w-10 h-10 rounded-lg flex items-center justify-center', bg, 'border', border)}>
         <span className={color}>{icon}</span>
       </div>
@@ -48,7 +54,7 @@ interface StatsPanelProps {
 
 export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanelProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
       <StatCard
         label="合計"
         tab="全て"
@@ -70,6 +76,18 @@ export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanel
         border="border-amber-500/20"
         isActive={activeTab === '確認待ち'}
         onClick={() => onTabChange('確認待ち')}
+      />
+      <StatCard
+        label="手動対応"
+        tab="手動対応"
+        value={stats.manual}
+        icon={<AlertTriangle className="w-4 h-4" />}
+        color="text-yellow-400"
+        bg="bg-yellow-500/10"
+        border="border-yellow-500/20"
+        isActive={activeTab === '手動対応'}
+        onClick={() => onTabChange('手動対応')}
+        urgent
       />
       <StatCard
         label="送信済み"

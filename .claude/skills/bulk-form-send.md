@@ -1,0 +1,216 @@
+---
+name: bulk-form-send
+description: >
+  Use when the user says something like "確認待ち全てをフォーム送信して",
+  "送信して", "フォーム送信して", or asks to send pending queue items.
+  This skill automates bulk contact form submission using Claude in Chrome.
+---
+
+# 一括フォーム送信スキル
+
+ユーザーが「確認待ち全てをフォーム送信して」などと指示したら、このスキルに従って自動送信を実行する。
+
+## 前提ツール
+- `mcp__cab03130-b6e4-4398-a37d-c01309686a60__execute_sql` (Supabase SQL)
+- `mcp__Claude_in_Chrome__*` (ブラウザ操作)
+- `mcp__Claude_in_Chrome__tabs_context_mcp` を最初に必ず呼ぶ
+
+## Supabase プロジェクトID
+`kaqhjlmftxvjjbmcuoyq`
+
+---
+
+## Step 1: ユーザープロフィール取得
+
+```sql
+SELECT
+  representative,
+  representative_title,
+  company_name,
+  company_email,
+  company_phone,
+  company_location
+FROM user_settings
+LIMIT 1;
+```
+
+- データが空（rows: 0 または全カラムが空文字）の場合：
+  - ユーザーに「設定ページ（/dashboard/settings）で送信者情報（氏名・メールアドレス・会社名）を入力してください。フォームの差出人欄に使用します。」と伝えて停止する。
+
+---
+
+## Step 2: 確認待ちアイテム取得
+
+```sql
+SELECT
+  sq.id,
+  sq.message_content,
+  sq.subject,
+  sq.send_method,
+  l.company_name,
+  l.contact_name,
+  l.email       AS lead_email,
+  l.website_url,
+  l.company_url
+FROM send_queue sq
+JOIN leads l ON l.id = sq.lead_id
+WHERE sq.status = '確認待ち'
+ORDER BY sq.created_at ASC;
+```
+
+- 0件の場合：「確認待ちのアイテムはありません。」と伝えて終了。
+- 件数をユーザーに報告する（例：「確認待ちが3件あります。順番に送信します。」）
+
+---
+
+## Step 3: タブ準備
+
+```
+tabs_context_mcp で既存タブを確認
+→ 新しいタブを tabs_create_mcp で作成して使用する
+```
+
+---
+
+## Step 4: 各アイテムをループ処理
+
+各アイテムについて以下を実行する。
+
+### 4-1. フォームページを探す
+
+1. `website_url` または `company_url` が存在すれば、そのURLに `navigate`
+2. ページを `read_page (filter: interactive)` で読み取る
+3. リンクの中から「お問い合わせ」「contact」「toiawase」「inquiry」を含むリンクを探してナビゲート
+4. それでも見つからない場合は以下のパスを順に試す：
+   ```
+   /contact  /contact/  /toiawase/  /inquiry/
+   /お問い合わせ  /form/  /contact-us/  /contactus/
+   ```
+5. 各パスに `navigate` してから `read_page (filter: interactive)` で `<input>` や `<textarea>` が存在するか確認
+6. フォームが見つかった場合 → Step 4-2 へ
+7. 全パスを試してもフォームが見つからない場合：
+   ```sql
+   UPDATE send_queue SET status = 'form_not_found', updated_at = NOW()
+   WHERE id = '{アイテムのid}';
+   ```
+   ユーザーに報告して次のアイテムへ
+
+### 4-2. フォームフィールドの分析
+
+`read_page (filter: all)` でフォーム構造を取得する。
+
+フィールドのラベルと `ref_id` のマッピングを行う：
+
+| フォームのラベル | 入力する値 |
+|---|---|
+| 名前・お名前・姓名・氏名・担当者名 | `representative`（姓名）または姓/名に分割 |
+| 姓・苗字・last name | `representative` の姓部分（スペース前） |
+| 名・first name | `representative` の名部分（スペース後） |
+| 会社名・法人名・御社名 | `company_name` |
+| メールアドレス・email・メール | `company_email` |
+| メールアドレス（確認）・確認用メール | `company_email`（同じ値） |
+| 電話番号・TEL・tel | `company_phone` |
+| 郵便番号 | `company_location` の郵便番号部分（あれば）。なければスキップ |
+| 住所・ご住所 | `company_location`（あれば）。なければスキップ |
+| 件名・タイトル・subject | `subject`（あれば）。なければ会社名を使った件名 |
+| メッセージ・お問い合わせ内容・本文・備考・ご要望 | `message_content` |
+| 性別 | スキップ（選択不要）またはデフォルトのまま |
+
+### 4-3. フィールド入力
+
+マッピングした各フィールドに `form_input` で入力する。
+
+- `type="hidden"` のフィールドはスキップ
+- `type="radio"` はスキップ（デフォルトのまま）または性別に関係するラジオのみスキップ
+- `type="checkbox"` で「送信確認」「同意」「プライバシーポリシー同意」などのラベルがあれば `true` でチェック
+- CAPTCHA（reCAPTCHA v2 画像選択、hCaptchaなど）を検出したら：
+  - **手動対応としてマークして次のアイテムへスキップする**：
+  ```sql
+  UPDATE send_queue
+  SET status = '手動対応',
+      error_message = 'CAPTCHAが検出されました。送信管理の「手動対応」ボックスから手動で送信してください。',
+      updated_at = NOW()
+  WHERE id = '{アイテムのid}';
+  ```
+- フォームの構造が複雑すぎてフィールドマッピングが困難な場合も同様に手動対応へ：
+  ```sql
+  UPDATE send_queue
+  SET status = '手動対応',
+      error_message = 'フォームの構造が複雑なため自動入力できませんでした。手動での送信をお願いします。',
+      updated_at = NOW()
+  WHERE id = '{アイテムのid}';
+  ```
+
+### 4-4. 送信前確認
+
+入力完了後、スクリーンショットを撮って入力内容を確認する。
+
+送信ボタン（`type="submit"` または「送信」「送る」「確認」「次へ」テキストのボタン）を特定する。
+
+**送信を実行する**：
+```
+computer ツールの left_click で送信ボタンをクリック
+```
+
+### 4-5. 送信結果の確認
+
+送信後3秒待機してからスクリーンショットを撮る。
+
+成功判定（以下のいずれかが当てはまれば成功）：
+- ページに「ありがとう」「送信完了」「お問い合わせを受け付け」「thank」「complete」「完了」が含まれる
+- URLが変わった（フォームページから別ページへ遷移した）
+- フォームのフィールドが消えた
+
+失敗判定（以下のいずれかが当てはまれば失敗）：
+- バリデーションエラー（赤いテキスト、エラーメッセージ）が表示されている
+- フォームがそのまま残っている（変化なし）
+
+### 4-6. ステータス更新
+
+**成功の場合：**
+```sql
+UPDATE send_queue
+SET status = '送信済み', sent_at = NOW(), updated_at = NOW()
+WHERE id = '{アイテムのid}';
+
+UPDATE leads
+SET status = '送信済み', updated_at = NOW()
+WHERE id = (SELECT lead_id FROM send_queue WHERE id = '{アイテムのid}');
+```
+
+**失敗の場合：**
+```sql
+UPDATE send_queue
+SET status = '失敗', error_message = '{エラーの内容}', updated_at = NOW()
+WHERE id = '{アイテムのid}';
+```
+
+---
+
+## Step 5: 完了レポート
+
+全アイテムの処理完了後、以下の形式でレポートする：
+
+```
+送信完了レポート
+━━━━━━━━━━━━━━━━━━━━
+✅ 送信成功: X件
+❌ 失敗: X件
+⚠️ フォーム未検出: X件
+
+【成功】
+- 株式会社○○
+- ○○サービス
+
+【失敗・要確認】
+- △△株式会社 → エラー内容
+```
+
+---
+
+## 注意事項
+
+- 各アイテムの処理間に1〜2秒のウェイトを入れる（サーバー負荷対策）
+- 同じタブを使い回す（毎回新しいタブを開かない）
+- エラーが発生しても次のアイテムの処理を続ける（1件失敗しても全体を止めない）
+- ユーザーのプライバシー情報（メール・電話など）はフォーム入力にのみ使用し、ログや出力には表示しない
