@@ -512,9 +512,10 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
         await handleCookieBanner(page)
         await delay(500)
 
-        // スクリーンショットを撮ってClaudeに分析させる（fullPageで全体取得）
+        // スクリーンショットを撮ってClaudeに分析させる
+        // ※ Claude APIの5MB制限のためfullPage: false（ビューポートのみ）
         console.log(`  📸 Claude Vision分析中... (depth=${navigateDepth})`)
-        const screenshotBuf = await page.screenshot({ fullPage: true })
+        const screenshotBuf = await page.screenshot({ fullPage: false })
         const screenshot = screenshotBuf.toString('base64')
         analysis = await analyzePageWithClaude(screenshot, currentUrl)
 
@@ -530,8 +531,8 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
             if (el) el.click()
           }, analysis.cookieBannerAcceptText)
           await delay(1000)
-          // 再スクリーンショット
-          const ss2Buf = await page.screenshot({ fullPage: true })
+          // 再スクリーンショット（Claude API用なのでfullPage: false）
+          const ss2Buf = await page.screenshot({ fullPage: false })
           analysis = await analyzePageWithClaude(ss2Buf.toString('base64'), currentUrl)
         }
 
