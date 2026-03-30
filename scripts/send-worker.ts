@@ -579,12 +579,41 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
             console.log(`  🔗 DOM検索でリンク発見: ${contactLink}`)
             currentUrl = contactLink
           } else {
-            // form_not_found
-            await supabase.from('send_queue').update({
-              status: 'form_not_found',
-              error_message: `お問い合わせフォームが見つかりませんでした (${currentUrl})。手動での対応が必要です。`,
-            }).eq('id', item.id)
-            return { success: false, error: 'form_not_found' }
+            // よくある問い合わせページのパスを順番に試す
+            const origin = new URL(currentUrl).origin
+            const CONTACT_PATHS = [
+              '/contact', '/contact/', '/inquiry', '/inquiry/',
+              '/toiawase', '/toiawase/', '/otoiawase', '/otoiawase/',
+              '/contact-us', '/contactus', '/form', '/form/',
+              '/mail', '/mail/', '/support', '/ask',
+              '/お問い合わせ', '/問い合わせ',
+            ]
+            let foundByPath = false
+            for (const path of CONTACT_PATHS) {
+              const tryUrl = origin + path
+              try {
+                const res = await page.goto(tryUrl, { waitUntil: 'domcontentloaded', timeout: 8000 })
+                if (res && res.ok()) {
+                  const hasForm = await page.evaluate(() =>
+                    !!(document.querySelector('form') || document.querySelector('textarea') || document.querySelector('input[type="email"]'))
+                  )
+                  if (hasForm) {
+                    console.log(`  🔗 共通パスでフォーム発見: ${tryUrl}`)
+                    currentUrl = tryUrl
+                    foundByPath = true
+                    break
+                  }
+                }
+              } catch { /* 次のパスへ */ }
+            }
+
+            if (!foundByPath) {
+              await supabase.from('send_queue').update({
+                status: 'form_not_found',
+                error_message: `お問い合わせフォームが見つかりませんでした (${currentUrl})。手動での対応が必要です。`,
+              }).eq('id', item.id)
+              return { success: false, error: 'form_not_found' }
+            }
           }
         }
 
