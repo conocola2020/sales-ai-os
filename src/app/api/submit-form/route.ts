@@ -56,10 +56,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // ステータスを確認待ちに更新（ワーカーが拾う）
+    // ユーザーが送信を承認 → 送信承認済みに変更してワーカーにトリガー
+    // （確認待ち = レビュー中、送信承認済み = ワーカーが処理する）
     const { error: updateError } = await supabase
       .from('send_queue')
-      .update({ status: '確認待ち' })
+      .update({ status: '送信承認済み', updated_at: new Date().toISOString(), retry_count: 0 })
       .eq('id', queueItemId)
       .eq('user_id', user.id)
 

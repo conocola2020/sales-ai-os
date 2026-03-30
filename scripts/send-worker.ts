@@ -820,7 +820,7 @@ async function pollAndProcess() {
           id, user_id, lead_id, message_content, send_method, form_url,
           lead:lead_id (company_name, contact_name, email, website_url, company_url)
         `)
-        .eq('status', '確認待ち')
+        .eq('status', '送信承認済み')
         .order('created_at', { ascending: true })
         .limit(10)
 

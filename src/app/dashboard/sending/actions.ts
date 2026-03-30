@@ -295,7 +295,7 @@ export async function retryQueueItem(
   const { error } = await supabase
     .from('send_queue')
     .update({
-      status: '確認待ち',
+      status: '送信承認済み',
       error_message: null,
       retry_count: (current.retry_count as number) + 1,
     })
