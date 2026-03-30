@@ -156,10 +156,18 @@ async function analyzePageWithClaude(screenshotBase64: string, currentUrl: strin
   "notes": "補足事項"
 }
 
+セレクタの優先順位（重要）:
+1. name属性: input[name="xxx"] または textarea[name="xxx"]
+2. id属性: #xxx または input[id="xxx"]
+3. class属性（ユニークなもの）: .xxx
+- スクリーンショットに見えるフォームフィールドのHTML属性（name/id）を正確に読み取ること
+- 複数の候補がある場合は最もユニークなセレクタを選ぶ
+- セレクタが存在しない場合は必ずnullを返す（空文字列は不可）
+
 重要な判断基準:
 - ホテルの宿泊予約フォーム・レストラン予約フォームはisContactForm=false
 - 問い合わせ・お問い合わせ専用ページのみisContactForm=true
-- セレクタはできるだけ具体的に（name属性 > id属性 > class属性の順で優先）`
+- emailフィールドとbodyフィールドは必ず特定すること（最重要）`
 
   const response = await anthropic.messages.create({
     model: 'claude-opus-4-5',
@@ -220,6 +228,11 @@ async function fillFormWithSelectors(
         await el.click()
         await delay(100)
         await el.fill(value)
+        // 入力後に値が実際に入ったか確認（ログのみ、強制書き込みはしない）
+        const actualValue = await el.evaluate(e => (e as HTMLInputElement).value ?? '')
+        if (!actualValue) {
+          console.log(`  ⚠️ ${selectorKey} 入力後の値が空 (${selector}): セレクタを見直してください`)
+        }
       }
       filled.push(selectorKey)
     } catch (e) {
@@ -258,6 +271,87 @@ async function fillFormWithSelectors(
   }
 
   return { filled, skipped }
+}
+
+// ─── サンクスページ待機（ポーリング）────────────
+
+async function waitForThankYouContent(page: import('playwright').Page): Promise<boolean> {
+  const thankYouPatterns = [
+    'ありがとうございます', 'ありがとうございました', 'ありがとう',
+    '送信完了', '送信しました', '送信いたしました',
+    '受け付けました', '受付完了', 'お問い合わせを受け付け', '承りました',
+    'お問い合わせを承り', 'お問い合わせいただき',
+    '確認のメールを', 'メールをお送り',
+    'thank you', 'thanks', 'successfully', 'submitted', 'complete',
+  ]
+
+  const maxWaitMs = 10000
+  const pollIntervalMs = 500
+  let elapsed = 0
+
+  while (elapsed < maxWaitMs) {
+    try {
+      const pageText = await page.evaluate(() =>
+        (document.body.innerText || '').substring(0, 2000).toLowerCase()
+      )
+      for (const pattern of thankYouPatterns) {
+        if (pageText.includes(pattern.toLowerCase())) {
+          console.log(`  ✅ サンクスページ検出 ("${pattern}") - ${elapsed}ms`)
+          await delay(1000) // アニメーション描画を待つ
+          return true
+        }
+      }
+    } catch { /* ページ遷移中は無視 */ }
+    await delay(pollIntervalMs)
+    elapsed += pollIntervalMs
+  }
+
+  console.log('  ⚠️ サンクスページ未検出（10秒タイムアウト）')
+  return false
+}
+
+// ─── バリデーションエラー検出 ────────────────
+
+async function detectValidationErrors(page: import('playwright').Page): Promise<string | null> {
+  const errors = await page.evaluate(() => {
+    const messages: string[] = []
+
+    // CSS classベースのエラー検出
+    const errorSelectors = [
+      '.error:not([style*="display: none"])',
+      '.err:not([style*="display: none"])',
+      '.validation-error',
+      '.form-error',
+      '.alert-danger',
+      '.alert-error',
+      '.invalid-feedback',
+      '[class*="error"]:not([style*="display: none"])',
+      '[class*="invalid"]:not([style*="display: none"])',
+      '.mw_wp_form_error',
+    ]
+    for (const sel of errorSelectors) {
+      try {
+        document.querySelectorAll(sel).forEach(el => {
+          const text = (el as HTMLElement).innerText?.trim()
+          if (text && text.length > 0 && text.length < 200) messages.push(text)
+        })
+      } catch { /* ignore */ }
+    }
+
+    // :invalid 擬似クラスのフィールド検出
+    const invalidFields = Array.from(document.querySelectorAll('input:invalid, textarea:invalid, select:invalid')) as HTMLElement[]
+    if (invalidFields.length > 0) {
+      messages.push(`未入力の必須フィールドあり (${invalidFields.length}件)`)
+    }
+
+    return [...new Set(messages)].slice(0, 5)
+  })
+
+  if (errors.length > 0) return errors.join(', ')
+
+  // NOTE: テキストキーワード判定は静的ラベル（「入力してください」等）と
+  // 誤検知するため使用しない。CSSクラスと:invalidのみで判定する。
+  return null
 }
 
 // ─── 確認画面の「送信する」ボタンをクリック ──
@@ -418,9 +512,9 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
         await handleCookieBanner(page)
         await delay(500)
 
-        // スクリーンショットを撮ってClaudeに分析させる
+        // スクリーンショットを撮ってClaudeに分析させる（fullPageで全体取得）
         console.log(`  📸 Claude Vision分析中... (depth=${navigateDepth})`)
-        const screenshotBuf = await page.screenshot({ fullPage: false })
+        const screenshotBuf = await page.screenshot({ fullPage: true })
         const screenshot = screenshotBuf.toString('base64')
         analysis = await analyzePageWithClaude(screenshot, currentUrl)
 
@@ -437,7 +531,7 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
           }, analysis.cookieBannerAcceptText)
           await delay(1000)
           // 再スクリーンショット
-          const ss2Buf = await page.screenshot({ fullPage: false })
+          const ss2Buf = await page.screenshot({ fullPage: true })
           analysis = await analyzePageWithClaude(ss2Buf.toString('base64'), currentUrl)
         }
 
@@ -529,8 +623,9 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
 
       if (submitSelector) {
         try {
-          const el = await page.$(submitSelector)
-          if (el && await el.isVisible()) {
+          // waitForSelectorで表示されるまで最大3秒待つ
+          const el = await page.waitForSelector(submitSelector, { state: 'visible', timeout: 3000 }).catch(() => null)
+          if (el) {
             await el.scrollIntoViewIfNeeded()
             await delay(300)
             await el.click()
@@ -541,43 +636,85 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
       }
 
       if (!submitted) {
-        // フォールバック: テキストマッチ
+        // フォールバック1: type="submit" を優先
+        const submitBtns = [
+          'button[type="submit"]',
+          'input[type="submit"]',
+        ]
+        for (const sel of submitBtns) {
+          const el = await page.$(sel)
+          if (el && await el.isVisible()) {
+            await el.scrollIntoViewIfNeeded()
+            await el.click()
+            submitted = true
+            console.log(`  🚀 送信ボタンクリック (type=submit: ${sel})`)
+            break
+          }
+        }
+      }
+
+      if (!submitted) {
+        // フォールバック2: テキストマッチ
         submitted = await page.evaluate(() => {
-          const kws = ['確認する', '送信する', '送信', 'submit', 'Submit']
-          const els = Array.from(document.querySelectorAll('button[type="submit"], input[type="submit"], button')) as HTMLElement[]
+          const kws = ['確認する', '送信する', '送信', 'submit', 'Submit', 'この内容で送信', '上記内容で送信']
+          const excludeKws = ['戻る', 'キャンセル', 'リセット', 'reset', 'cancel']
+          const els = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"]')) as HTMLElement[]
           for (const el of els) {
-            const text = ((el as HTMLButtonElement).textContent || (el as HTMLInputElement).value || '').trim()
-            if (kws.some(kw => text.includes(kw)) && el.getBoundingClientRect().height > 0) {
-              el.click()
-              return true
-            }
+            const text = ((el as HTMLButtonElement).textContent || (el as HTMLInputElement).value || '').trim().replace(/\s+/g, '')
+            if (!el.getBoundingClientRect().height) continue
+            if (excludeKws.some(kw => text.includes(kw))) continue
+            if (kws.some(kw => text.includes(kw))) { el.click(); return true }
           }
           return false
         })
-        if (submitted) console.log('  🚀 送信ボタンクリック (フォールバック)')
+        if (submitted) console.log('  🚀 送信ボタンクリック (テキストマッチ)')
       }
 
       if (!submitted) {
         return { success: false, error: '送信ボタンが見つかりませんでした' }
       }
 
+      // ページ遷移またはDOM更新を待つ（最大5秒）
+      await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => {})
+
+      // 送信直後のバリデーションエラーチェック
+      await delay(500)
+      const validationError = await detectValidationErrors(page)
+      if (validationError) {
+        console.log(`  ❌ バリデーションエラー検出: ${validationError}`)
+        // エラー時のスクリーンショット保存
+        try {
+          const errBuf = await page.screenshot({ fullPage: true })
+          const errFilename = `form-submissions/${item.id}_error_${Date.now()}.png`
+          await supabase.storage.from('screenshots').upload(errFilename, errBuf, { contentType: 'image/png' })
+          const { data: errUrlData } = supabase.storage.from('screenshots').getPublicUrl(errFilename)
+          await supabase.from('send_queue').update({ screenshot_url: errUrlData.publicUrl }).eq('id', item.id)
+        } catch { /* ignore */ }
+        return { success: false, error: `バリデーションエラー: ${validationError}` }
+      }
+
       // 確認画面への対応
-      await delay(2000)
+      await delay(500)
       await handleConfirmPage(page)
       await delay(2000)
 
-      // 送信完了判定
+      // 送信完了判定: まずポーリングでサンクスページを待つ
+      const foundThankYou = await waitForThankYouContent(page)
       const finalUrl = page.url()
+      const urlChanged = finalUrl !== formUrl
+
+      // ページ全体のテキストを取得して最終判定
       const completionCheck = await page.evaluate(() => {
         const text = document.body.innerText || ''
         const successKws = [
-          'ありがとうございます', 'ありがとう', '送信完了', '送信しました',
+          'ありがとうございます', 'ありがとうございました', 'ありがとう',
+          '送信完了', '送信しました', '送信いたしました',
           '受付けました', '受け付けました', '受付完了', 'お問い合わせを受け付け',
-          '完了しました', '送信いたしました', 'お問い合わせを承り', '承りました',
+          '完了しました', 'お問い合わせを承り', '承りました',
           'お問い合わせいただき', '確認のメールを', 'メールをお送り',
-          'thank you', 'submitted', 'success', 'complete',
+          'thank you', 'thanks', 'submitted', 'success', 'complete',
         ]
-        const errorKws = ['エラー', '入力してください', '必須', '正しく入力', 'error', 'required', 'invalid']
+        const errorKws = ['エラーが発生', '入力してください', '必須項目', '正しく入力', '形式が正しくありません']
         return {
           foundSuccess: successKws.filter(kw => text.toLowerCase().includes(kw.toLowerCase())),
           foundError: errorKws.filter(kw => text.includes(kw)),
@@ -585,16 +722,16 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
         }
       })
 
-      const hasSuccessText = completionCheck.foundSuccess.length > 0
+      const hasSuccessText = foundThankYou || completionCheck.foundSuccess.length > 0
       const hasErrorText = completionCheck.foundError.length > 0
-      const urlChanged = finalUrl !== formUrl
 
-      console.log(`  📊 完了テキスト: ${hasSuccessText ? completionCheck.foundSuccess.join(', ') : 'なし'}`)
+      console.log(`  📊 完了テキスト: ${hasSuccessText ? completionCheck.foundSuccess.join(', ') || 'ポーリング検出' : 'なし'}`)
       console.log(`  📊 エラーテキスト: ${hasErrorText ? completionCheck.foundError.join(', ') : 'なし'}`)
+      console.log(`  📊 URL変化: ${urlChanged ? `${formUrl} → ${finalUrl}` : 'なし'}`)
 
-      // スクリーンショット保存
+      // スクリーンショット保存（fullPageで全体を記録）
       try {
-        const buffer = await page.screenshot({ fullPage: false })
+        const buffer = await page.screenshot({ fullPage: true })
         const filename = `form-submissions/${item.id}_${Date.now()}.png`
         await supabase.storage.from('screenshots').upload(filename, buffer, { contentType: 'image/png' })
         const { data: urlData } = supabase.storage.from('screenshots').getPublicUrl(filename)
