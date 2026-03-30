@@ -538,29 +538,43 @@ async function sendForm(item: QueueItem): Promise<{ success: boolean; error?: st
 
         if (analysis.isContactForm) {
           console.log(`  ✅ お問い合わせフォームを確認`)
+          // フォームが見つかったがセレクタが不十分な場合、スクロールして再分析
+          const hasKeySelectors = analysis.selectors?.email && analysis.selectors?.body
+          if (!hasKeySelectors) {
+            console.log(`  🔄 email/bodyセレクタ未取得。スクロールして再分析...`)
+            await page.evaluate(() => window.scrollTo(0, 300))
+            await delay(500)
+            const reSsBuf = await page.screenshot({ fullPage: false })
+            const reAnalysis = await analyzePageWithClaude(reSsBuf.toString('base64'), currentUrl)
+            if (reAnalysis.isContactForm && (reAnalysis.selectors?.email || reAnalysis.selectors?.body)) {
+              analysis = reAnalysis
+              console.log(`  ✅ 再分析でセレクタ取得成功`)
+            }
+          }
           break
         }
 
         // お問い合わせページではない → リンクを辿る
         if (analysis.contactPageUrl) {
           console.log(`  🔗 お問い合わせページへ遷移: ${analysis.contactPageUrl} ("${analysis.contactPageLinkText}")`)
-          // ページ内のリンクをクリックするか、URLに直接移動
-          const linked = await page.evaluate((url: string) => {
-            const a = Array.from(document.querySelectorAll('a[href]')).find(
-              el => (el as HTMLAnchorElement).href === url
-            ) as HTMLAnchorElement | undefined
-            if (a) { a.click(); return true }
-            return false
-          }, analysis.contactPageUrl)
+          // URLに直接移動して404チェック
+          let navOk = false
+          try {
+            const res = await page.goto(analysis.contactPageUrl, { waitUntil: 'domcontentloaded', timeout: 15000 })
+            navOk = !!(res && res.ok())
+          } catch { navOk = false }
 
-          if (!linked) {
-            // リンクが見つからなければURLに直接移動
-            currentUrl = analysis.contactPageUrl
-          } else {
-            await delay(2000)
+          if (navOk) {
+            await delay(1500)
             currentUrl = page.url()
+          } else {
+            // 404 or error → 共通パスフォールバックへ直行
+            console.log(`  ⚠️ ${analysis.contactPageUrl} が存在しません。共通パスを試します`)
+            analysis.contactPageUrl = undefined // 次のelseブランチへ
           }
-        } else {
+        }
+
+        if (!analysis.contactPageUrl) {
           // Claudeもリンクを特定できなかった → DOM内のお問い合わせリンクを探す
           const contactLink = await page.evaluate(() => {
             const kws = ['お問い合わせ', '問い合わせ', 'contact', 'inquiry', 'toiawase']
