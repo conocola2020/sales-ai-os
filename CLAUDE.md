@@ -6,9 +6,10 @@
 ## 利用可能なスキル
 
 ### bulk-form-send
-**トリガー**: 「確認待ち全てをフォーム送信して」「送信して」「フォーム送信して」などの指示
-**内容**: send_queue の確認待ちアイテムを Claude in Chrome で自動フォーム送信する
+**トリガー**: 「送信して」「フォーム送信して」「確認待ち全てをフォーム送信して」などの指示
+**内容**: send_queue の確認待ちアイテムを **Claude in Chrome** で自動フォーム送信する
 **スキルファイル**: `.claude/skills/bulk-form-send.md`
+**⚠️ 重要**: `/api/submit-form` やRailwayワーカーは**絶対に使わない**。必ず `mcp__Claude_in_Chrome__*` ツールを使う。
 
 ## Supabase
 - Project ID: `kaqhjlmftxvjjbmcuoyq`

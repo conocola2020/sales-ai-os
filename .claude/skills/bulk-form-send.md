@@ -8,11 +8,16 @@ description: >
 
 # 一括フォーム送信スキル
 
-ユーザーが「確認待ち全てをフォーム送信して」などと指示したら、このスキルに従って自動送信を実行する。
+ユーザーが「送信して」「フォーム送信して」などと指示したら、このスキルに従って自動送信を実行する。
+
+## ⚠️ 絶対に守るルール
+- **`/api/submit-form` は絶対に呼ばない**（Railwayワーカーは使用禁止）
+- **必ず `mcp__Claude_in_Chrome__*` ツールでMacのChromeを直接操作する**
+- Sales AI OSのUIボタンや既存APIは一切使わない
 
 ## 前提ツール
 - `mcp__cab03130-b6e4-4398-a37d-c01309686a60__execute_sql` (Supabase SQL)
-- `mcp__Claude_in_Chrome__*` (ブラウザ操作)
+- `mcp__Claude_in_Chrome__*` (ブラウザ操作) ← **これのみ使用**
 - `mcp__Claude_in_Chrome__tabs_context_mcp` を最初に必ず呼ぶ
 
 ## Supabase プロジェクトID
