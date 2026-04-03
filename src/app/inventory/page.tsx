@@ -460,25 +460,45 @@ export default function InventoryPage() {
     const { active, over } = event
     if (!over || active.id === over.id) return
 
-    const oldIndex = items.findIndex((i) => i.id === active.id)
-    const newIndex = items.findIndex((i) => i.id === over.id)
+    const list = isFiltering ? filtered : items
+    const oldIndex = list.findIndex((i) => i.id === active.id)
+    const newIndex = list.findIndex((i) => i.id === over.id)
     if (oldIndex === -1 || newIndex === -1) return
 
-    const reordered = arrayMove(items, oldIndex, newIndex)
-    // Optimistic update
-    setItems(reordered)
+    if (isFiltering) {
+      // Reorder within filtered subset, then rebuild full items list
+      const reorderedFiltered = arrayMove(list, oldIndex, newIndex)
+      const filteredIds = new Set(reorderedFiltered.map((i) => i.id))
+      const nonFiltered = items.filter((i) => !filteredIds.has(i.id))
+      const merged = [...reorderedFiltered, ...nonFiltered]
+      // Reassign sort_order for all
+      const updated = merged.map((item, index) => ({ ...item, sort_order: index }))
+      setItems(updated)
 
-    // Save new order to Supabase
-    const updates = reordered.map((item, index) => ({
-      id: item.id,
-      sort_order: index,
-    }))
+      const updates = updated.map((item, index) => ({
+        id: item.id,
+        sort_order: index,
+      }))
+      try {
+        await updateSortOrder(updates)
+      } catch (err) {
+        console.error('Sort order update failed:', err)
+        await fetchItems()
+      }
+    } else {
+      const reordered = arrayMove(items, oldIndex, newIndex)
+      setItems(reordered)
 
-    try {
-      await updateSortOrder(updates)
-    } catch (err) {
-      console.error('Sort order update failed:', err)
-      await fetchItems()
+      const updates = reordered.map((item, index) => ({
+        id: item.id,
+        sort_order: index,
+      }))
+      try {
+        await updateSortOrder(updates)
+      } catch (err) {
+        console.error('Sort order update failed:', err)
+        await fetchItems()
+      }
     }
   }
 
@@ -553,11 +573,6 @@ export default function InventoryPage() {
               ))}
             </select>
           </div>
-          {isFiltering && (
-            <p className="text-gray-500 text-xs mt-2">
-              フィルター中は並び替えできません
-            </p>
-          )}
         </div>
       </div>
 
@@ -586,7 +601,7 @@ export default function InventoryPage() {
                   key={item.id}
                   item={item}
                   isLow={isLowStock(item)}
-                  isDragDisabled={isFiltering}
+                  isDragDisabled={false}
                   onStockChange={handleStockChange}
                   onEdit={(i) => {
                     setEditItem(i)
