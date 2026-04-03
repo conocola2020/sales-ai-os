@@ -279,14 +279,22 @@ export default function InventoryPage() {
     location: 'shop' | 'workshop',
     delta: number
   ) => {
-    setActionLoading(id)
+    // Optimistic update - reflect change immediately in UI
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, [location]: Math.max(0, item[location] + delta) }
+          : item
+      )
+    )
+
     try {
       await updateStock(id, location, delta)
-      await fetchItems()
     } catch (err) {
       console.error('Stock update failed:', err)
+      // Revert on error
+      await fetchItems()
     }
-    setActionLoading(null)
   }
 
   const handleSave = async (data: FormData, id?: number) => {
@@ -440,16 +448,15 @@ export default function InventoryPage() {
                     </div>
                     <div className="flex gap-1">
                       <button
-                        disabled={actionLoading === item.id || item[loc] <= 0}
+                        disabled={item[loc] <= 0}
                         onClick={() => handleStockChange(item.id, loc, -1)}
-                        className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30 text-white text-lg flex items-center justify-center transition-colors"
+                        className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 active:bg-gray-500 disabled:opacity-30 text-white text-lg flex items-center justify-center transition-colors"
                       >
                         -
                       </button>
                       <button
-                        disabled={actionLoading === item.id}
                         onClick={() => handleStockChange(item.id, loc, 1)}
-                        className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-30 text-white text-lg flex items-center justify-center transition-colors"
+                        className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-white text-lg flex items-center justify-center transition-colors"
                       >
                         +
                       </button>
