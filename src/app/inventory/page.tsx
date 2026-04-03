@@ -8,7 +8,24 @@ import {
   addItem,
   updateItem,
   deleteItem,
+  updateSortOrder,
 } from './actions'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 // ─── PIN Auth Gate ───────────────────────────────────────────
 
@@ -22,7 +39,6 @@ function PinGate({ onAuth }: { onAuth: () => void }) {
     setLoading(true)
     setError('')
 
-    // Verify PIN via API to avoid exposing env var on client
     const res = await fetch('/api/inventory/verify-pin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -74,7 +90,7 @@ function PinGate({ onAuth }: { onAuth: () => void }) {
 
 // ─── Item Form Modal ─────────────────────────────────────────
 
-type FormData = Omit<InventoryItem, 'id' | 'updated_at'>
+type FormData = Omit<InventoryItem, 'id' | 'updated_at' | 'sort_order'>
 
 const emptyForm: FormData = {
   name: '',
@@ -223,6 +239,144 @@ function ItemFormModal({
   )
 }
 
+// ─── Sortable Item Card ──────────────────────────────────────
+
+function SortableItemCard({
+  item,
+  isLow,
+  isDragDisabled,
+  onStockChange,
+  onEdit,
+  onDelete,
+}: {
+  item: InventoryItem
+  isLow: boolean
+  isDragDisabled: boolean
+  onStockChange: (id: number, loc: 'shop' | 'workshop', delta: number) => void
+  onEdit: (item: InventoryItem) => void
+  onDelete: (id: number) => void
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id, disabled: isDragDisabled })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`bg-gray-900 border rounded-xl p-4 transition-colors ${
+        isLow ? 'border-red-500/50 bg-red-500/5' : 'border-gray-800'
+      } ${isDragging ? 'shadow-2xl shadow-violet-500/20' : ''}`}
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start gap-2">
+          {/* Drag Handle */}
+          {!isDragDisabled && (
+            <button
+              {...attributes}
+              {...listeners}
+              className="mt-0.5 text-gray-600 hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none p-1 -ml-1"
+              aria-label="並び替え"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <circle cx="5" cy="3" r="1.5" />
+                <circle cx="11" cy="3" r="1.5" />
+                <circle cx="5" cy="8" r="1.5" />
+                <circle cx="11" cy="8" r="1.5" />
+                <circle cx="5" cy="13" r="1.5" />
+                <circle cx="11" cy="13" r="1.5" />
+              </svg>
+            </button>
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-white">{item.name}</span>
+              {item.category && (
+                <span className="bg-gray-800 text-gray-400 text-xs px-2 py-0.5 rounded">
+                  {item.category}
+                </span>
+              )}
+              {isLow && (
+                <span className="text-red-400 text-xs font-medium">在庫不足</span>
+              )}
+            </div>
+            {item.note && (
+              <p className="text-gray-500 text-xs mt-0.5">{item.note}</p>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-1">
+          <button
+            onClick={() => onEdit(item)}
+            className="text-gray-500 hover:text-white text-sm px-2 py-1 rounded transition-colors"
+          >
+            編集
+          </button>
+          <button
+            onClick={() => onDelete(item.id)}
+            className="text-gray-500 hover:text-red-400 text-sm px-2 py-1 rounded transition-colors"
+          >
+            削除
+          </button>
+        </div>
+      </div>
+
+      {/* Stock Controls */}
+      <div className="grid grid-cols-2 gap-3">
+        {(['shop', 'workshop'] as const).map((loc) => (
+          <div
+            key={loc}
+            className="bg-gray-800/50 rounded-lg p-3 flex items-center justify-between"
+          >
+            <div>
+              <div className="text-xs text-gray-400">
+                {loc === 'shop' ? '店舗' : '工房'}
+              </div>
+              <div className="text-lg font-bold text-white">
+                {item[loc]}
+                <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
+              </div>
+            </div>
+            <div className="flex gap-1">
+              <button
+                disabled={item[loc] <= 0}
+                onClick={() => onStockChange(item.id, loc, -1)}
+                className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 active:bg-gray-500 disabled:opacity-30 text-white text-lg flex items-center justify-center transition-colors"
+              >
+                -
+              </button>
+              <button
+                onClick={() => onStockChange(item.id, loc, 1)}
+                className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-white text-lg flex items-center justify-center transition-colors"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {item.min_stock > 0 && (
+        <div className="mt-2 text-xs text-gray-500">
+          合計: {item.shop + item.workshop}{item.unit} / 最低: {item.min_stock}{item.unit}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main Inventory Page ─────────────────────────────────────
 
 export default function InventoryPage() {
@@ -233,9 +387,15 @@ export default function InventoryPage() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState<InventoryItem | null>(null)
-  const [actionLoading, setActionLoading] = useState<number | null>(null)
 
-  // Check sessionStorage auth on mount
+  // Drag requires activation distance to avoid conflicts with buttons
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 5 },
+    })
+  )
+
   useEffect(() => {
     if (sessionStorage.getItem('inventory_auth') === '1') {
       setAuthed(true)
@@ -259,6 +419,8 @@ export default function InventoryPage() {
 
   if (!authed) return <PinGate onAuth={() => setAuthed(true)} />
 
+  const isFiltering = filter !== '' || categoryFilter !== 'all'
+
   const categories = ['all', ...new Set(items.map((i) => i.category).filter(Boolean))]
 
   const filtered = items.filter((item) => {
@@ -279,7 +441,6 @@ export default function InventoryPage() {
     location: 'shop' | 'workshop',
     delta: number
   ) => {
-    // Optimistic update - reflect change immediately in UI
     setItems((prev) =>
       prev.map((item) =>
         item.id === id
@@ -287,12 +448,36 @@ export default function InventoryPage() {
           : item
       )
     )
-
     try {
       await updateStock(id, location, delta)
     } catch (err) {
       console.error('Stock update failed:', err)
-      // Revert on error
+      await fetchItems()
+    }
+  }
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = items.findIndex((i) => i.id === active.id)
+    const newIndex = items.findIndex((i) => i.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reordered = arrayMove(items, oldIndex, newIndex)
+    // Optimistic update
+    setItems(reordered)
+
+    // Save new order to Supabase
+    const updates = reordered.map((item, index) => ({
+      id: item.id,
+      sort_order: index,
+    }))
+
+    try {
+      await updateSortOrder(updates)
+    } catch (err) {
+      console.error('Sort order update failed:', err)
       await fetchItems()
     }
   }
@@ -308,18 +493,18 @@ export default function InventoryPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm('この商品を削除しますか？')) return
-    setActionLoading(id)
     try {
       await deleteItem(id)
       await fetchItems()
     } catch (err) {
       console.error('Delete failed:', err)
     }
-    setActionLoading(null)
   }
 
   const isLowStock = (item: InventoryItem) =>
     item.min_stock > 0 && item.shop + item.workshop <= item.min_stock
+
+  const displayItems = isFiltering ? filtered : items
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -368,6 +553,11 @@ export default function InventoryPage() {
               ))}
             </select>
           </div>
+          {isFiltering && (
+            <p className="text-gray-500 text-xs mt-2">
+              フィルター中は並び替えできません
+            </p>
+          )}
         </div>
       </div>
 
@@ -375,104 +565,38 @@ export default function InventoryPage() {
       <div className="max-w-4xl mx-auto px-4 py-4 space-y-3">
         {loading ? (
           <div className="text-center text-gray-500 py-20">読み込み中...</div>
-        ) : filtered.length === 0 ? (
+        ) : displayItems.length === 0 ? (
           <div className="text-center text-gray-500 py-20">
-            {items.length === 0 ? '商品がありません。「+ 追加」から登録してください。' : '該当する商品がありません'}
+            {items.length === 0
+              ? '商品がありません。「+ 追加」から登録してください。'
+              : '該当する商品がありません'}
           </div>
         ) : (
-          filtered.map((item) => (
-            <div
-              key={item.id}
-              className={`bg-gray-900 border rounded-xl p-4 transition-colors ${
-                isLowStock(item)
-                  ? 'border-red-500/50 bg-red-500/5'
-                  : 'border-gray-800'
-              }`}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={displayItems.map((i) => i.id)}
+              strategy={verticalListSortingStrategy}
             >
-              {/* Item Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-white">{item.name}</span>
-                    {item.category && (
-                      <span className="bg-gray-800 text-gray-400 text-xs px-2 py-0.5 rounded">
-                        {item.category}
-                      </span>
-                    )}
-                    {isLowStock(item) && (
-                      <span className="text-red-400 text-xs font-medium">
-                        在庫不足
-                      </span>
-                    )}
-                  </div>
-                  {item.note && (
-                    <p className="text-gray-500 text-xs mt-0.5">{item.note}</p>
-                  )}
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => {
-                      setEditItem(item)
-                      setShowForm(true)
-                    }}
-                    className="text-gray-500 hover:text-white text-sm px-2 py-1 rounded transition-colors"
-                  >
-                    編集
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="text-gray-500 hover:text-red-400 text-sm px-2 py-1 rounded transition-colors"
-                  >
-                    削除
-                  </button>
-                </div>
-              </div>
-
-              {/* Stock Controls */}
-              <div className="grid grid-cols-2 gap-3">
-                {(['shop', 'workshop'] as const).map((loc) => (
-                  <div
-                    key={loc}
-                    className="bg-gray-800/50 rounded-lg p-3 flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="text-xs text-gray-400">
-                        {loc === 'shop' ? '店舗' : '工房'}
-                      </div>
-                      <div className="text-lg font-bold text-white">
-                        {item[loc]}
-                        <span className="text-xs text-gray-500 ml-1">
-                          {item.unit}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <button
-                        disabled={item[loc] <= 0}
-                        onClick={() => handleStockChange(item.id, loc, -1)}
-                        className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 active:bg-gray-500 disabled:opacity-30 text-white text-lg flex items-center justify-center transition-colors"
-                      >
-                        -
-                      </button>
-                      <button
-                        onClick={() => handleStockChange(item.id, loc, 1)}
-                        className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-white text-lg flex items-center justify-center transition-colors"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Min stock info */}
-              {item.min_stock > 0 && (
-                <div className="mt-2 text-xs text-gray-500">
-                  合計: {item.shop + item.workshop}{item.unit} / 最低: {item.min_stock}{item.unit}
-                </div>
-              )}
-            </div>
-          ))
+              {displayItems.map((item) => (
+                <SortableItemCard
+                  key={item.id}
+                  item={item}
+                  isLow={isLowStock(item)}
+                  isDragDisabled={isFiltering}
+                  onStockChange={handleStockChange}
+                  onEdit={(i) => {
+                    setEditItem(i)
+                    setShowForm(true)
+                  }}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 

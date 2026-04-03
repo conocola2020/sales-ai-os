@@ -8,7 +8,7 @@ export async function getInventory(): Promise<InventoryItem[]> {
   const { data, error } = await supabase
     .from('inventory')
     .select('*')
-    .order('category')
+    .order('sort_order', { ascending: true })
     .order('name')
 
   if (error) throw new Error(error.message)
@@ -42,13 +42,37 @@ export async function updateStock(
   if (error) throw new Error(error.message)
 }
 
+export async function updateSortOrder(
+  items: { id: number; sort_order: number }[]
+): Promise<void> {
+  const supabase = await createClient()
+  for (const item of items) {
+    const { error } = await supabase
+      .from('inventory')
+      .update({ sort_order: item.sort_order })
+      .eq('id', item.id)
+    if (error) throw new Error(error.message)
+  }
+}
+
 export async function addItem(
-  item: Omit<InventoryItem, 'id' | 'updated_at'>
+  item: Omit<InventoryItem, 'id' | 'updated_at' | 'sort_order'>
 ): Promise<InventoryItem> {
   const supabase = await createClient()
+
+  // Get max sort_order to place new item at the end
+  const { data: maxRow } = await supabase
+    .from('inventory')
+    .select('sort_order')
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .single()
+
+  const nextOrder = (maxRow?.sort_order ?? 0) + 1
+
   const { data, error } = await supabase
     .from('inventory')
-    .insert(item)
+    .insert({ ...item, sort_order: nextOrder })
     .select()
     .single()
 

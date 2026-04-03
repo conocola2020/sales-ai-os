@@ -7,5 +7,6 @@ export type InventoryItem = {
   shop: number
   workshop: number
   min_stock: number
+  sort_order: number
   updated_at: string
 }
