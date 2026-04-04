@@ -1,6 +1,6 @@
 'use client'
 
-import { Copy, Save, RefreshCw, Check, Loader2, Send } from 'lucide-react'
+import { Copy, RefreshCw, Check, Loader2, Send } from 'lucide-react'
 import clsx from 'clsx'
 
 interface MessageEditorProps {
@@ -26,10 +26,8 @@ export default function MessageEditor({
   onChange,
   isStreaming,
   isSaving,
-  onSave,
   onCopy,
   onRegenerate,
-  onAddToQueue,
   onSaveAndQueue,
   copied,
   canRegenerate,
@@ -124,31 +122,7 @@ export default function MessageEditor({
             再生成
           </button>
 
-          {onAddToQueue && (
-            <button
-              onClick={onAddToQueue}
-              disabled={isStreaming || !value}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Send className="w-3.5 h-3.5" />
-              キューに追加
-            </button>
-          )}
-
           <div className="flex-1" />
-
-          <button
-            onClick={onSave}
-            disabled={isStreaming || isSaving || !value}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {isSaving ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Save className="w-3.5 h-3.5" />
-            )}
-            {isSaving ? '保存中...' : '保存のみ'}
-          </button>
 
           {onSaveAndQueue && (
             <button
@@ -161,7 +135,7 @@ export default function MessageEditor({
               ) : (
                 <Send className="w-3.5 h-3.5" />
               )}
-              {isSaving ? '処理中...' : '保存 & キュー追加'}
+              {isSaving ? '処理中...' : '確認待ちに追加'}
             </button>
           )}
         </div>
