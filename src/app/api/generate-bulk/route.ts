@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
     const systemPrompt = buildSystemPrompt(settings, template, tone)
 
     // Stream results as NDJSON（順次処理 + レート制限対策）
-    const DELAY_MS = 2000 // リクエスト間の待機時間（2秒）
+    const DELAY_MS = 1000 // リクエスト間の待機時間（1秒）
     const MAX_RETRIES = 3 // 429エラー時の最大リトライ回数
     const encoder = new TextEncoder()
     const readableStream = new ReadableStream({
