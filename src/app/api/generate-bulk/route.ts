@@ -113,8 +113,9 @@ export async function POST(req: NextRequest) {
     const client = new Anthropic({ apiKey })
     const systemPrompt = buildSystemPrompt(settings, template, tone)
 
-    // Stream results as NDJSON（並列処理 同時3件）
-    const CONCURRENCY = 3
+    // Stream results as NDJSON（順次処理 + レート制限対策）
+    const DELAY_MS = 2000 // リクエスト間の待機時間（2秒）
+    const MAX_RETRIES = 3 // 429エラー時の最大リトライ回数
     const encoder = new TextEncoder()
     const readableStream = new ReadableStream({
       async start(controller) {
@@ -125,6 +126,41 @@ export async function POST(req: NextRequest) {
           JSON.stringify({ type: 'progress', total, completed: 0 }) + '\n'
         ))
 
+        // Claude APIコール（429リトライ付き）
+        const callWithRetry = async (
+          systemMsg: string,
+          userMsg: string,
+          retries = 0
+        ): Promise<Anthropic.Message> => {
+          try {
+            return await client.messages.create({
+              model: 'claude-sonnet-4-6',
+              max_tokens: 1500,
+              system: systemMsg,
+              messages: [{ role: 'user', content: userMsg }],
+            })
+          } catch (err) {
+            const isRateLimit =
+              err instanceof Anthropic.RateLimitError ||
+              (err instanceof Error && err.message.includes('429'))
+            if (isRateLimit && retries < MAX_RETRIES) {
+              // 指数バックオフ: 10秒, 20秒, 40秒
+              const waitMs = 10000 * Math.pow(2, retries)
+              controller.enqueue(encoder.encode(
+                JSON.stringify({
+                  type: 'progress',
+                  total,
+                  completed,
+                  message: `レート制限到達。${waitMs / 1000}秒後にリトライ... (${retries + 1}/${MAX_RETRIES})`,
+                }) + '\n'
+              ))
+              await new Promise(r => setTimeout(r, waitMs))
+              return callWithRetry(systemMsg, userMsg, retries + 1)
+            }
+            throw err
+          }
+        }
+
         // 1件分の処理
         const processLead = async (leadId: string) => {
           const lead = leadsMap.get(leadId) ?? { company_name: '不明' }
@@ -133,7 +169,6 @@ export async function POST(req: NextRequest) {
             let hpAnalysisText: string | null = null
             const hpUrl = lead.company_url || lead.website_url
             if (hpUrl) {
-              // HP取得は最大8秒でタイムアウト
               const structured = await Promise.race([
                 fetchStructuredHpContent(hpUrl as string),
                 new Promise<null>(r => setTimeout(() => r(null), 8000)),
@@ -159,12 +194,7 @@ export async function POST(req: NextRequest) {
               hpContent, hpAnalysisText
             )
 
-            const response = await client.messages.create({
-              model: 'claude-sonnet-4-6',
-              max_tokens: 1500,
-              system: systemPrompt,
-              messages: [{ role: 'user', content: userPrompt }],
-            })
+            const response = await callWithRetry(systemPrompt, userPrompt)
 
             const fullText = response.content
               .filter(b => b.type === 'text')
@@ -200,10 +230,13 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // 同時CONCURRENCY件ずつ並列処理
-        for (let i = 0; i < total; i += CONCURRENCY) {
-          const batch = leadIds.slice(i, i + CONCURRENCY)
-          await Promise.all(batch.map(processLead))
+        // 順次処理（1件ずつ、間にウェイトを入れる）
+        for (let i = 0; i < total; i++) {
+          await processLead(leadIds[i])
+          // 最後の1件以外はウェイトを入れる
+          if (i < total - 1) {
+            await new Promise(r => setTimeout(r, DELAY_MS))
+          }
         }
 
         controller.enqueue(encoder.encode(
