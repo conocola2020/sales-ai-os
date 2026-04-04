@@ -47,6 +47,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all' | 'queue_確認待ち' | 'queue_失敗' | 'queue_form_not_found'>('all')
   const [industryFilter, setIndustryFilter] = useState('all')
   const [prefectureFilter, setPrefectureFilter] = useState('all')
+  const [methodFilter, setMethodFilter] = useState<'all' | 'email' | 'form'>('all')
   const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -84,13 +85,19 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
     }
     if (industryFilter !== 'all') rows = rows.filter((l) => l.industry === industryFilter)
     if (prefectureFilter !== 'all') rows = rows.filter((l) => (l.prefecture ?? l.notes) === prefectureFilter)
+    if (methodFilter !== 'all') {
+      rows = rows.filter((l) => {
+        const method = detectContactMethod(l)
+        return method === methodFilter
+      })
+    }
 
     return [...rows].sort((a, b) => {
       const av = a[sortField] ?? ''
       const bv = b[sortField] ?? ''
       return sortDir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
     })
-  }, [leads, search, statusFilter, industryFilter, prefectureFilter, sortField, sortDir])
+  }, [leads, search, statusFilter, industryFilter, prefectureFilter, methodFilter, sortField, sortDir, queueStatusMap])
 
   // ── Status counts ──────────────────────────────────────────
   const counts = useMemo(() => {
@@ -393,6 +400,15 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
           >
             <option value="all">都道府県: すべて</option>
             {PREFECTURES.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <select
+            value={methodFilter}
+            onChange={(e) => { setMethodFilter(e.target.value as 'all' | 'email' | 'form'); setPage(1) }}
+            className={clsx(inputCls, 'cursor-pointer')}
+          >
+            <option value="all">送信方法: すべて</option>
+            <option value="email">メール</option>
+            <option value="form">フォーム</option>
           </select>
         </div>
 
