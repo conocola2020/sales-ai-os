@@ -48,6 +48,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
   const [industryFilter, setIndustryFilter] = useState('all')
   const [prefectureFilter, setPrefectureFilter] = useState('all')
   const [methodFilter, setMethodFilter] = useState<'all' | 'email' | 'form'>('all')
+  const [excludeQueued, setExcludeQueued] = useState(true) // デフォルトで確認待ちを除外
   const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -85,6 +86,9 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
     }
     if (industryFilter !== 'all') rows = rows.filter((l) => l.industry === industryFilter)
     if (prefectureFilter !== 'all') rows = rows.filter((l) => (l.prefecture ?? l.notes) === prefectureFilter)
+    if (excludeQueued && statusFilter !== 'queue_確認待ち') {
+      rows = rows.filter((l) => !queueStatusMap[l.id] || queueStatusMap[l.id] !== '確認待ち')
+    }
     if (methodFilter !== 'all') {
       rows = rows.filter((l) => {
         const method = detectContactMethod(l)
@@ -97,7 +101,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
       const bv = b[sortField] ?? ''
       return sortDir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
     })
-  }, [leads, search, statusFilter, industryFilter, prefectureFilter, methodFilter, sortField, sortDir, queueStatusMap])
+  }, [leads, search, statusFilter, industryFilter, prefectureFilter, methodFilter, excludeQueued, sortField, sortDir, queueStatusMap])
 
   // ── Status counts ──────────────────────────────────────────
   const counts = useMemo(() => {
@@ -420,6 +424,17 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
             <option value="email">メール</option>
             <option value="form">フォーム</option>
           </select>
+          <button
+            onClick={() => { setExcludeQueued(v => !v); setPage(1) }}
+            className={clsx(
+              'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all',
+              excludeQueued
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-600'
+            )}
+          >
+            {excludeQueued ? '確認待ち除外中' : '確認待ち含む'}
+          </button>
         </div>
 
         {selected.size > 0 && (
