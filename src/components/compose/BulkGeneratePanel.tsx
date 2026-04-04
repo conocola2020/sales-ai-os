@@ -146,7 +146,7 @@ export default function BulkGeneratePanel({
   const handleBulkGenerate = useCallback(async () => {
     if (selectedLeadIds.size === 0) return
 
-    const BATCH_SIZE = 80 // 1バッチあたり80件（Vercel 300秒以内に収まる）
+    const BATCH_SIZE = 15 // 1バッチあたり15件（Vercel Hobby 60秒制限対応）
     const allLeadIds = Array.from(selectedLeadIds)
     const total = allLeadIds.length
     const batches: string[][] = []
