@@ -24,6 +24,7 @@ export interface SendQueueItem {
     email: string | null
     website_url: string | null
     company_url: string | null
+    contact_url: string | null
     industry: string | null
     status: string
   } | null
