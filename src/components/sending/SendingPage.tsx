@@ -402,9 +402,30 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                     <span className="flex-shrink-0 px-2 py-0.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs rounded-full">手動対応</span>
                   </div>
 
-                  {/* メッセージプレビュー */}
-                  <div className="bg-gray-950 border border-gray-800 rounded-xl p-3">
-                    <p className="text-xs text-gray-400 line-clamp-3 whitespace-pre-wrap">{item.message_content}</p>
+                  {/* コピー可能なフィールド一覧 */}
+                  <div className="bg-gray-950 border border-gray-800 rounded-xl p-3 space-y-2">
+                    {item.subject && (
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="text-[10px] text-gray-500">件名</span>
+                          <p className="text-xs text-gray-300 truncate">{item.subject}</p>
+                        </div>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(item.subject || ''); }}
+                          className="flex-shrink-0 px-2 py-1 text-[10px] bg-gray-800 hover:bg-gray-700 text-gray-400 rounded transition-colors"
+                        >コピー</button>
+                      </div>
+                    )}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[10px] text-gray-500">本文</span>
+                        <p className="text-xs text-gray-400 whitespace-pre-wrap max-h-32 overflow-y-auto">{item.message_content}</p>
+                      </div>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(item.message_content || ''); }}
+                        className="flex-shrink-0 px-2 py-1 text-[10px] bg-gray-800 hover:bg-gray-700 text-gray-400 rounded transition-colors"
+                      >コピー</button>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
