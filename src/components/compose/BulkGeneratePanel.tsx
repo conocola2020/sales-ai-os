@@ -411,33 +411,6 @@ export default function BulkGeneratePanel({
             />
           </div>
 
-          {/* 自動キュー追加トグル */}
-          <div
-            onClick={() => setAutoQueue(v => !v)}
-            className={clsx(
-              'flex items-center justify-between px-3 py-2.5 rounded-xl border cursor-pointer transition-all select-none',
-              autoQueue
-                ? 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/15'
-                : 'bg-gray-800/60 border-gray-700 hover:border-gray-600'
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <Zap className={clsx('w-3.5 h-3.5', autoQueue ? 'text-emerald-400' : 'text-gray-500')} />
-              <p className={clsx('text-xs font-medium', autoQueue ? 'text-emerald-300' : 'text-gray-300')}>
-                {autoQueue ? '生成後に自動でキュー追加' : '自動キュー追加：OFF'}
-              </p>
-            </div>
-            <div className={clsx(
-              'relative w-9 h-4.5 rounded-full transition-colors flex-shrink-0',
-              autoQueue ? 'bg-emerald-500' : 'bg-gray-600'
-            )}>
-              <div className={clsx(
-                'absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow transition-transform',
-                autoQueue ? 'translate-x-4.5' : 'translate-x-0.5'
-              )} />
-            </div>
-          </div>
-
           {/* Generate button */}
           <button
             onClick={handleBulkGenerate}
@@ -445,9 +418,7 @@ export default function BulkGeneratePanel({
             className={clsx(
               'flex items-center justify-center gap-2.5 w-full py-3 rounded-xl text-sm font-semibold transition-all',
               selectedLeadIds.size > 0 && !isGenerating
-                ? autoQueue
-                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30'
-                  : 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/30'
+                ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/30'
                 : 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed'
             )}
           >
@@ -461,8 +432,8 @@ export default function BulkGeneratePanel({
               </>
             ) : (
               <>
-                {autoQueue ? <Zap className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-                {selectedLeadIds.size}件を一括生成{autoQueue ? '＆キュー追加' : ''}
+                <Sparkles className="w-4 h-4" />
+                {selectedLeadIds.size}件を一括生成
               </>
             )}
           </button>
@@ -490,15 +461,7 @@ export default function BulkGeneratePanel({
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white transition-colors"
                   >
                     {(isSavingAll || isQueuingAll) ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                    {(isSavingAll || isQueuingAll) ? '処理中...' : `全て保存＆送信キューへ (${unqueuedCount}件)`}
-                  </button>
-                  <button
-                    onClick={handleSaveAll}
-                    disabled={isSavingAll || successCount === 0}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-gray-300 transition-colors"
-                  >
-                    {isSavingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-                    保存のみ
+                    {(isSavingAll || isQueuingAll) ? '処理中...' : `全て確認待ちに追加 (${unqueuedCount}件)`}
                   </button>
                 </div>
               )}

@@ -44,7 +44,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
   const router = useRouter()
   const [leads, setLeads] = useState<Lead[]>(initialLeads)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all')
+  const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all' | 'queue_確認待ち' | 'queue_失敗' | 'queue_form_not_found'>('all')
   const [industryFilter, setIndustryFilter] = useState('all')
   const [prefectureFilter, setPrefectureFilter] = useState('all')
   const [sortField, setSortField] = useState<SortField>('created_at')
@@ -70,7 +70,18 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
           (l.email ?? '').toLowerCase().includes(q)
       )
     }
-    if (statusFilter !== 'all') rows = rows.filter((l) => l.status === statusFilter)
+    if (statusFilter !== 'all') {
+      if (statusFilter.startsWith('queue_')) {
+        if (statusFilter === 'queue_失敗') {
+          rows = rows.filter((l) => queueStatusMap[l.id] === '失敗' || queueStatusMap[l.id] === 'form_not_found')
+        } else {
+          const queueStatus = statusFilter.replace('queue_', '')
+          rows = rows.filter((l) => queueStatusMap[l.id] === queueStatus)
+        }
+      } else {
+        rows = rows.filter((l) => l.status === statusFilter)
+      }
+    }
     if (industryFilter !== 'all') rows = rows.filter((l) => l.industry === industryFilter)
     if (prefectureFilter !== 'all') rows = rows.filter((l) => (l.prefecture ?? l.notes) === prefectureFilter)
 
@@ -85,8 +96,11 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: leads.length }
     LEAD_STATUSES.forEach((s) => { c[s] = leads.filter((l) => l.status === s).length })
+    // Queue status counts
+    c['queue_確認待ち'] = leads.filter((l) => queueStatusMap[l.id] === '確認待ち').length
+    c['queue_失敗'] = leads.filter((l) => queueStatusMap[l.id] === '失敗' || queueStatusMap[l.id] === 'form_not_found').length
     return c
-  }, [leads])
+  }, [leads, queueStatusMap])
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
@@ -313,6 +327,37 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                 )}>
                   {counts[s] ?? 0}
                 </span>
+              </button>
+            )
+          })}
+          {/* Queue status filters */}
+          <span className="w-px h-5 bg-gray-700 mx-1" />
+          {([
+            { key: 'queue_確認待ち' as const, label: '確認待ち', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30', dot: 'bg-amber-400' },
+            { key: 'queue_失敗' as const, label: '送信失敗', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30', dot: 'bg-red-400' },
+          ]).map(({ key, label, color, bg, border, dot }) => {
+            const active = statusFilter === key
+            return (
+              <button
+                key={key}
+                onClick={() => { setStatusFilter(active ? 'all' : key); setPage(1) }}
+                className={clsx(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border',
+                  active
+                    ? `${bg} ${border} ${color}`
+                    : 'bg-gray-800/50 border-gray-700/50 text-gray-500 hover:border-gray-600 hover:text-gray-300'
+                )}
+              >
+                <span className={clsx('w-1.5 h-1.5 rounded-full', active ? dot : 'bg-gray-600')} />
+                {label}
+                {(counts[key] ?? 0) > 0 && (
+                  <span className={clsx(
+                    'px-1.5 py-0.5 rounded text-xs',
+                    active ? 'bg-white/10' : 'bg-gray-700/50 text-gray-500'
+                  )}>
+                    {counts[key]}
+                  </span>
+                )}
               </button>
             )
           })}
