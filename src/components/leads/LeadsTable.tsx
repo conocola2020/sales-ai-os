@@ -124,7 +124,17 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
   // ── Selection ──────────────────────────────────────────────
   const allSelected = filtered.length > 0 && filtered.every((l) => selected.has(l.id))
   const toggleAll = () => {
-    setSelected(allSelected ? new Set() : new Set(filtered.map((l) => l.id)))
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (allSelected) {
+        // Deselect only current filtered items (keep others)
+        filtered.forEach((l) => next.delete(l.id))
+      } else {
+        // Add current filtered items to existing selection
+        filtered.forEach((l) => next.add(l.id))
+      }
+      return next
+    })
   }
   const toggleOne = useCallback((id: string) => {
     setSelected((prev) => {
