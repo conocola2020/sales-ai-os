@@ -326,9 +326,9 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                    {item.lead?.website_url && (
+                    {(item.lead?.company_url || item.lead?.website_url) && (
                       <a
-                        href={item.lead.website_url}
+                        href={item.lead.company_url || item.lead.website_url || undefined}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition-colors"
@@ -408,9 +408,9 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
-                    {item.lead?.website_url && (
+                    {(item.lead?.company_url || item.lead?.website_url) && (
                       <a
-                        href={item.lead.website_url}
+                        href={item.lead.company_url || item.lead.website_url || undefined}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-xl transition-colors"
