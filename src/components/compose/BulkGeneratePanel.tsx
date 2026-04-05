@@ -87,15 +87,22 @@ export default function BulkGeneratePanel({
 }: BulkGeneratePanelProps) {
   const router = useRouter()
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(() => {
-    // URLパラメータ → sessionStorage → 空の優先順で復元
-    if (initialSelectedIds && initialSelectedIds.length > 0) {
-      return new Set(initialSelectedIds)
-    }
+    // localStorageから復元 + URLパラメータをマージ
+    const restored = new Set<string>()
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('bulk_selected_leads')
-      if (saved) return new Set(JSON.parse(saved) as string[])
+      try {
+        const saved = localStorage.getItem('bulk_selected_leads')
+        if (saved) {
+          const ids = JSON.parse(saved) as string[]
+          ids.forEach(id => restored.add(id))
+        }
+      } catch { /* ignore */ }
     }
-    return new Set<string>()
+    // URLパラメータがあればマージ
+    if (initialSelectedIds && initialSelectedIds.length > 0) {
+      initialSelectedIds.forEach(id => restored.add(id))
+    }
+    return restored
   })
   // selectedLeadIdsをsessionStorageに永続化
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useTransition } from 'react'
+import { useState, useMemo, useCallback, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Search, Filter, ChevronUp, ChevronDown, ChevronsUpDown,
@@ -51,7 +51,21 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
   const [excludeQueued, setExcludeQueued] = useState(true) // デフォルトで確認待ちを除外
   const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
-  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [selected, setSelected] = useState<Set<string>>(() => {
+    // localStorageから復元
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('leads_selected')
+        if (saved) return new Set(JSON.parse(saved) as string[])
+      } catch { /* ignore */ }
+    }
+    return new Set<string>()
+  })
+  // selectedをlocalStorageに永続化
+  useEffect(() => {
+    localStorage.setItem('leads_selected', JSON.stringify(Array.from(selected)))
+  }, [selected])
+
   const [activeLead, setActiveLead] = useState<Lead | null>(null)
   const [showCSV, setShowCSV] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
@@ -441,8 +455,10 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                const ids = Array.from(selected).join(',')
-                router.push(`/dashboard/compose?mode=bulk&leads=${ids}`)
+                const ids = Array.from(selected)
+                // 選択をlocalStorageにも保存（文面生成ページで復元可能）
+                localStorage.setItem('bulk_selected_leads', JSON.stringify(ids))
+                router.push(`/dashboard/compose?mode=bulk&leads=${ids.join(',')}`)
               }}
               className="flex items-center gap-2 px-4 py-2 bg-violet-500/10 border border-violet-500/20 text-violet-400 text-sm rounded-xl hover:bg-violet-500/20 transition-colors"
             >
