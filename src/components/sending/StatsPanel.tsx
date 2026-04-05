@@ -1,6 +1,6 @@
 'use client'
 
-import { Eye, CheckCircle2, XCircle, Send, AlertTriangle } from 'lucide-react'
+import { Eye, CheckCircle2, XCircle, Send, AlertTriangle, Globe } from 'lucide-react'
 import type { SendStats } from '@/types/sending'
 import clsx from 'clsx'
 
@@ -54,7 +54,7 @@ interface StatsPanelProps {
 
 export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanelProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
       <StatCard
         label="合計"
         tab="全て"
@@ -110,6 +110,17 @@ export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanel
         border="border-red-500/20"
         isActive={activeTab === '失敗'}
         onClick={() => onTabChange('失敗')}
+      />
+      <StatCard
+        label="フォーム未検出"
+        tab="フォーム未検出"
+        value={stats.formNotFound}
+        icon={<Globe className="w-4 h-4" />}
+        color="text-orange-400"
+        bg="bg-orange-500/10"
+        border="border-orange-500/20"
+        isActive={activeTab === 'フォーム未検出'}
+        onClick={() => onTabChange('フォーム未検出')}
       />
     </div>
   )
