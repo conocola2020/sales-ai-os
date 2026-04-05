@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
             if (hpUrl) {
               const structured = await Promise.race([
                 fetchStructuredHpContent(hpUrl as string),
-                new Promise<null>(r => setTimeout(() => r(null), 8000)),
+                new Promise<null>(r => setTimeout(() => r(null), 5000)),
               ])
               if (structured) {
                 hpContent = formatStructuredContent(structured)
