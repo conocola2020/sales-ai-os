@@ -39,8 +39,22 @@ function notify() {
 
 function setState(partial: Partial<BulkGenerateState>) {
   state = { ...state, ...partial }
+  // localStorageにバックアップ（ページリロードでも復元可能）
+  try {
+    localStorage.setItem('bulk_generate_state', JSON.stringify(state))
+  } catch { /* ignore */ }
   notify()
 }
+
+// 起動時にlocalStorageから復元
+try {
+  const saved = typeof window !== 'undefined' ? localStorage.getItem('bulk_generate_state') : null
+  if (saved) {
+    const parsed = JSON.parse(saved) as BulkGenerateState
+    // 生成中だった場合は完了状態にリセット（fetchは復元できない）
+    state = { ...parsed, isGenerating: false, batchInfo: null }
+  }
+} catch { /* ignore */ }
 
 // useSyncExternalStore用
 export function subscribe(listener: () => void) {
@@ -54,11 +68,23 @@ export function getSnapshot(): BulkGenerateState {
 
 export function clearResults() {
   state = { ...initialState }
+  try { localStorage.removeItem('bulk_generate_state') } catch { /* ignore */ }
   notify()
 }
 
 // 生成開始（モジュールレベルで実行、コンポーネント非依存）
-export async function startBulkGeneration(params: {
+export function startBulkGeneration(params: {
+  leadIds: string[]
+  tone: string
+  customInstructions: string
+  templateId?: string
+  leads: Array<{ id: string; company_name: string }>
+}) {
+  // setTimeout でReactの実行コンテキストから完全に切り離す
+  setTimeout(() => runGeneration(params), 0)
+}
+
+async function runGeneration(params: {
   leadIds: string[]
   tone: string
   customInstructions: string
