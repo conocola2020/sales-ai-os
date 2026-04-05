@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo, useEffect, memo } from 'react'
+import { useState, useCallback, useMemo, useEffect, useSyncExternalStore, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Sparkles, Loader2, Check, X, Globe, Mail, Send,
@@ -10,20 +10,19 @@ import ToneSelector from './ToneSelector'
 import TemplateSelector from './TemplateSelector'
 import { saveMessage } from '@/app/dashboard/compose/actions'
 import { addToQueue } from '@/app/dashboard/sending/actions'
+import {
+  subscribe,
+  getSnapshot,
+  startBulkGeneration,
+  clearResults,
+  type BulkResult,
+} from '@/lib/bulk-generate-store'
 import type { Lead, LeadOption } from '@/types/leads'
 import type { Tone } from '@/types/messages'
 import type { MessageTemplate } from '@/types/settings'
 import clsx from 'clsx'
 
-interface BulkResult {
-  leadId: string
-  companyName: string
-  subject: string
-  body: string
-  error?: string
-  saved?: boolean
-  queued?: boolean
-}
+// BulkResult はストアから import
 
 // Memoized lead row — only re-renders when its own isSelected changes
 // チェックアイコン（軽量インラインSVG）
@@ -104,45 +103,20 @@ export default function BulkGeneratePanel({
   }, [selectedLeadIds])
 
   const [customInstructions, setCustomInstructions] = useState('')
-  const [isGenerating, setIsGenerating] = useState(false)
 
-  // 生成中のページ離脱を防止
-  useEffect(() => {
-    if (!isGenerating) return
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault()
-      e.returnValue = ''
-    }
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
-  }, [isGenerating])
+  // グローバルストアから生成状態を取得（ページ遷移しても保持される）
+  const globalState = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+  const isGenerating = globalState.isGenerating
+  const progress = globalState.progress
+  const results = globalState.results
+  const batchInfo = globalState.batchInfo
 
-  // Next.jsのページ遷移（リンククリック）を防止
-  useEffect(() => {
-    if (!isGenerating) return
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      const anchor = target.closest('a')
-      if (anchor && anchor.href && !anchor.href.includes('#')) {
-        if (!confirm('文面生成中です。ページを離れると未処理の分は生成されません。\n（完了済みの分は確認待ちに保存済みです）\n\n本当に離れますか？')) {
-          e.preventDefault()
-          e.stopPropagation()
-        }
-      }
-    }
-    document.addEventListener('click', handleClick, true)
-    return () => document.removeEventListener('click', handleClick, true)
-  }, [isGenerating])
-  const [progress, setProgress] = useState({ total: 0, completed: 0 })
-  const [results, setResults] = useState<BulkResult[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [prefectureFilter, setPrefectureFilter] = useState('all')
   const [visibleCount, setVisibleCount] = useState(VISIBLE_BATCH)
   const [isSavingAll, setIsSavingAll] = useState(false)
   const [isQueuingAll, setIsQueuingAll] = useState(false)
-  const autoQueue = true // 生成完了後に自動でキュー追加（常時ON）
-  const [batchInfo, setBatchInfo] = useState<{ current: number; total: number } | null>(null)
 
   // Filtered leads（検索クエリ + 都道府県フィルター）
   const filteredLeads = useMemo(() => {
@@ -184,180 +158,35 @@ export default function BulkGeneratePanel({
     ))
   }
 
-  const handleBulkGenerate = useCallback(async () => {
+  const handleBulkGenerate = useCallback(() => {
     if (selectedLeadIds.size === 0) return
-
-    const BATCH_SIZE = 8 // 1バッチあたり8件（HP取得含めてVercel Hobby 60秒制限対応）
-    const allLeadIds = Array.from(selectedLeadIds)
-    const total = allLeadIds.length
-    const batches: string[][] = []
-    for (let i = 0; i < total; i += BATCH_SIZE) {
-      batches.push(allLeadIds.slice(i, i + BATCH_SIZE))
-    }
-
-    setIsGenerating(true)
-    setResults([])
-    setProgress({ total, completed: 0 })
-    setBatchInfo(batches.length > 1 ? { current: 1, total: batches.length } : null)
-
-    const allCollected: BulkResult[] = []
-    let totalCompleted = 0
-
-    try {
-      for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
-        const batchLeadIds = batches[batchIdx]
-        if (batches.length > 1) {
-          setBatchInfo({ current: batchIdx + 1, total: batches.length })
-        }
-
-        const res = await fetch('/api/generate-bulk', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            leadIds: batchLeadIds,
-            tone,
-            customInstructions,
-            templateId: selectedTemplateId || undefined,
-          }),
-        })
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-        const reader = res.body?.getReader()
-        if (!reader) throw new Error('ストリーム取得に失敗')
-
-        const decoder = new TextDecoder()
-        let buffer = ''
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          buffer += decoder.decode(value, { stream: true })
-
-          const lines = buffer.split('\n')
-          buffer = lines.pop() ?? ''
-
-          for (const line of lines) {
-            if (!line.trim()) continue
-            try {
-              const data = JSON.parse(line)
-              if (data.type === 'result') {
-                const realLead = leads.find(l => l.id === data.leadId)
-                const newResult: BulkResult = {
-                  leadId: data.leadId,
-                  companyName: realLead?.company_name ?? data.companyName,
-                  subject: data.subject,
-                  body: data.body,
-                  error: data.error,
-                }
-                allCollected.push(newResult)
-                totalCompleted++
-                setResults(prev => [...prev, newResult])
-                setProgress({ total, completed: totalCompleted })
-
-                // 1件完了ごとに即キュー追加（エラーなし&本文ありの場合）
-                if (!data.error && data.body) {
-                  addToQueue({
-                    lead_id: data.leadId,
-                    message_content: data.body,
-                    subject: data.subject || undefined,
-                  }).then(({ error: qErr }) => {
-                    if (!qErr) {
-                      setResults(prev => prev.map(p => p.leadId === data.leadId ? { ...p, queued: true } : p))
-                    }
-                  })
-                }
-              }
-            } catch {
-              // Skip malformed lines
-            }
-          }
-        }
-      }
-
-      // キュー追加は1件ずつストリーム受信時に実行済み
-    } catch (err) {
-      console.error('Bulk generate error:', err)
-    } finally {
-      setIsGenerating(false)
-      setBatchInfo(null)
-    }
+    // グローバルストアで生成開始（ページ遷移しても継続する）
+    startBulkGeneration({
+      leadIds: Array.from(selectedLeadIds),
+      tone,
+      customInstructions,
+      templateId: selectedTemplateId || undefined,
+      leads: leads.map(l => ({ id: l.id, company_name: l.company_name })),
+    })
   }, [selectedLeadIds, tone, customInstructions, selectedTemplateId, leads])
 
-  const handleSaveAll = async () => {
-    setIsSavingAll(true)
-    const unsaved = results.filter(r => !r.saved && !r.error && r.body)
-    for (const result of unsaved) {
-      const { error } = await saveMessage({
-        lead_id: result.leadId,
-        subject: result.subject || null,
-        content: result.body,
-        tone,
-      })
-      if (!error) {
-        setResults(prev => prev.map(r =>
-          r.leadId === result.leadId ? { ...r, saved: true } : r
-        ))
-      }
-    }
-    setIsSavingAll(false)
-  }
-
-  const handleQueueAll = async () => {
-    setIsQueuingAll(true)
-    const unqueued = results.filter(r => !r.queued && !r.error && r.body)
-    for (const result of unqueued) {
-      const { error } = await addToQueue({
-        lead_id: result.leadId,
-        message_content: result.body,
-        subject: result.subject || undefined,
-      })
-      if (!error) {
-        setResults(prev => prev.map(r =>
-          r.leadId === result.leadId ? { ...r, queued: true } : r
-        ))
-      }
-    }
-    setIsQueuingAll(false)
-  }
-
+  // キュー追加は1件ずつストリーム受信時に自動実行済み
+  // 以下は手動での再キュー追加用
   const handleSaveAndQueueAll = async () => {
     setIsSavingAll(true)
     setIsQueuingAll(true)
     const targets = results.filter(r => !r.error && r.body && !r.queued)
-    // Promise.all で並列処理（全件同時に送信）
     await Promise.all(
       targets.map(async (result) => {
-        // Save（未保存の場合のみ）
-        if (!result.saved) {
-          const { error } = await saveMessage({
-            lead_id: result.leadId,
-            subject: result.subject || null,
-            content: result.body,
-            tone,
-          })
-          if (!error) {
-            setResults(prev => prev.map(r =>
-              r.leadId === result.leadId ? { ...r, saved: true } : r
-            ))
-          }
-        }
-        // Queue
-        const { error: qErr } = await addToQueue({
+        await addToQueue({
           lead_id: result.leadId,
           message_content: result.body,
           subject: result.subject || undefined,
         })
-        if (!qErr) {
-          setResults(prev => prev.map(r =>
-            r.leadId === result.leadId ? { ...r, queued: true } : r
-          ))
-        }
       })
     )
     setIsSavingAll(false)
     setIsQueuingAll(false)
-    // 完了後に送信管理画面へ自動遷移
     router.push('/dashboard/sending')
   }
 
