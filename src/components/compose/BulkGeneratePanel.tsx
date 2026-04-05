@@ -105,6 +105,34 @@ export default function BulkGeneratePanel({
 
   const [customInstructions, setCustomInstructions] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+
+  // 生成中のページ離脱を防止
+  useEffect(() => {
+    if (!isGenerating) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isGenerating])
+
+  // Next.jsのページ遷移（リンククリック）を防止
+  useEffect(() => {
+    if (!isGenerating) return
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      const anchor = target.closest('a')
+      if (anchor && anchor.href && !anchor.href.includes('#')) {
+        if (!confirm('文面生成中です。ページを離れると未処理の分は生成されません。\n（完了済みの分は確認待ちに保存済みです）\n\n本当に離れますか？')) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+      }
+    }
+    document.addEventListener('click', handleClick, true)
+    return () => document.removeEventListener('click', handleClick, true)
+  }, [isGenerating])
   const [progress, setProgress] = useState({ total: 0, completed: 0 })
   const [results, setResults] = useState<BulkResult[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
