@@ -64,6 +64,19 @@ export async function addToQueue(
     return { data: null, error: '認証が必要です' }
   }
 
+  // 重複チェック：同じリードが確認待ちに既にある場合はスキップ
+  const { data: existing } = await supabase
+    .from('send_queue')
+    .select('id')
+    .eq('lead_id', item.lead_id)
+    .eq('status', '確認待ち')
+    .limit(1)
+    .maybeSingle()
+
+  if (existing) {
+    return { data: null, error: 'このリードは既に確認待ちに追加されています' }
+  }
+
   // Auto-detect send method based on lead email
   let sendMethod: SendMethod = item.send_method ?? 'form'
   if (!item.send_method) {
