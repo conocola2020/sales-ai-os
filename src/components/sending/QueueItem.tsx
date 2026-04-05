@@ -14,11 +14,13 @@ import {
   RotateCcw,
   Globe,
   TriangleAlert,
+  CheckCircle2,
+  Undo2,
 } from 'lucide-react'
 import clsx from 'clsx'
 import type { SendQueueItem } from '@/types/sending'
 import { SEND_STATUS_CONFIG, SEND_METHOD_CONFIG } from '@/types/sending'
-import { deleteQueueItem, retryQueueItem } from '@/app/dashboard/sending/actions'
+import { deleteQueueItem, retryQueueItem, markAsSent, resetToReview } from '@/app/dashboard/sending/actions'
 
 interface QueueItemProps {
   item: SendQueueItem
@@ -75,6 +77,20 @@ export default function QueueItem({
   const handleRetry = async () => {
     setLoading(true)
     const { error } = await retryQueueItem(item.id)
+    setLoading(false)
+    if (!error) onUpdated(item.id, '確認待ち')
+  }
+
+  const handleMarkAsSent = async () => {
+    setLoading(true)
+    const { error } = await markAsSent(item.id)
+    setLoading(false)
+    if (!error) onUpdated(item.id, '送信済み')
+  }
+
+  const handleResetToReview = async () => {
+    setLoading(true)
+    const { error } = await resetToReview([item.id])
     setLoading(false)
     if (!error) onUpdated(item.id, '確認待ち')
   }
@@ -372,6 +388,30 @@ export default function QueueItem({
               >
                 <Send className="w-3.5 h-3.5" />
                 送信する
+              </button>
+            )}
+
+            {/* 確認待ち → 送信済みにする */}
+            {item.status === '確認待ち' && (
+              <button
+                onClick={handleMarkAsSent}
+                disabled={loading}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-lg transition-colors"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                送信済みにする
+              </button>
+            )}
+
+            {/* 送信済み → 確認待ちに戻す */}
+            {item.status === '送信済み' && (
+              <button
+                onClick={handleResetToReview}
+                disabled={loading}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-xs font-semibold rounded-lg transition-colors"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+                確認待ちに戻す
               </button>
             )}
 
