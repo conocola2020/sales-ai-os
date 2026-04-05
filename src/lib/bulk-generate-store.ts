@@ -1,6 +1,6 @@
 /**
  * 一括生成のグローバルストア
- * ページ遷移してもコンポーネントがアンマウントされても生成が継続する
+ * 中断されても自動再開する仕組み
  */
 
 import { addToQueue } from '@/app/dashboard/sending/actions'
@@ -22,6 +22,16 @@ export interface BulkGenerateState {
   batchInfo: { current: number; total: number } | null
 }
 
+// 生成ジョブのパラメータ（再開用）
+interface GenerationJob {
+  allLeadIds: string[]
+  completedLeadIds: string[]
+  tone: string
+  customInstructions: string
+  templateId?: string
+  leads: Array<{ id: string; company_name: string }>
+}
+
 const initialState: BulkGenerateState = {
   isGenerating: false,
   progress: { total: 0, completed: 0 },
@@ -29,7 +39,6 @@ const initialState: BulkGenerateState = {
   batchInfo: null,
 }
 
-// Module-level state（コンポーネントのライフサイクルに依存しない）
 let state: BulkGenerateState = { ...initialState }
 const listeners = new Set<() => void>()
 
@@ -39,20 +48,37 @@ function notify() {
 
 function setState(partial: Partial<BulkGenerateState>) {
   state = { ...state, ...partial }
-  // localStorageにバックアップ（ページリロードでも復元可能）
   try {
     localStorage.setItem('bulk_generate_state', JSON.stringify(state))
   } catch { /* ignore */ }
   notify()
 }
 
+function saveJob(job: GenerationJob | null) {
+  try {
+    if (job) {
+      localStorage.setItem('bulk_generate_job', JSON.stringify(job))
+    } else {
+      localStorage.removeItem('bulk_generate_job')
+    }
+  } catch { /* ignore */ }
+}
+
+function loadJob(): GenerationJob | null {
+  try {
+    const saved = localStorage.getItem('bulk_generate_job')
+    return saved ? JSON.parse(saved) : null
+  } catch { return null }
+}
+
 // 起動時にlocalStorageから復元
 try {
-  const saved = typeof window !== 'undefined' ? localStorage.getItem('bulk_generate_state') : null
-  if (saved) {
-    const parsed = JSON.parse(saved) as BulkGenerateState
-    // 生成中だった場合は完了状態にリセット（fetchは復元できない）
-    state = { ...parsed, isGenerating: false, batchInfo: null }
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('bulk_generate_state')
+    if (saved) {
+      const parsed = JSON.parse(saved) as BulkGenerateState
+      state = { ...parsed, isGenerating: false, batchInfo: null }
+    }
   }
 } catch { /* ignore */ }
 
@@ -68,11 +94,53 @@ export function getSnapshot(): BulkGenerateState {
 
 export function clearResults() {
   state = { ...initialState }
-  try { localStorage.removeItem('bulk_generate_state') } catch { /* ignore */ }
+  saveJob(null)
+  try {
+    localStorage.removeItem('bulk_generate_state')
+    localStorage.removeItem('bulk_generate_job')
+  } catch { /* ignore */ }
   notify()
 }
 
-// 生成開始（モジュールレベルで実行、コンポーネント非依存）
+// 未完了のジョブがあるか確認
+export function hasPendingJob(): boolean {
+  const job = loadJob()
+  if (!job) return false
+  return job.completedLeadIds.length < job.allLeadIds.length
+}
+
+// 未完了のジョブの残り件数を取得
+export function getPendingCount(): number {
+  const job = loadJob()
+  if (!job) return 0
+  return job.allLeadIds.length - job.completedLeadIds.length
+}
+
+// 未完了のジョブを再開
+export function resumeGeneration() {
+  const job = loadJob()
+  if (!job) return
+
+  const remainingIds = job.allLeadIds.filter(
+    (id) => !job.completedLeadIds.includes(id)
+  )
+
+  if (remainingIds.length === 0) {
+    saveJob(null)
+    return
+  }
+
+  // 既存の結果を保持したまま残りを生成
+  runGeneration({
+    leadIds: remainingIds,
+    tone: job.tone,
+    customInstructions: job.customInstructions,
+    templateId: job.templateId,
+    leads: job.leads,
+  }, true)
+}
+
+// 生成開始
 export function startBulkGeneration(params: {
   leadIds: string[]
   tone: string
@@ -80,34 +148,50 @@ export function startBulkGeneration(params: {
   templateId?: string
   leads: Array<{ id: string; company_name: string }>
 }) {
-  // setTimeout でReactの実行コンテキストから完全に切り離す
-  setTimeout(() => runGeneration(params), 0)
+  runGeneration(params, false)
 }
 
-async function runGeneration(params: {
-  leadIds: string[]
-  tone: string
-  customInstructions: string
-  templateId?: string
-  leads: Array<{ id: string; company_name: string }>
-}) {
+async function runGeneration(
+  params: {
+    leadIds: string[]
+    tone: string
+    customInstructions: string
+    templateId?: string
+    leads: Array<{ id: string; company_name: string }>
+  },
+  isResume: boolean
+) {
   const { leadIds, tone, customInstructions, templateId, leads } = params
   const BATCH_SIZE = 8
-  const total = leadIds.length
+  const total = isResume ? (state.progress.total || leadIds.length) : leadIds.length
   const batches: string[][] = []
 
-  for (let i = 0; i < total; i += BATCH_SIZE) {
+  for (let i = 0; i < leadIds.length; i += BATCH_SIZE) {
     batches.push(leadIds.slice(i, i + BATCH_SIZE))
   }
 
+  // ジョブを保存（再開用）
+  const existingJob = loadJob()
+  const job: GenerationJob = {
+    allLeadIds: isResume && existingJob ? existingJob.allLeadIds : leadIds,
+    completedLeadIds: isResume && existingJob ? existingJob.completedLeadIds : [],
+    tone,
+    customInstructions,
+    templateId,
+    leads,
+  }
+  saveJob(job)
+
+  const startCompleted = isResume ? state.progress.completed : 0
+
   setState({
     isGenerating: true,
-    results: [],
-    progress: { total, completed: 0 },
+    results: isResume ? state.results : [],
+    progress: { total, completed: startCompleted },
     batchInfo: batches.length > 1 ? { current: 1, total: batches.length } : null,
   })
 
-  let totalCompleted = 0
+  let totalCompleted = startCompleted
 
   try {
     for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
@@ -157,6 +241,11 @@ async function runGeneration(params: {
                 error: data.error,
               }
               totalCompleted++
+
+              // ジョブの完了リストを更新
+              job.completedLeadIds.push(data.leadId)
+              saveJob(job)
+
               setState({
                 results: [...state.results, newResult],
                 progress: { total, completed: totalCompleted },
@@ -185,8 +274,11 @@ async function runGeneration(params: {
         }
       }
     }
+    // 全件完了 → ジョブをクリア
+    saveJob(null)
   } catch (err) {
     console.error('Bulk generate error:', err)
+    // 中断された → ジョブは保持（再開可能）
   } finally {
     setState({ isGenerating: false, batchInfo: null })
   }

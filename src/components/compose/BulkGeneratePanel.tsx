@@ -15,6 +15,9 @@ import {
   getSnapshot,
   startBulkGeneration,
   clearResults,
+  hasPendingJob,
+  getPendingCount,
+  resumeGeneration,
   type BulkResult,
 } from '@/lib/bulk-generate-store'
 import type { Lead, LeadOption } from '@/types/leads'
@@ -313,6 +316,33 @@ export default function BulkGeneratePanel({
 
       {/* Right: Results */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* 中断されたジョブの再開バナー */}
+        {!isGenerating && hasPendingJob() && (
+          <div className="px-5 pt-4 flex-shrink-0">
+            <div className="flex items-center justify-between p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-amber-400" />
+                <span className="text-sm text-amber-300">
+                  前回の生成が中断されました。残り{getPendingCount()}件が未処理です。
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => resumeGeneration()}
+                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-semibold rounded-lg transition-colors"
+                >
+                  再開する
+                </button>
+                <button
+                  onClick={() => clearResults()}
+                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded-lg transition-colors"
+                >
+                  破棄
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Progress bar */}
         {(isGenerating || results.length > 0) && (
           <div className="px-5 pt-4 flex-shrink-0">
