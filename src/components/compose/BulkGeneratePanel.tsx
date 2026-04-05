@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo, memo } from 'react'
+import { useState, useCallback, useMemo, useEffect, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Sparkles, Loader2, Check, X, Globe, Mail, Send,
@@ -87,9 +87,22 @@ export default function BulkGeneratePanel({
   initialSelectedIds,
 }: BulkGeneratePanelProps) {
   const router = useRouter()
-  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(
-    new Set(initialSelectedIds ?? [])
-  )
+  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(() => {
+    // URLパラメータ → sessionStorage → 空の優先順で復元
+    if (initialSelectedIds && initialSelectedIds.length > 0) {
+      return new Set(initialSelectedIds)
+    }
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('bulk_selected_leads')
+      if (saved) return new Set(JSON.parse(saved) as string[])
+    }
+    return new Set<string>()
+  })
+  // selectedLeadIdsをsessionStorageに永続化
+  useEffect(() => {
+    sessionStorage.setItem('bulk_selected_leads', JSON.stringify(Array.from(selectedLeadIds)))
+  }, [selectedLeadIds])
+
   const [customInstructions, setCustomInstructions] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [progress, setProgress] = useState({ total: 0, completed: 0 })
@@ -212,8 +225,20 @@ export default function BulkGeneratePanel({
                 allCollected.push(newResult)
                 totalCompleted++
                 setResults(prev => [...prev, newResult])
-                // 全体の進捗で上書き
                 setProgress({ total, completed: totalCompleted })
+
+                // 1件完了ごとに即キュー追加（エラーなし&本文ありの場合）
+                if (!data.error && data.body) {
+                  addToQueue({
+                    lead_id: data.leadId,
+                    message_content: data.body,
+                    subject: data.subject || undefined,
+                  }).then(({ error: qErr }) => {
+                    if (!qErr) {
+                      setResults(prev => prev.map(p => p.leadId === data.leadId ? { ...p, queued: true } : p))
+                    }
+                  })
+                }
               }
             } catch {
               // Skip malformed lines
@@ -222,25 +247,7 @@ export default function BulkGeneratePanel({
         }
       }
 
-      // 自動キュー追加
-      if (autoQueue && allCollected.length > 0) {
-        setIsQueuingAll(true)
-        const targets = allCollected.filter(r => !r.error && r.body)
-        await Promise.all(
-          targets.map(r =>
-            addToQueue({
-              lead_id: r.leadId,
-              message_content: r.body,
-              subject: r.subject || undefined,
-            }).then(({ error }) => {
-              if (!error) {
-                setResults(prev => prev.map(p => p.leadId === r.leadId ? { ...p, queued: true } : p))
-              }
-            })
-          )
-        )
-        setIsQueuingAll(false)
-      }
+      // キュー追加は1件ずつストリーム受信時に実行済み
     } catch (err) {
       console.error('Bulk generate error:', err)
     } finally {
