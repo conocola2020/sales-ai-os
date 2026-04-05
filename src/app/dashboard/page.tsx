@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   return (
     <DashboardOverview
       leads={leadSummary.data ?? { total: 0, untouched: 0 }}
-      sendStats={sendResult.data ?? { total: 0, reviewing: 0, sent: 0, failed: 0, manual: 0 }}
+      sendStats={sendResult.data ?? { total: 0, reviewing: 0, sent: 0, failed: 0, manual: 0, formNotFound: 0 }}
       replyStats={replyResult.data ?? { total: 0, unread: 0, interested: 0, considering: 0, declined: 0, questions: 0, other: 0 }}
       dealStats={dealResult.data ?? { total: 0, active: 0, won: 0, lost: 0, pipelineAmount: 0, weightedAmount: 0, winRate: null }}
       igStats={igResult.data ?? { total: 0, approached: 0, dmSent: 0, replied: 0, converted: 0, replyRate: null }}
