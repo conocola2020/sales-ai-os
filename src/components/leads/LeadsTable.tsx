@@ -89,7 +89,9 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
     if (statusFilter !== 'all') {
       if (statusFilter.startsWith('queue_')) {
         if (statusFilter === 'queue_失敗') {
-          rows = rows.filter((l) => queueStatusMap[l.id] === '失敗' || queueStatusMap[l.id] === 'form_not_found')
+          rows = rows.filter((l) => queueStatusMap[l.id] === '失敗')
+        } else if (statusFilter === 'queue_form_not_found') {
+          rows = rows.filter((l) => queueStatusMap[l.id] === 'form_not_found')
         } else {
           const queueStatus = statusFilter.replace('queue_', '')
           rows = rows.filter((l) => queueStatusMap[l.id] === queueStatus)
@@ -123,7 +125,8 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
     LEAD_STATUSES.forEach((s) => { c[s] = leads.filter((l) => l.status === s).length })
     // Queue status counts
     c['queue_確認待ち'] = leads.filter((l) => queueStatusMap[l.id] === '確認待ち').length
-    c['queue_失敗'] = leads.filter((l) => queueStatusMap[l.id] === '失敗' || queueStatusMap[l.id] === 'form_not_found').length
+    c['queue_失敗'] = leads.filter((l) => queueStatusMap[l.id] === '失敗').length
+    c['queue_form_not_found'] = leads.filter((l) => queueStatusMap[l.id] === 'form_not_found').length
     return c
   }, [leads, queueStatusMap])
 
@@ -370,6 +373,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
           {([
             { key: 'queue_確認待ち' as const, label: '確認待ち', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30', dot: 'bg-amber-400' },
             { key: 'queue_失敗' as const, label: '送信失敗', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30', dot: 'bg-red-400' },
+            { key: 'queue_form_not_found' as const, label: 'フォーム未検出', color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/30', dot: 'bg-orange-400' },
           ]).map(({ key, label, color, bg, border, dot }) => {
             const active = statusFilter === key
             return (
