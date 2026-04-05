@@ -100,7 +100,7 @@ export default function BulkGeneratePanel({
   const [visibleCount, setVisibleCount] = useState(VISIBLE_BATCH)
   const [isSavingAll, setIsSavingAll] = useState(false)
   const [isQueuingAll, setIsQueuingAll] = useState(false)
-  const [autoQueue, setAutoQueue] = useState(false)
+  const autoQueue = true // 生成完了後に自動でキュー追加（常時ON）
   const [batchInfo, setBatchInfo] = useState<{ current: number; total: number } | null>(null)
 
   // Filtered leads（検索クエリ + 都道府県フィルター）
@@ -247,7 +247,7 @@ export default function BulkGeneratePanel({
       setIsGenerating(false)
       setBatchInfo(null)
     }
-  }, [selectedLeadIds, tone, customInstructions, selectedTemplateId, leads, autoQueue])
+  }, [selectedLeadIds, tone, customInstructions, selectedTemplateId, leads])
 
   const handleSaveAll = async () => {
     setIsSavingAll(true)
