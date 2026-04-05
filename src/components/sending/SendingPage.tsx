@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   ExternalLink,
   Globe,
+  Search,
 } from 'lucide-react'
 import clsx from 'clsx'
 import type { SendQueueItem, SendStats } from '@/types/sending'
@@ -76,6 +77,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
   const [confirmQueue, setConfirmQueue] = useState<SendQueueItem[]>([]) // 一括送信の残りキュー
   const [showAddModal, setShowAddModal] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = useState('')
   const [isBulkProcessing, setIsBulkProcessing] = useState(false)
 
   // 自動一括送信の進捗
@@ -227,11 +229,23 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
 
   const filteredQueue = useMemo(
     () => {
-      if (activeTab === '全て') return queue.filter(i => i.status !== '手動対応')
-      if (activeTab === 'フォーム未検出') return queue.filter(i => i.status === 'form_not_found')
-      return queue.filter(i => i.status === activeTab)
+      let items: SendQueueItem[]
+      if (activeTab === '全て') items = queue.filter(i => i.status !== '手動対応')
+      else if (activeTab === 'フォーム未検出') items = queue.filter(i => i.status === 'form_not_found')
+      else items = queue.filter(i => i.status === activeTab)
+
+      // 検索フィルター
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        items = items.filter(i =>
+          (i.lead?.company_name ?? '').toLowerCase().includes(q) ||
+          (i.message_content ?? '').toLowerCase().includes(q) ||
+          (i.subject ?? '').toLowerCase().includes(q)
+        )
+      }
+      return items
     },
-    [queue, activeTab]
+    [queue, activeTab, searchQuery]
   )
 
   const manualItems = useMemo(
@@ -298,6 +312,19 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
 
         {/* Stats panel (clickable tabs) */}
         <StatsPanel stats={stats} activeTab={activeTab} onTabChange={setActiveTab} />
+
+        {/* 検索窓 */}
+        <div className="px-4 md:px-8 py-3">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="施設名・文面で検索..."
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+            />
+          </div>
+        </div>
 
         {/* 手動対応ボックス（件数がある場合のみ表示） */}
         {manualItems.length > 0 && activeTab !== '手動対応' && (
