@@ -270,7 +270,66 @@ SET status = '失敗', error_message = '{エラーの内容}', updated_at = NOW(
 WHERE id = '{アイテムのid}';
 ```
 
-### 4-7. タブのクリーンアップ
+### 4-7. スクリーンショットをSupabase Storageに保存
+
+送信成功時、証拠のスクリーンショット（通常フォームの場合）またはAPIレスポンス（CF7 REST APIの場合）をSupabase Storageに保存する。
+
+**通常フォームの場合（完了画面のスクショ）：**
+
+Step 4-5 で撮ったスクリーンショットのIDを使い、以下を `javascript_tool` で実行する：
+
+```javascript
+(async () => {
+  // スクリーンショット画像をcanvasから取得してSupabaseにアップロード
+  const timestamp = Date.now();
+  const fileName = `send_queue_id_${timestamp}.jpg`;
+
+  // screenshot IDの画像をfetchしてblobにする
+  const img = document.querySelector('img[src*="screenshot"]') || document.querySelector('img');
+  if (!img) return JSON.stringify({error: 'no screenshot found'});
+
+  const canvas = document.createElement('canvas');
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+  canvas.getContext('2d').drawImage(img, 0, 0);
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.8));
+
+  const formData = new FormData();
+  formData.append('file', blob, fileName);
+
+  // Supabase Storage API
+  const resp = await fetch('{SUPABASE_URL}/storage/v1/object/screenshots/' + fileName, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer {SUPABASE_ANON_KEY}' },
+    body: formData
+  });
+  return JSON.stringify({status: resp.status, fileName});
+})();
+```
+
+ただし、Chrome MCP経由のスクリーンショットは直接ブラウザDOMに入らないため、**代わりに以下の方法を使う**：
+
+Supabase SQL で screenshot_url を直接更新する：
+```sql
+UPDATE send_queue
+SET screenshot_url = 'chrome_screenshot:{screenshot_id}',
+    updated_at = NOW()
+WHERE id = '{アイテムのid}';
+```
+
+> ★ screenshot_id は `computer` ツールの `screenshot` アクションで返される ID（例: ss_1234abcd）。
+> 送信管理UIで表示するときに、このIDが設定されていれば「スクショ確認済み」バッジを表示する。
+
+**CF7 REST API直接POSTの場合：**
+APIレスポンスJSONを screenshot_url に記録する：
+```sql
+UPDATE send_queue
+SET screenshot_url = 'api_response:{"status":"mail_sent","message":"..."}',
+    updated_at = NOW()
+WHERE id = '{アイテムのid}';
+```
+
+### 4-8. タブのクリーンアップ
 
 ステータス更新後、送信先サイトが開いたままにならないようタブを空ページに戻す：
 ```

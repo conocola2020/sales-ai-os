@@ -413,3 +413,55 @@ export async function getSendStats(): Promise<{
 
   return { data: stats, error: null }
 }
+
+// ──────────────────────────────────────────
+// Screenshot Storage Cleanup
+// ──────────────────────────────────────────
+const SCREENSHOT_MAX = 10000
+const SCREENSHOT_DELETE_COUNT = 5000
+
+export async function cleanupScreenshotsIfNeeded(): Promise<{
+  deleted: number
+  error: string | null
+}> {
+  const supabase = await createClient()
+
+  // Count files in screenshots bucket
+  const { data: files, error: listError } = await supabase.storage
+    .from('screenshots')
+    .list('', { limit: 1, offset: SCREENSHOT_MAX })
+
+  if (listError) return { deleted: 0, error: listError.message }
+
+  // If no files beyond the limit, no cleanup needed
+  if (!files || files.length === 0) return { deleted: 0, error: null }
+
+  // Get oldest files to delete
+  const { data: oldFiles, error: oldError } = await supabase.storage
+    .from('screenshots')
+    .list('', {
+      limit: SCREENSHOT_DELETE_COUNT,
+      sortBy: { column: 'created_at', order: 'asc' },
+    })
+
+  if (oldError || !oldFiles) return { deleted: 0, error: oldError?.message ?? 'Failed to list' }
+
+  const filePaths = oldFiles.map((f) => f.name)
+  if (filePaths.length === 0) return { deleted: 0, error: null }
+
+  const { error: removeError } = await supabase.storage
+    .from('screenshots')
+    .remove(filePaths)
+
+  if (removeError) return { deleted: 0, error: removeError.message }
+
+  // Clear screenshot_url for deleted files
+  for (const path of filePaths) {
+    await supabase
+      .from('send_queue')
+      .update({ screenshot_url: null })
+      .like('screenshot_url', `%${path}%`)
+  }
+
+  return { deleted: filePaths.length, error: null }
+}
