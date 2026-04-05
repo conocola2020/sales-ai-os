@@ -93,14 +93,14 @@ export default function BulkGeneratePanel({
       return new Set(initialSelectedIds)
     }
     if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem('bulk_selected_leads')
+      const saved = localStorage.getItem('bulk_selected_leads')
       if (saved) return new Set(JSON.parse(saved) as string[])
     }
     return new Set<string>()
   })
   // selectedLeadIdsをsessionStorageに永続化
   useEffect(() => {
-    sessionStorage.setItem('bulk_selected_leads', JSON.stringify(Array.from(selectedLeadIds)))
+    localStorage.setItem('bulk_selected_leads', JSON.stringify(Array.from(selectedLeadIds)))
   }, [selectedLeadIds])
 
   const [customInstructions, setCustomInstructions] = useState('')
