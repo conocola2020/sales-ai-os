@@ -17,6 +17,7 @@ import {
   Loader2,
   AlertTriangle,
   ExternalLink,
+  Globe,
 } from 'lucide-react'
 import clsx from 'clsx'
 import type { SendQueueItem, SendStats } from '@/types/sending'
@@ -31,7 +32,7 @@ import { deleteQueueItem, retryQueueItem, markAsSent, markAsManual, changeSendMe
 // ──────────────────────────────────────────
 // Tab definitions
 // ──────────────────────────────────────────
-type Tab = '全て' | '確認待ち' | '手動対応' | '送信済み' | '失敗'
+type Tab = '全て' | '確認待ち' | '手動対応' | '送信済み' | '失敗' | 'フォーム未検出'
 
 const TABS: { label: Tab; icon: React.ReactNode; count?: (s: SendStats) => number; urgent?: boolean }[] = [
   { label: '全て', icon: <Send className="w-3.5 h-3.5" />, count: s => s.total },
@@ -39,6 +40,7 @@ const TABS: { label: Tab; icon: React.ReactNode; count?: (s: SendStats) => numbe
   { label: '手動対応', icon: <AlertTriangle className="w-3.5 h-3.5" />, count: s => s.manual, urgent: true },
   { label: '送信済み', icon: <CheckCircle2 className="w-3.5 h-3.5" />, count: s => s.sent },
   { label: '失敗', icon: <XCircle className="w-3.5 h-3.5" />, count: s => s.failed },
+  { label: 'フォーム未検出', icon: <Globe className="w-3.5 h-3.5" />, count: s => s.formNotFound },
 ]
 
 // ──────────────────────────────────────────
@@ -51,6 +53,7 @@ function buildStats(items: SendQueueItem[]): SendStats {
     sent: items.filter(i => i.status === '送信済み').length,
     failed: items.filter(i => i.status === '失敗').length,
     manual: items.filter(i => i.status === '手動対応').length,
+    formNotFound: items.filter(i => i.status === 'form_not_found').length,
   }
 }
 
@@ -223,10 +226,11 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
   }
 
   const filteredQueue = useMemo(
-    () =>
-      activeTab === '全て'
-        ? queue.filter(i => i.status !== '手動対応')
-        : queue.filter(i => i.status === activeTab),
+    () => {
+      if (activeTab === '全て') return queue.filter(i => i.status !== '手動対応')
+      if (activeTab === 'フォーム未検出') return queue.filter(i => i.status === 'form_not_found')
+      return queue.filter(i => i.status === activeTab)
+    },
     [queue, activeTab]
   )
 

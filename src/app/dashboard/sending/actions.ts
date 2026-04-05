@@ -387,7 +387,7 @@ export async function getSendStats(): Promise<{
 
   if (!user) {
     return {
-      data: { total: 0, reviewing: 0, sent: 0, failed: 0, manual: 0 },
+      data: { total: 0, reviewing: 0, sent: 0, failed: 0, manual: 0, formNotFound: 0 },
       error: null,
     }
   }
@@ -409,6 +409,7 @@ export async function getSendStats(): Promise<{
     sent: rows.filter(r => r.status === '送信済み').length,
     failed: rows.filter(r => r.status === '失敗').length,
     manual: rows.filter(r => r.status === '手動対応').length,
+    formNotFound: rows.filter(r => r.status === 'form_not_found').length,
   }
 
   return { data: stats, error: null }

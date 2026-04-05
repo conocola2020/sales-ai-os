@@ -4,7 +4,7 @@ import { Eye, CheckCircle2, XCircle, Send, AlertTriangle } from 'lucide-react'
 import type { SendStats } from '@/types/sending'
 import clsx from 'clsx'
 
-type Tab = '全て' | '確認待ち' | '手動対応' | '送信済み' | '失敗'
+type Tab = '全て' | '確認待ち' | '手動対応' | '送信済み' | '失敗' | 'フォーム未検出'
 
 interface StatCardProps {
   label: string

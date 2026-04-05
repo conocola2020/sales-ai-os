@@ -113,4 +113,5 @@ export interface SendStats {
   sent: number       // 送信済み
   failed: number     // 失敗
   manual: number     // 手動対応が必要
+  formNotFound: number // フォーム未検出
 }
