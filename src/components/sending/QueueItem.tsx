@@ -165,17 +165,31 @@ export default function QueueItem({
           )}
         </div>
 
-        {/* Status badge */}
-        <div
-          className={clsx(
-            'flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border',
-            cfg.bg,
-            cfg.border,
-            cfg.color
+        {/* Status badge + evidence badge */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {item.status === '送信済み' && (
+            <span className={clsx(
+              'text-[10px] px-2 py-0.5 rounded-full font-medium border',
+              item.screenshot_url
+                ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                : 'text-gray-500 bg-gray-500/10 border-gray-500/20'
+            )}>
+              {item.screenshot_url
+                ? item.screenshot_url.startsWith('api_response:') ? '📋 API証拠' : '📸 証拠あり'
+                : '証拠なし'}
+            </span>
           )}
-        >
-          <span className={clsx('w-1.5 h-1.5 rounded-full', cfg.dot)} />
-          {cfg.label}
+          <div
+            className={clsx(
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border',
+              cfg.bg,
+              cfg.border,
+              cfg.color
+            )}
+          >
+            <span className={clsx('w-1.5 h-1.5 rounded-full', cfg.dot)} />
+            {cfg.label}
+          </div>
         </div>
 
         {/* Quick delete (inline) */}
@@ -315,10 +329,25 @@ export default function QueueItem({
           )}
           {item.screenshot_url && (
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">送信後スクリーンショット</p>
-              <a href={item.screenshot_url} target="_blank" rel="noopener noreferrer">
-                <img src={item.screenshot_url} alt="送信結果" className="rounded-lg border border-gray-700 max-h-32 object-cover" />
-              </a>
+              <p className="text-xs font-medium text-gray-500 mb-1">送信証拠</p>
+              {item.screenshot_url.startsWith('api_response:') ? (
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3">
+                  <p className="text-[10px] text-emerald-400 font-medium mb-1">📋 CF7 REST APIレスポンス</p>
+                  <pre className="text-xs text-emerald-300/80 whitespace-pre-wrap font-mono">
+                    {item.screenshot_url.replace('api_response:', '')}
+                  </pre>
+                </div>
+              ) : item.screenshot_url.startsWith('chrome_screenshot:') ? (
+                <div className="bg-violet-500/5 border border-violet-500/20 rounded-lg p-3">
+                  <p className="text-xs text-violet-400">📸 スクリーンショット確認済み（ID: {item.screenshot_url.replace('chrome_screenshot:', '')}）</p>
+                </div>
+              ) : item.screenshot_url.startsWith('http') ? (
+                <a href={item.screenshot_url} target="_blank" rel="noopener noreferrer">
+                  <img src={item.screenshot_url} alt="送信結果" className="rounded-lg border border-gray-700 max-h-48 object-contain" />
+                </a>
+              ) : (
+                <p className="text-xs text-gray-400">{item.screenshot_url}</p>
+              )}
             </div>
           )}
 
