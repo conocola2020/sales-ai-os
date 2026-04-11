@@ -234,12 +234,12 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // failed
+    // failed → 確認待ちに戻して Chrome MCP での自動再試行に回す
     await supabase
       .from('send_queue')
       .update({
-        status: '失敗',
-        error_message: result.message,
+        status: '確認待ち',
+        error_message: `Agent失敗: ${result.message}`,
         updated_at: new Date().toISOString(),
       })
       .eq('id', queueItemId)
@@ -252,6 +252,26 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('Agent send error:', err)
+
+    // Agent API エラー時はステータスを「確認待ち」に戻す
+    // → Scheduled Task (bulk-form-send-resume) が自動検出して Chrome MCP で送信
+    try {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user && queueItemId) {
+        await supabase
+          .from('send_queue')
+          .update({
+            status: '確認待ち',
+            error_message: `Agent API失敗: ${err instanceof Error ? err.message : 'unknown'}`,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', queueItemId)
+          .eq('user_id', user.id)
+      }
+    } catch {
+      // ステータス復元失敗は無視
+    }
 
     return NextResponse.json(
       {
