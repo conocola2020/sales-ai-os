@@ -4,13 +4,13 @@
  * /v1/agents, /v1/environments, /v1/sessions を使って
  * クラウドサンドボックス内でフォーム送信を実行する。
  *
- * Beta: anthropic-beta: managed-agents-2026-04-01
+ * Beta: anthropic-beta: agent-api-2026-03-01
  */
 
 import { getAnthropicApiKey } from '@/lib/env'
 
 const API_BASE = 'https://api.anthropic.com'
-const BETA_HEADER = 'managed-agents-2026-04-01'
+const BETA_HEADER = 'agent-api-2026-03-01'
 const AGENT_MODEL = 'claude-sonnet-4-6'
 
 // ─── 型定義 ─────────────────────────────────────
