@@ -7,14 +7,19 @@
 
 ## ⛔ 絶対禁止事項（全セッション共通）
 
-- **`/api/submit-form` を呼ぶことは絶対禁止**（Railwayワーカー経由の送信は使わない）
-- **fetch や axios で Sales AI OS の API を直接叩くことは禁止**
 - **`mcp__plugin_playwright_playwright__*` ツールは絶対に使わない**（Playwrightは禁止）
-- **フォーム送信には必ず `mcp__Claude_in_Chrome__*` ツールのみを使う**
+- **Playwright / Puppeteer を使ったフォーム送信は禁止**（削除済み）
+
+## フォーム送信方式
+
+フォーム自動送信は以下の2つの方式で行う：
+
+1. **Managed Agents API** (`/api/agent-send`) — UIの「フォーム自動送信」ボタンから呼ばれる。Anthropic のクラウドサンドボックス内で Agent が web_fetch + bash (curl) でフォーム送信を実行する。
+2. **Claude in Chrome MCP** (`mcp__Claude_in_Chrome__*`) — 「送信して」と指示された場合に `.claude/skills/bulk-form-send.md` スキルに従って実行する。
 
 ---
 
-## フォーム送信の指示を受けたときの必須手順
+## 「送信して」指示を受けたときの手順
 
 「送信して」「フォーム送信して」「確認待ちを送信」などの指示を受けたら：
 
@@ -23,7 +28,6 @@
 3. Supabase (`kaqhjlmftxvjjbmcuoyq`) の `send_queue` から `確認待ち` を取得して処理する
 
 Chrome MCPが使えない・タブが取得できない場合は、処理を止めてユーザーに報告する。
-**決してAPIやコードで代替しない。**
 
 ---
 

@@ -260,3 +260,58 @@ export async function getDealStats(): Promise<{
     error: null,
   }
 }
+
+// ──────────────────────────────────────────
+// Get upcoming deals (next_action_date or meeting_date within 7 days)
+// ──────────────────────────────────────────
+export interface UpcomingDeal {
+  id: string
+  company_name: string
+  contact_name: string | null
+  stage: string
+  next_action: string | null
+  next_action_date: string | null
+  meeting_date: string | null
+  meeting_url: string | null
+}
+
+export async function getUpcomingDeals(): Promise<{
+  data: UpcomingDeal[]
+  error: string | null
+}> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { data: [], error: null }
+
+  const today = new Date()
+  const todayStr = today.toISOString().split('T')[0]
+  const weekLater = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000)
+  const weekLaterStr = weekLater.toISOString().split('T')[0]
+
+  // next_action_date or meeting_date が今日〜14日以内の商談を取得
+  const { data, error } = await supabase
+    .from('deals')
+    .select('id, company_name, contact_name, stage, next_action, next_action_date, meeting_date, meeting_url')
+    .eq('user_id', user.id)
+    .in('stage', ACTIVE_STAGES as unknown as string[])
+    .or(`next_action_date.gte.${todayStr},meeting_date.gte.${todayStr}`)
+    .order('next_action_date', { ascending: true, nullsFirst: false })
+    .limit(10)
+
+  if (error) {
+    console.error('getUpcomingDeals error:', error)
+    return { data: [], error: error.message }
+  }
+
+  // 14日以内のものだけフィルタ
+  const filtered = (data as UpcomingDeal[]).filter(d => {
+    const actionDate = d.next_action_date
+    const meetDate = d.meeting_date?.split('T')[0]
+    return (actionDate && actionDate <= weekLaterStr) || (meetDate && meetDate <= weekLaterStr)
+  })
+
+  return { data: filtered, error: null }
+}

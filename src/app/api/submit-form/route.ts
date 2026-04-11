@@ -4,12 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 /**
  * POST /api/submit-form
  *
- * フォーム自動送信のトリガーAPI。
- * Railway上のPlaywrightワーカーがポーリングで処理するため、
- * このAPIはキューアイテムのステータスを「確認待ち」に変更し、
- * send_method='form' であることを確認する。
- *
- * 実際のフォーム送信はRailwayのワーカー (scripts/form-submitter.ts) が行う。
+ * レガシーAPI（後方互換のため残置）。
+ * 新規のフォーム送信は /api/agent-send を使用すること。
+ * このAPIはステータスを「送信承認済み」に変更するのみ。
  */
 export async function POST(req: NextRequest) {
   try {

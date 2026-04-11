@@ -12,6 +12,7 @@ import type { SendStats } from '@/types/sending'
 import type { ReplyStats } from '@/types/replies'
 import type { DealStats } from '@/types/deals'
 import type { InstagramStats } from '@/types/instagram'
+import type { UpcomingDeal } from '@/app/dashboard/deals/actions'
 
 interface LeadSummary {
   total: number
@@ -24,6 +25,26 @@ interface DashboardOverviewProps {
   replyStats: ReplyStats
   dealStats: DealStats
   igStats: InstagramStats
+  upcomingDeals?: UpcomingDeal[]
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr)
+  const month = d.getMonth() + 1
+  const day = d.getDate()
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土']
+  const weekday = weekdays[d.getDay()]
+  return `${month}/${day}(${weekday})`
+}
+
+function isToday(dateStr: string): boolean {
+  const today = new Date().toISOString().split('T')[0]
+  return dateStr.split('T')[0] === today
+}
+
+function isTomorrow(dateStr: string): boolean {
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+  return dateStr.split('T')[0] === tomorrow
 }
 
 export default function DashboardOverview({
@@ -32,6 +53,7 @@ export default function DashboardOverview({
   replyStats,
   dealStats,
   igStats,
+  upcomingDeals = [],
 }: DashboardOverviewProps) {
   const replyRate = sendStats.sent > 0
     ? Math.round((replyStats.total / sendStats.sent) * 100)
@@ -211,36 +233,90 @@ export default function DashboardOverview({
           </div>
         </Link>
 
-        {/* Quick Actions */}
+        {/* Upcoming Deals */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-          <h2 className="text-base font-semibold text-white mb-5">クイックアクション</h2>
-          <div className="space-y-2">
-            {[
-              { label: 'リードをインポート', icon: Users, href: '/dashboard/leads', desc: 'CSVから一括登録' },
-              { label: '文面を生成', icon: Zap, href: '/dashboard/compose', desc: 'AIで営業文章作成' },
-              { label: '送信を管理', icon: Send, href: '/dashboard/sending', desc: '送信キュー管理' },
-              { label: 'レポートを確認', icon: TrendingUp, href: '/dashboard/reports', desc: '成果分析・可視化' },
-            ].map((action) => {
-              const Icon = action.icon
-              return (
-                <Link
-                  key={action.label}
-                  href={action.href}
-                  className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all group"
-                >
-                  <div className="w-9 h-9 bg-violet-500/10 border border-violet-500/20 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-violet-500/20 transition-colors">
-                    <Icon className="w-4 h-4 text-violet-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">{action.label}</p>
-                    <p className="text-xs text-gray-500">{action.desc}</p>
-                  </div>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-gray-600 ml-auto" />
-                </Link>
-              )
-            })}
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-base font-semibold text-white">商談予定</h2>
+            <Link href="/dashboard/deals" className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1">
+              すべて見る <ArrowUpRight className="w-3 h-3" />
+            </Link>
           </div>
+          {upcomingDeals.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Clock className="w-8 h-8 text-gray-600 mb-3" />
+              <p className="text-sm text-gray-500">直近の予定はありません</p>
+              <p className="text-xs text-gray-600 mt-1">商談が作成されるとここに表示されます</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {upcomingDeals.map((deal) => {
+                const dateStr = deal.meeting_date || deal.next_action_date || ''
+                const dateLabel = dateStr
+                  ? isToday(dateStr) ? '今日' : isTomorrow(dateStr) ? '明日' : formatDate(dateStr)
+                  : ''
+                const urgent = dateStr ? isToday(dateStr) : false
+                return (
+                  <Link
+                    key={deal.id}
+                    href="/dashboard/deals"
+                    className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all group"
+                  >
+                    <div className={clsx(
+                      'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold',
+                      urgent
+                        ? 'bg-red-500/10 border border-red-500/20 text-red-400'
+                        : 'bg-violet-500/10 border border-violet-500/20 text-violet-400'
+                    )}>
+                      {dateLabel}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors truncate">
+                        {deal.company_name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {deal.next_action || deal.stage}
+                      </p>
+                    </div>
+                    {deal.meeting_url && (
+                      <div className="flex-shrink-0">
+                        <div className="w-6 h-6 bg-emerald-500/10 border border-emerald-500/20 rounded flex items-center justify-center">
+                          <ArrowUpRight className="w-3 h-3 text-emerald-400" />
+                        </div>
+                      </div>
+                    )}
+                  </Link>
+                )
+              })}
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        {[
+          { label: 'リードをインポート', icon: Users, href: '/dashboard/leads', desc: 'CSVから一括登録' },
+          { label: '文面を生成', icon: Zap, href: '/dashboard/compose', desc: 'AIで営業文章作成' },
+          { label: '送信を管理', icon: Send, href: '/dashboard/sending', desc: '送信キュー管理' },
+          { label: 'レポートを確認', icon: TrendingUp, href: '/dashboard/reports', desc: '成果分析・可視化' },
+        ].map((action) => {
+          const Icon = action.icon
+          return (
+            <Link
+              key={action.label}
+              href={action.href}
+              className="flex items-center gap-3 p-3 bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-gray-600 rounded-xl transition-all group"
+            >
+              <div className="w-9 h-9 bg-violet-500/10 border border-violet-500/20 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-violet-500/20 transition-colors">
+                <Icon className="w-4 h-4 text-violet-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">{action.label}</p>
+                <p className="text-xs text-gray-500">{action.desc}</p>
+              </div>
+            </Link>
+          )
+        })}
       </div>
     </div>
   )

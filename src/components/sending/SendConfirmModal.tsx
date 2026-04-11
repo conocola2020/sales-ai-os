@@ -32,7 +32,7 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
     if (sendMethod === 'form') {
       // フォーム自動送信: APIでキューに入れてワーカーが処理
       try {
-        const res = await fetch('/api/submit-form', {
+        const res = await fetch('/api/agent-send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ queueItemId: item.id }),
@@ -150,11 +150,11 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
               </div>
               <div className="text-center">
                 <p className="text-base font-semibold text-white">
-                  {sendMethod === 'form' ? 'フォーム送信をキューに登録しました' : '送信完了しました'}
+                  {sendMethod === 'form' ? 'フォーム送信が完了しました' : '送信完了しました'}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
                   {sendMethod === 'form'
-                    ? `${lead?.company_name ?? '企業'} への送信はワーカーが処理します。結果はページ更新後に「送信済み」または「失敗」として反映されます。`
+                    ? `${lead?.company_name ?? '企業'} へのフォーム送信がAIエージェントにより完了しました。`
                     : `${lead?.company_name ?? '企業'} への${sendMethod === 'email' ? 'メール' : ''}送信が完了し、ステータスを「送信済み」に更新しました。`
                   }
                 </p>
@@ -178,7 +178,7 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
             <div className="flex flex-col items-center py-8 gap-4">
               <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
               <p className="text-sm text-gray-400">
-                {sendMethod === 'form' ? 'フォーム送信を登録中...' : sendMethod === 'email' ? 'メール送信中...' : '送信処理中...'}
+                {sendMethod === 'form' ? 'AIエージェントがフォーム送信中...' : sendMethod === 'email' ? 'メール送信中...' : '送信処理中...'}
               </p>
             </div>
           )}
@@ -276,7 +276,7 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
                 <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-300/90">
                   {sendMethod === 'form'
-                    ? 'Playwrightワーカーが企業HPの問い合わせフォームを自動検出し、送信します。フォームが見つからない場合は手動対応が必要になります。'
+                    ? 'AIエージェントが企業HPの問い合わせフォームを自動検出し、送信します。フォームが見つからない場合は手動対応が必要になります。'
                     : sendMethod === 'email'
                     ? 'Resend APIを使用してメールを直接送信します。送信後は取り消せません。'
                     : '以下の文面を企業の問い合わせフォームから送信してください。送信後に「送信完了」ボタンを押すとステータスが更新されます。'}
