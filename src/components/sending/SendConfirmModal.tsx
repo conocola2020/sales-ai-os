@@ -30,30 +30,40 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
     setStep('sending')
 
     if (sendMethod === 'form') {
-      // フォーム自動送信: APIでキューに入れてワーカーが処理
+      // フォーム自動送信: Managed Agents API で送信を試行
+      // 失敗した場合はステータスを「確認待ち」に戻し、Claude in Chrome での手動送信を案内
       try {
         const res = await fetch('/api/agent-send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ queueItemId: item.id }),
         })
-        let data: { error?: string; success?: boolean } = {}
+        let data: { error?: string; success?: boolean; result?: { result: string } } = {}
         try {
           data = await res.json()
         } catch {
-          // JSONパース失敗 = サーバーがHTMLエラーページを返した
-          setErrorMsg(`サーバーエラー (HTTP ${res.status}) — フォーム送信APIが応答しませんでした`)
+          setErrorMsg(`AIエージェントが応答しませんでした (HTTP ${res.status})。Claude に「送信して」と指示して手動送信することもできます。`)
           setStep('error')
           return
         }
         if (!res.ok || data.error) {
-          setErrorMsg(data.error || `フォーム送信の登録に失敗しました (HTTP ${res.status})`)
+          setErrorMsg(data.error
+            ? `${data.error}\n\nClaude に「送信して」と指示して手動送信することもできます。`
+            : `フォーム送信に失敗しました (HTTP ${res.status})。Claude に「送信して」と指示して手動送信することもできます。`)
+          setStep('error')
+          return
+        }
+        // Agent の結果が form_not_found や manual の場合もエラー表示
+        if (data.result && data.result.result !== 'success') {
+          setErrorMsg(`${data.result.result === 'form_not_found' ? 'フォームが見つかりませんでした。' : data.result.result === 'manual' ? 'CAPTCHA等により自動送信できません。' : 'フォーム送信に失敗しました。'}Claude に「送信して」と指示して手動送信することもできます。`)
           setStep('error')
           return
         }
         setStep('success')
       } catch (err) {
-        setErrorMsg(err instanceof Error ? err.message : 'ネットワークエラーが発生しました')
+        setErrorMsg(err instanceof Error
+          ? `${err.message}\n\nClaude に「送信して」と指示して手動送信することもできます。`
+          : 'ネットワークエラーが発生しました。Claude に「送信して」と指示して手動送信することもできます。')
         setStep('error')
       }
     } else if (sendMethod === 'email' && lead?.email) {
@@ -276,7 +286,7 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
                 <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-300/90">
                   {sendMethod === 'form'
-                    ? 'AIエージェントが企業HPの問い合わせフォームを自動検出し、送信します。フォームが見つからない場合は手動対応が必要になります。'
+                    ? 'AIエージェントが企業HPの問い合わせフォームを自動検出し、送信します。失敗した場合はClaude に「送信して」と指示して手動送信できます。'
                     : sendMethod === 'email'
                     ? 'Resend APIを使用してメールを直接送信します。送信後は取り消せません。'
                     : '以下の文面を企業の問い合わせフォームから送信してください。送信後に「送信完了」ボタンを押すとステータスが更新されます。'}
