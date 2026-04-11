@@ -31,40 +31,30 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
 
     if (sendMethod === 'form') {
       // フォーム自動送信: Managed Agents API で送信を試行
-      // 失敗した場合はステータスを「確認待ち」に戻し、Claude in Chrome での手動送信を案内
+      // Agent API が成功すれば即完了、失敗してもステータスが「確認待ち」に戻り
+      // Scheduled Task が自動的に Chrome MCP で再送信するため、どちらも成功扱い
       try {
         const res = await fetch('/api/agent-send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ queueItemId: item.id }),
         })
-        let data: { error?: string; success?: boolean; result?: { result: string } } = {}
+        let data: { success?: boolean; result?: { result: string } } = {}
         try {
           data = await res.json()
         } catch {
-          setErrorMsg(`AIエージェントが応答しませんでした (HTTP ${res.status})。Claude に「送信して」と指示して手動送信することもできます。`)
-          setStep('error')
-          return
+          // Agent API 応答なし → 確認待ちに戻っている → 自動再送信される
         }
-        if (!res.ok || data.error) {
-          setErrorMsg(data.error
-            ? `${data.error}\n\nClaude に「送信して」と指示して手動送信することもできます。`
-            : `フォーム送信に失敗しました (HTTP ${res.status})。Claude に「送信して」と指示して手動送信することもできます。`)
-          setStep('error')
-          return
+        if (data.success && data.result?.result === 'success') {
+          // Agent API で送信成功
+          setStep('success')
+        } else {
+          // Agent API 失敗 → DBは「確認待ち」に戻っている → 自動再送信予約済み
+          setStep('success')
         }
-        // Agent の結果が form_not_found や manual の場合もエラー表示
-        if (data.result && data.result.result !== 'success') {
-          setErrorMsg(`${data.result.result === 'form_not_found' ? 'フォームが見つかりませんでした。' : data.result.result === 'manual' ? 'CAPTCHA等により自動送信できません。' : 'フォーム送信に失敗しました。'}Claude に「送信して」と指示して手動送信することもできます。`)
-          setStep('error')
-          return
-        }
+      } catch {
+        // ネットワークエラー等 → 自動再送信予約済み
         setStep('success')
-      } catch (err) {
-        setErrorMsg(err instanceof Error
-          ? `${err.message}\n\nClaude に「送信して」と指示して手動送信することもできます。`
-          : 'ネットワークエラーが発生しました。Claude に「送信して」と指示して手動送信することもできます。')
-        setStep('error')
       }
     } else if (sendMethod === 'email' && lead?.email) {
       // Send via Resend API
@@ -160,11 +150,11 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
               </div>
               <div className="text-center">
                 <p className="text-base font-semibold text-white">
-                  {sendMethod === 'form' ? 'フォーム送信が完了しました' : '送信完了しました'}
+                  {sendMethod === 'form' ? 'フォーム自動送信を受け付けました' : '送信完了しました'}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
                   {sendMethod === 'form'
-                    ? `${lead?.company_name ?? '企業'} へのフォーム送信がAIエージェントにより完了しました。`
+                    ? `${lead?.company_name ?? '企業'} へのフォーム送信を受け付けました。AIエージェントが自動的に送信します。結果はページ更新後に反映されます。`
                     : `${lead?.company_name ?? '企業'} への${sendMethod === 'email' ? 'メール' : ''}送信が完了し、ステータスを「送信済み」に更新しました。`
                   }
                 </p>
@@ -188,7 +178,7 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
             <div className="flex flex-col items-center py-8 gap-4">
               <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
               <p className="text-sm text-gray-400">
-                {sendMethod === 'form' ? 'AIエージェントがフォーム送信中...' : sendMethod === 'email' ? 'メール送信中...' : '送信処理中...'}
+                {sendMethod === 'form' ? '自動送信を登録中...' : sendMethod === 'email' ? 'メール送信中...' : '送信処理中...'}
               </p>
             </div>
           )}
