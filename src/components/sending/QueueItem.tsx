@@ -62,6 +62,7 @@ export default function QueueItem({
   const [expanded, setExpanded] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showEvidence, setShowEvidence] = useState(false)
 
   const cfg = SEND_STATUS_CONFIG[item.status] ?? {
     label: item.status,
@@ -109,6 +110,7 @@ export default function QueueItem({
   const lead = item.lead
 
   return (
+    <>
     <div
       className={clsx(
         'rounded-xl border transition-all',
@@ -184,16 +186,19 @@ export default function QueueItem({
         {/* Status badge + evidence badge */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {item.status === '送信済み' && (
-            <span className={clsx(
-              'text-[10px] px-2 py-0.5 rounded-full font-medium border',
-              item.screenshot_url
-                ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-                : 'text-gray-500 bg-gray-500/10 border-gray-500/20'
-            )}>
+            <button
+              onClick={(e) => { e.stopPropagation(); if (item.screenshot_url) setShowEvidence(true) }}
+              className={clsx(
+                'text-[10px] px-2 py-0.5 rounded-full font-medium border transition-colors',
+                item.screenshot_url
+                  ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20 cursor-pointer'
+                  : 'text-gray-500 bg-gray-500/10 border-gray-500/20 cursor-default'
+              )}
+            >
               {item.screenshot_url
-                ? item.screenshot_url.startsWith('api_response:') ? '📋 API証拠' : '📸 証拠あり'
+                ? item.screenshot_url.startsWith('api_response:') ? '📋 証拠を見る' : '📸 証拠を見る'
                 : '証拠なし'}
-            </span>
+            </button>
           )}
           <div
             className={clsx(
@@ -460,5 +465,91 @@ export default function QueueItem({
         </div>
       )}
     </div>
+
+    {/* 証拠モーダル */}
+    {showEvidence && item.screenshot_url && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowEvidence(false)}>
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+        <div className="relative w-full max-w-lg bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-emerald-400" />
+              <h3 className="text-sm font-semibold text-white">送信証拠</h3>
+              <span className="text-xs text-gray-500">{item.lead?.company_name}</span>
+            </div>
+            <button onClick={() => setShowEvidence(false)} className="p-1 text-gray-500 hover:text-gray-300 transition-colors">
+              <span className="text-lg leading-none">&times;</span>
+            </button>
+          </div>
+          <div className="p-5 max-h-[70vh] overflow-y-auto">
+            {item.screenshot_url.startsWith('api_response:') ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">CF7 REST API</span>
+                  <span className="text-xs text-gray-500">フォーム送信APIレスポンス</span>
+                </div>
+                <pre className="text-xs text-emerald-300/80 bg-gray-800/60 border border-gray-700/50 rounded-lg p-4 whitespace-pre-wrap font-mono overflow-x-auto">
+                  {(() => { try { return JSON.stringify(JSON.parse(item.screenshot_url.replace('api_response:', '')), null, 2) } catch { return item.screenshot_url.replace('api_response:', '') } })()}
+                </pre>
+              </div>
+            ) : item.screenshot_url.startsWith('agent_result:') ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full">AI Agent</span>
+                  <span className="text-xs text-gray-500">Managed Agent 実行結果</span>
+                </div>
+                <pre className="text-xs text-violet-300/80 bg-gray-800/60 border border-gray-700/50 rounded-lg p-4 whitespace-pre-wrap font-mono overflow-x-auto">
+                  {(() => { try { return JSON.stringify(JSON.parse(item.screenshot_url.replace('agent_result:', '')), null, 2) } catch { return item.screenshot_url.replace('agent_result:', '') } })()}
+                </pre>
+              </div>
+            ) : item.screenshot_url.startsWith('chrome_screenshot:') ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full">Chrome MCP</span>
+                  <span className="text-xs text-gray-500">ブラウザスクリーンショット</span>
+                </div>
+                <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg p-4 text-center">
+                  <p className="text-sm text-cyan-400">Screenshot ID: {item.screenshot_url.replace('chrome_screenshot:', '')}</p>
+                  <p className="text-xs text-gray-500 mt-1">Chrome MCPで撮影された送信完了画面のスクリーンショット</p>
+                </div>
+              </div>
+            ) : item.screenshot_url.startsWith('complete_page:') || item.screenshot_url.startsWith('thanks_page:') ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">完了ページ</span>
+                  <span className="text-xs text-gray-500">送信完了後のリダイレクト先</span>
+                </div>
+                <a
+                  href={item.screenshot_url.replace(/^(complete_page|thanks_page):/, '')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-gray-800/60 border border-gray-700/50 rounded-lg p-4 text-emerald-400 hover:text-emerald-300 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-sm truncate">{item.screenshot_url.replace(/^(complete_page|thanks_page):/, '')}</span>
+                </a>
+              </div>
+            ) : item.screenshot_url.startsWith('http') ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">スクリーンショット</span>
+                </div>
+                <a href={item.screenshot_url} target="_blank" rel="noopener noreferrer">
+                  <img src={item.screenshot_url} alt="送信結果" className="rounded-lg border border-gray-700 w-full object-contain" />
+                </a>
+              </div>
+            ) : (
+              <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg p-4">
+                <p className="text-sm text-gray-300">{item.screenshot_url}</p>
+              </div>
+            )}
+            {item.sent_at && (
+              <p className="text-xs text-gray-600 mt-4">送信日時: {new Date(item.sent_at).toLocaleString('ja-JP')}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }
