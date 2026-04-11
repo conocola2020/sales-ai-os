@@ -24,8 +24,10 @@ interface UserSettings {
 }
 
 export async function POST(req: NextRequest) {
+  let queueItemId = ''
   try {
-    const { queueItemId } = (await req.json()) as { queueItemId: string }
+    const body = (await req.json()) as { queueItemId: string }
+    queueItemId = body.queueItemId
 
     if (!queueItemId) {
       return NextResponse.json(
