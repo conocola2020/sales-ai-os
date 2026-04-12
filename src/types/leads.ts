@@ -1,4 +1,4 @@
-export type LeadStatus = '未着手' | '送信済み' | '返信あり' | '商談中' | '成約' | 'NG'
+export type LeadStatus = '未着手' | '送信済み' | '返信あり' | '商談中' | '成約' | 'NG' | 'お断り'
 
 export interface Lead {
   id: string
@@ -36,7 +36,7 @@ export type LeadOption = Pick<Lead, 'id' | 'company_name' | 'contact_name' | 'st
 export type LeadUpdate = Partial<LeadInsert>
 
 export const LEAD_STATUSES: LeadStatus[] = [
-  '未着手', '送信済み', '返信あり', '商談中', '成約', 'NG'
+  '未着手', '送信済み', '返信あり', '商談中', '成約', 'NG', 'お断り'
 ]
 
 export const INDUSTRIES = [
@@ -84,6 +84,13 @@ export const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; b
   },
   'NG': {
     label: 'NG',
+    color: 'text-red-400',
+    bg: 'bg-red-500/10',
+    border: 'border-red-500/20',
+    dot: 'bg-red-400',
+  },
+  'お断り': {
+    label: 'お断り',
     color: 'text-red-400',
     bg: 'bg-red-500/10',
     border: 'border-red-500/20',
