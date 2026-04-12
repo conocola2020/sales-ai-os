@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "send": "node --env-file=.env.local --import tsx scripts/send-forms.ts"
+    "send": "node --env-file=.env.local --import tsx scripts/send-forms.ts",
+    "detect": "node --env-file=.env.local --import tsx scripts/detect-contacts.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

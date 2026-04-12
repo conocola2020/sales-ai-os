@@ -145,6 +145,11 @@ export default function BulkGeneratePanel({
     return rows
   }, [leads, searchQuery, prefectureFilter])
 
+  // 連絡方法未検出のリード数
+  const noContactCount = useMemo(() =>
+    filteredLeads.filter(l => l.contact_method === 'none').length
+  , [filteredLeads])
+
   const toggleLead = useCallback((id: string) => {
     setSelectedLeadIds(prev => {
       const next = new Set(prev)
@@ -165,6 +170,12 @@ export default function BulkGeneratePanel({
   const selectWithHp = () => {
     setSelectedLeadIds(new Set(
       filteredLeads.filter(l => l.company_url || l.website_url).map(l => l.id)
+    ))
+  }
+
+  const selectViable = () => {
+    setSelectedLeadIds(new Set(
+      filteredLeads.filter(l => l.contact_method === 'form' || l.contact_method === 'email').map(l => l.id)
     ))
   }
 
@@ -243,8 +254,17 @@ export default function BulkGeneratePanel({
               <Globe className="w-3 h-3 inline mr-1" />
               HP有り
             </button>
+            <button onClick={selectViable} className="px-2.5 py-1 text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 hover:bg-emerald-500/20 transition-colors">
+              ✅ 送信可能のみ
+            </button>
             <span className="text-xs text-gray-500 ml-auto">{selectedLeadIds.size}件選択</span>
           </div>
+
+          {noContactCount > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+              <span className="text-xs text-amber-400">⚠️ {noContactCount}件は連絡方法未検出です。「npm run detect」で事前検出してください。</span>
+            </div>
+          )}
 
           {/* Lead list (virtualized: show first N, load more on scroll) */}
           <div className="space-y-1 max-h-[300px] overflow-y-auto" onScroll={e => {

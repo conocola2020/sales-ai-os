@@ -74,13 +74,13 @@ export async function getLeadQueueStatuses(): Promise<Record<string, string>> {
 // 軽量版：ドロップダウン用（id・社名・担当者名のみ）
 // ──────────────────────────────────────────
 export async function getLeadOptions(): Promise<{
-  data: Pick<Lead, 'id' | 'company_name' | 'contact_name' | 'status' | 'industry' | 'prefecture' | 'notes' | 'website_url' | 'company_url' | 'email'>[]
+  data: Pick<Lead, 'id' | 'company_name' | 'contact_name' | 'status' | 'industry' | 'prefecture' | 'notes' | 'website_url' | 'company_url' | 'email' | 'contact_method'>[]
   error: string | null
 }> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('leads')
-    .select('id, company_name, contact_name, status, industry, prefecture, notes, website_url, company_url, email')
+    .select('id, company_name, contact_name, status, industry, prefecture, notes, website_url, company_url, email, contact_method')
     .order('created_at', { ascending: false })
     .limit(2000)
 
