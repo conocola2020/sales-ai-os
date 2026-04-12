@@ -163,7 +163,7 @@ export async function getOrCreateAgent(): Promise<string> {
     system: FORM_AGENT_SYSTEM,
     tools: [
       {
-        type: 'agent_toolset_20260401',
+        type: 'agent_toolset_20251212',
         default_config: { enabled: false },
         configs: [
           { name: 'bash', enabled: true },

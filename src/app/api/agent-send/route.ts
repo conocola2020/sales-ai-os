@@ -78,6 +78,40 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // 冪等性チェック: 既に送信中・送信済みなら二重実行を防止
+    if (item.status === '送信済み') {
+      return NextResponse.json({
+        success: true,
+        message: 'このアイテムは既に送信済みです',
+        result: { result: 'success', message: '送信済み（スキップ）' },
+      })
+    }
+    if (item.status === '送信中') {
+      return NextResponse.json({
+        success: true,
+        message: 'このアイテムは現在送信中です',
+        result: { result: 'success', message: '送信中（スキップ）' },
+      })
+    }
+
+    // ステータスを「送信中」に即座に変更（二重実行防止ロック）
+    const { error: lockError } = await supabase
+      .from('send_queue')
+      .update({
+        status: '送信中',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', queueItemId)
+      .eq('user_id', user.id)
+      .in('status', ['確認待ち', '送信承認済み'])
+
+    if (lockError) {
+      return NextResponse.json(
+        { error: 'ステータスロックに失敗しました' },
+        { status: 500 }
+      )
+    }
+
     const lead = item.lead as unknown as {
       id: string
       company_name: string
@@ -88,6 +122,13 @@ export async function POST(req: NextRequest) {
 
     const companyUrl = lead.company_url || lead.website_url
     if (!companyUrl) {
+      // ロック解除
+      await supabase
+        .from('send_queue')
+        .update({ status: '確認待ち', updated_at: new Date().toISOString() })
+        .eq('id', queueItemId)
+        .eq('user_id', user.id)
+
       return NextResponse.json(
         { error: '企業URLが設定されていません' },
         { status: 400 }
