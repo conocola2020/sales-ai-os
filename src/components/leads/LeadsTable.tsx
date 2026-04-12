@@ -714,8 +714,8 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                             {lead.company_name}
                           </span>
                           {(() => {
-                            const method = lead.contact_method || detectContactMethod(lead)
-                            const badge = CONTACT_METHOD_BADGE[method] || CONTACT_METHOD_BADGE.manual
+                            const method = lead.contact_method ?? 'unscanned'
+                            const badge = CONTACT_METHOD_BADGE[method] || CONTACT_METHOD_BADGE.unscanned
                             return (
                               <span className={clsx('inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border w-fit', badge.color)}>
                                 {badge.icon} {badge.label}
