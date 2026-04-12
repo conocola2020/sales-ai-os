@@ -124,15 +124,25 @@ export default function BulkGeneratePanel({
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [prefectureFilter, setPrefectureFilter] = useState('all')
+  const [contactMethodFilter, setContactMethodFilter] = useState('all')
   const [visibleCount, setVisibleCount] = useState(VISIBLE_BATCH)
   const [isSavingAll, setIsSavingAll] = useState(false)
   const [isQueuingAll, setIsQueuingAll] = useState(false)
 
-  // Filtered leads（検索クエリ + 都道府県フィルター）
+  // Filtered leads（検索クエリ + 都道府県 + 連絡方法フィルター）
   const filteredLeads = useMemo(() => {
     let rows = leads
     if (prefectureFilter !== 'all') {
       rows = rows.filter(l => (l.prefecture ?? l.notes) === prefectureFilter)
+    }
+    if (contactMethodFilter !== 'all') {
+      if (contactMethodFilter === 'viable') {
+        rows = rows.filter(l => l.contact_method === 'form' || l.contact_method === 'email')
+      } else if (contactMethodFilter === 'unscanned') {
+        rows = rows.filter(l => !l.contact_method)
+      } else {
+        rows = rows.filter(l => l.contact_method === contactMethodFilter)
+      }
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
@@ -143,7 +153,7 @@ export default function BulkGeneratePanel({
       )
     }
     return rows
-  }, [leads, searchQuery, prefectureFilter])
+  }, [leads, searchQuery, prefectureFilter, contactMethodFilter])
 
   // 連絡方法未検出のリード数
   const noContactCount = useMemo(() =>
@@ -240,6 +250,20 @@ export default function BulkGeneratePanel({
               const prefs = [...new Set(leads.map(l => l.prefecture ?? l.notes).filter(Boolean))] as string[]
               return prefs.sort().map(p => <option key={p} value={p}>{p} ({leads.filter(l => (l.prefecture ?? l.notes) === p).length})</option>)
             })()}
+          </select>
+
+          {/* Contact method filter */}
+          <select
+            value={contactMethodFilter}
+            onChange={e => { setContactMethodFilter(e.target.value); setVisibleCount(VISIBLE_BATCH) }}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+          >
+            <option value="all">連絡方法: すべて</option>
+            <option value="viable">📝📧 送信可能のみ（フォーム+メール）</option>
+            <option value="form">📝 フォームのみ</option>
+            <option value="email">📧 メールのみ</option>
+            <option value="none">❌ なし</option>
+            <option value="unscanned">🔍 未スキャン</option>
           </select>
 
           {/* Quick select buttons */}
