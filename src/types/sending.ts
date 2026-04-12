@@ -1,4 +1,4 @@
-export type SendStatus = '確認待ち' | '送信承認済み' | '送信済み' | '失敗' | 'form_not_found' | '手動対応'
+export type SendStatus = '確認待ち' | '送信承認済み' | '送信済み' | '失敗' | 'form_not_found' | '手動対応' | '送信不可'
 export type SendMethod = 'email' | 'form' | 'manual'
 
 export interface SendQueueItem {
@@ -33,7 +33,7 @@ export interface SendQueueItem {
 export type SendQueueInsert = Pick<SendQueueItem, 'lead_id' | 'message_content'> &
   Partial<Pick<SendQueueItem, 'subject' | 'scheduled_at' | 'send_method'>>
 
-export const SEND_STATUSES: SendStatus[] = ['確認待ち', '送信承認済み', '送信済み', '失敗', 'form_not_found', '手動対応']
+export const SEND_STATUSES: SendStatus[] = ['確認待ち', '送信承認済み', '送信済み', '失敗', 'form_not_found', '手動対応', '送信不可']
 
 export const SEND_STATUS_CONFIG: Record<
   SendStatus,
@@ -81,6 +81,13 @@ export const SEND_STATUS_CONFIG: Record<
     border: 'border-yellow-500/20',
     dot: 'bg-yellow-400',
   },
+  送信不可: {
+    label: '送信不可',
+    color: 'text-gray-400',
+    bg: 'bg-gray-500/10',
+    border: 'border-gray-500/20',
+    dot: 'bg-gray-400',
+  },
 }
 
 export const SEND_METHOD_CONFIG: Record<
@@ -114,4 +121,5 @@ export interface SendStats {
   failed: number     // 失敗
   manual: number     // 手動対応が必要
   formNotFound: number // フォーム未検出
+  unsendable: number // 送信不可
 }

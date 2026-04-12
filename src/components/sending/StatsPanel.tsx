@@ -1,10 +1,10 @@
 'use client'
 
-import { Eye, CheckCircle2, XCircle, Send, AlertTriangle, Globe } from 'lucide-react'
+import { Eye, CheckCircle2, XCircle, Send, AlertTriangle, Globe, Ban } from 'lucide-react'
 import type { SendStats } from '@/types/sending'
 import clsx from 'clsx'
 
-type Tab = '全て' | '確認待ち' | '手動対応' | '送信済み' | '失敗' | 'フォーム未検出'
+type Tab = '全て' | '確認待ち' | '手動対応' | '送信済み' | '失敗' | 'フォーム未検出' | '送信不可'
 
 interface StatCardProps {
   label: string
@@ -54,7 +54,7 @@ interface StatsPanelProps {
 
 export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanelProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
       <StatCard
         label="合計"
         tab="全て"
@@ -121,6 +121,17 @@ export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanel
         border="border-orange-500/20"
         isActive={activeTab === 'フォーム未検出'}
         onClick={() => onTabChange('フォーム未検出')}
+      />
+      <StatCard
+        label="送信不可"
+        tab="送信不可"
+        value={stats.unsendable}
+        icon={<Ban className="w-4 h-4" />}
+        color="text-gray-400"
+        bg="bg-gray-500/10"
+        border="border-gray-500/20"
+        isActive={activeTab === '送信不可'}
+        onClick={() => onTabChange('送信不可')}
       />
     </div>
   )

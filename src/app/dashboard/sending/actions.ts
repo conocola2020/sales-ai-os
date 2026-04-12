@@ -350,7 +350,32 @@ export async function markAsManual(
 }
 
 // ──────────────────────────────────────────
-// フォーム未検出確定（form_not_found → 手動対応 or メール切替）
+// 送信不可にする（手動でも送信できなかった）
+// ──────────────────────────────────────────
+export async function markAsUnsendable(
+  id: string,
+  reason?: string
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: '認証が必要です' }
+
+  const { error } = await supabase
+    .from('send_queue')
+    .update({
+      status: '送信不可' as SendStatus,
+      error_message: reason || '手動確認の結果、送信不可',
+    })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/sending')
+  return { error: null }
+}
+
+// ──────────────────────────────────────────
+// フォーム未検出確定（form_not_found → 手動対応）
 // ──────────────────────────────────────────
 export async function confirmFormNotFound(
   id: string
@@ -411,7 +436,7 @@ export async function getSendStats(): Promise<{
 
   if (!user) {
     return {
-      data: { total: 0, reviewing: 0, sent: 0, failed: 0, manual: 0, formNotFound: 0 },
+      data: { total: 0, reviewing: 0, sent: 0, failed: 0, manual: 0, formNotFound: 0, unsendable: 0 },
       error: null,
     }
   }
@@ -434,6 +459,7 @@ export async function getSendStats(): Promise<{
     failed: rows.filter(r => r.status === '失敗').length,
     manual: rows.filter(r => r.status === '手動対応').length,
     formNotFound: rows.filter(r => r.status === 'form_not_found').length,
+    unsendable: rows.filter(r => r.status === '送信不可').length,
   }
 
   return { data: stats, error: null }

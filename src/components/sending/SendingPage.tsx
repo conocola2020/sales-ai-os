@@ -19,6 +19,7 @@ import {
   ExternalLink,
   Globe,
   Search,
+  Ban,
 } from 'lucide-react'
 import clsx from 'clsx'
 import type { SendQueueItem, SendStats } from '@/types/sending'
@@ -28,12 +29,12 @@ import StatsPanel from './StatsPanel'
 import QueueItem from './QueueItem'
 import SendConfirmModal from './SendConfirmModal'
 import AddToQueueModal from './AddToQueueModal'
-import { deleteQueueItem, retryQueueItem, markAsSent, markAsManual, changeSendMethod, resetToReview } from '@/app/dashboard/sending/actions'
+import { deleteQueueItem, retryQueueItem, markAsSent, markAsManual, changeSendMethod, resetToReview, markAsUnsendable } from '@/app/dashboard/sending/actions'
 
 // ──────────────────────────────────────────
 // Tab definitions
 // ──────────────────────────────────────────
-type Tab = '全て' | '確認待ち' | '手動対応' | '送信済み' | '失敗' | 'フォーム未検出'
+type Tab = '全て' | '確認待ち' | '手動対応' | '送信済み' | '失敗' | 'フォーム未検出' | '送信不可'
 
 const TABS: { label: Tab; icon: React.ReactNode; count?: (s: SendStats) => number; urgent?: boolean }[] = [
   { label: '全て', icon: <Send className="w-3.5 h-3.5" />, count: s => s.total },
@@ -42,6 +43,7 @@ const TABS: { label: Tab; icon: React.ReactNode; count?: (s: SendStats) => numbe
   { label: '送信済み', icon: <CheckCircle2 className="w-3.5 h-3.5" />, count: s => s.sent },
   { label: '失敗', icon: <XCircle className="w-3.5 h-3.5" />, count: s => s.failed },
   { label: 'フォーム未検出', icon: <Globe className="w-3.5 h-3.5" />, count: s => s.formNotFound },
+  { label: '送信不可', icon: <Ban className="w-3.5 h-3.5" />, count: s => s.unsendable },
 ]
 
 // ──────────────────────────────────────────
@@ -55,6 +57,7 @@ function buildStats(items: SendQueueItem[]): SendStats {
     failed: items.filter(i => i.status === '失敗').length,
     manual: items.filter(i => i.status === '手動対応').length,
     formNotFound: items.filter(i => i.status === 'form_not_found').length,
+    unsendable: items.filter(i => i.status === '送信不可').length,
   }
 }
 
@@ -230,8 +233,9 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
   const filteredQueue = useMemo(
     () => {
       let items: SendQueueItem[]
-      if (activeTab === '全て') items = queue.filter(i => i.status !== '手動対応')
+      if (activeTab === '全て') items = queue.filter(i => i.status !== '手動対応' && i.status !== '送信不可')
       else if (activeTab === 'フォーム未検出') items = queue.filter(i => i.status === 'form_not_found')
+      else if (activeTab === '送信不可') items = queue.filter(i => i.status === '送信不可')
       else items = queue.filter(i => i.status === activeTab)
 
       // 検索フィルター
@@ -496,6 +500,20 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                       再試行
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const { error } = await markAsUnsendable(item.id)
+                        if (!error) {
+                          setQueue(prev => prev.map(q =>
+                            q.id === item.id ? { ...q, status: '送信不可' as const, error_message: '手動確認の結果、送信不可' } : q
+                          ))
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 text-xs rounded-xl transition-colors"
+                    >
+                      <Ban className="w-3.5 h-3.5" />
+                      送信不可
                     </button>
                     <button
                       onClick={async () => {
