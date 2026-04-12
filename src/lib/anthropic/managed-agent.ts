@@ -10,7 +10,7 @@
 import { getAnthropicApiKey } from '@/lib/env'
 
 const API_BASE = 'https://api.anthropic.com'
-const BETA_HEADER = 'managed-agents-2026-04-01'
+const BETA_HEADER = 'managed-agents-2026-04-01,agent-api-2026-03-01'
 const AGENT_MODEL = 'claude-sonnet-4-6'
 
 // ─── 型定義 ─────────────────────────────────────
