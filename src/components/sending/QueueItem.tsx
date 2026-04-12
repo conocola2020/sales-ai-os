@@ -23,7 +23,7 @@ import {
 import clsx from 'clsx'
 import type { SendQueueItem } from '@/types/sending'
 import { SEND_STATUS_CONFIG, SEND_METHOD_CONFIG } from '@/types/sending'
-import { deleteQueueItem, retryQueueItem, markAsSent, resetToReview, confirmFormNotFound } from '@/app/dashboard/sending/actions'
+import { deleteQueueItem, retryQueueItem, markAsSent, resetToReview, confirmFormNotFound, changeSendMethod } from '@/app/dashboard/sending/actions'
 
 interface QueueItemProps {
   item: SendQueueItem
@@ -104,6 +104,13 @@ export default function QueueItem({
     const { error } = await confirmFormNotFound(item.id)
     setLoading(false)
     if (!error) onUpdated(item.id, '手動対応')
+  }
+
+  const handleSwitchToEmail = async () => {
+    setLoading(true)
+    const { error } = await changeSendMethod([item.id], 'email')
+    setLoading(false)
+    if (!error) onUpdated(item.id, '確認待ち')
   }
 
   const [copied, setCopied] = useState(false)
@@ -519,6 +526,14 @@ export default function QueueItem({
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   手動送信済み
+                </button>
+                <button
+                  onClick={handleSwitchToEmail}
+                  disabled={loading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 text-xs font-semibold rounded-lg transition-colors"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  メール送信に切替
                 </button>
                 <button
                   onClick={handleRetry}
