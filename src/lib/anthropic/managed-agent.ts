@@ -67,11 +67,13 @@ export interface FormSubmissionResult {
 
 // ─── API ヘルパー ───────────────────────────────
 
-function headers(): Record<string, string> {
+const STREAM_BETA_HEADER = 'agent-api-2026-03-01'
+
+function headers(forStream = false): Record<string, string> {
   return {
     'x-api-key': getAnthropicApiKey(),
     'anthropic-version': '2023-06-01',
-    'anthropic-beta': BETA_HEADER,
+    'anthropic-beta': forStream ? STREAM_BETA_HEADER : BETA_HEADER,
     'Content-Type': 'application/json',
   }
 }
@@ -247,24 +249,31 @@ export async function runFormSubmission(
 
   console.log(`[ManagedAgent] Created session: ${session.id}`)
 
-  // タスク送信
-  await apiRequest<void>(
-    'POST',
-    `/v1/sessions/${session.id}/events`,
+  // タスク送信（session events は agent-api ヘッダーを使用）
+  const eventsRes = await fetch(
+    `${API_BASE}/v1/sessions/${session.id}/events`,
     {
-      events: [
-        {
-          type: 'user.message',
-          content: [
-            {
-              type: 'text',
-              text: buildTaskPrompt(req),
-            },
-          ],
-        },
-      ],
+      method: 'POST',
+      headers: headers(true),
+      body: JSON.stringify({
+        events: [
+          {
+            type: 'user.message',
+            content: [
+              {
+                type: 'text',
+                text: buildTaskPrompt(req),
+              },
+            ],
+          },
+        ],
+      }),
     }
   )
+  if (!eventsRes.ok) {
+    const errBody = await eventsRes.text()
+    throw new Error(`Events API error (${eventsRes.status}): ${errBody}`)
+  }
 
   // ストリーミングで結果を取得
   const result = await streamSessionResult(session.id)
@@ -279,7 +288,7 @@ async function streamSessionResult(
     {
       method: 'GET',
       headers: {
-        ...headers(),
+        ...headers(true),
         Accept: 'text/event-stream',
       },
     }
