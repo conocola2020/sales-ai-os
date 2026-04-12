@@ -21,7 +21,8 @@ const CONTACT_METHOD_BADGE: Record<string, { icon: string; label: string; color:
   email: { icon: '📧', label: 'メール', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
   instagram: { icon: '📸', label: 'Instagram', color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' },
   manual: { icon: '✋', label: '手動', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' },
-  none: { icon: '❌', label: '未検出', color: 'text-red-400 bg-red-500/10 border-red-500/20' },
+  none: { icon: '❌', label: 'なし', color: 'text-red-400 bg-red-500/10 border-red-500/20' },
+  unscanned: { icon: '🔍', label: '未スキャン', color: 'text-gray-500 bg-gray-500/10 border-gray-700/30' },
 }
 
 type SortField = 'company_name' | 'industry' | 'status' | 'created_at'
@@ -502,8 +503,8 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
             </div>
           ) : (
             filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((lead) => {
-              const method = lead.contact_method || detectContactMethod(lead)
-              const badge = CONTACT_METHOD_BADGE[method] || CONTACT_METHOD_BADGE.manual
+              const method = lead.contact_method ?? 'unscanned'
+              const badge = CONTACT_METHOD_BADGE[method] || CONTACT_METHOD_BADGE.unscanned
               return (
                 <div
                   key={lead.id}
