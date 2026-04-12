@@ -162,15 +162,7 @@ export async function getOrCreateAgent(): Promise<string> {
     model: AGENT_MODEL,
     system: FORM_AGENT_SYSTEM,
     tools: [
-      {
-        type: 'agent_toolset_20251212',
-        default_config: { enabled: false },
-        configs: [
-          { name: 'bash', enabled: true },
-          { name: 'web_fetch', enabled: true },
-          { name: 'web_search', enabled: true },
-        ],
-      },
+      { type: 'agent_toolset_20251212' },
     ],
   })
 
