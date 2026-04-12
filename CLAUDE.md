@@ -7,15 +7,19 @@
 
 ## ⛔ 絶対禁止事項（全セッション共通）
 
+- **同じ企業（lead_id）に2回以上フォーム送信してはならない（最重要）**
+  - 送信前に必ず `send_queue` で同じ `lead_id` に `status = '送信済み'` がないか確認する
+  - テスト送信でも実際の企業にPOSTされるため、未送信企業のみ対象にすること
 - **`mcp__plugin_playwright_playwright__*` ツールは絶対に使わない**（Playwrightは禁止）
 - **Playwright / Puppeteer を使ったフォーム送信は禁止**（削除済み）
 
 ## フォーム送信方式
 
-フォーム自動送信は以下の2つの方式で行う：
+フォーム自動送信は以下の3つの方式で行う（優先順位順）：
 
-1. **Managed Agents API** (`/api/agent-send`) — UIの「フォーム自動送信」ボタンから呼ばれる。Anthropic のクラウドサンドボックス内で Agent が web_fetch + bash (curl) でフォーム送信を実行する。
-2. **Claude in Chrome MCP** (`mcp__Claude_in_Chrome__*`) — 「送信して」と指示された場合に `.claude/skills/bulk-form-send.md` スキルに従って実行する。
+1. **ローカルスクリプト** (`npm run send`) — ローカルPCで fetch + cheerio でフォーム送信。API費用ゼロ。403エラーの場合は方式2へ。
+2. **Claude in Chrome MCP** (`mcp__Claude_in_Chrome__*`) — 「送信して」と指示された場合に `.claude/skills/bulk-form-send.md` スキルに従って実行。ブラウザ経由なので403にならない。
+3. **自前エンジンAPI** (`/api/agent-send`) — UIの「フォーム自動送信」ボタンから呼ばれる。Vercelサーバーからのfetch。403の場合は確認待ちに戻り方式2でリトライ。
 
 ---
 

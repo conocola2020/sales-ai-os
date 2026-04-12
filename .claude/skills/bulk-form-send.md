@@ -10,12 +10,22 @@ description: >
 
 ユーザーが「送信して」「フォーム送信して」などと指示したら、このスキルに従って自動送信を実行する。
 
-## ⚠️ 絶対に守るルール
-- **`/api/submit-form` は絶対に呼ばない**（Railwayワーカーは使用禁止）
-- **fetch / axios / curl でプロジェクト内APIを叩くことは禁止**
+## ⛔ 絶対に守るルール
+
+### 重複送信の禁止（最重要）
+- **同じ企業（lead_id）に2回以上フォーム送信してはならない**
+- 送信前に必ず以下のSQLで送信済みチェックを行うこと：
+  ```sql
+  SELECT COUNT(*) FROM send_queue
+  WHERE lead_id = (SELECT lead_id FROM send_queue WHERE id = '{アイテムのid}')
+    AND status = '送信済み';
+  ```
+- 結果が1以上なら**そのアイテムはスキップする**
+- テスト送信であっても実際の企業フォームにPOSTされるため、未送信企業のみ対象にすること
+
+### その他の禁止事項
 - **`mcp__plugin_playwright_playwright__*` は絶対に使わない**（Playwright禁止）
 - **必ず `mcp__Claude_in_Chrome__*` ツールでMacのChromeを直接操作する**
-- Sales AI OSのUIボタンや既存APIは一切使わない
 - Chrome MCPが使えない場合は処理を止めてユーザーに報告する（他の手段で代替しない）
 
 ## 前提ツール
