@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { SendQueueItem, SendQueueInsert, SendStats, SendMethod } from '@/types/sending'
+import type { SendQueueItem, SendQueueInsert, SendStats, SendMethod, SendStatus } from '@/types/sending'
 
 const LEAD_SELECT = `
   *,
@@ -340,6 +340,30 @@ export async function markAsManual(
     .update({
       status: '手動対応',
       error_message: reason,
+    })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/sending')
+  return { error: null }
+}
+
+// ──────────────────────────────────────────
+// フォーム未検出確定（form_not_found → 手動対応 or メール切替）
+// ──────────────────────────────────────────
+export async function confirmFormNotFound(
+  id: string
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: '認証が必要です' }
+
+  const { error } = await supabase
+    .from('send_queue')
+    .update({
+      status: '手動対応' as SendStatus,
+      error_message: 'フォーム未検出確定 — 手動対応が必要',
     })
     .eq('id', id)
     .eq('user_id', user.id)

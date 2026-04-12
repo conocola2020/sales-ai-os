@@ -16,11 +16,14 @@ import {
   TriangleAlert,
   CheckCircle2,
   Undo2,
+  XCircle,
+  Copy,
+  Mail,
 } from 'lucide-react'
 import clsx from 'clsx'
 import type { SendQueueItem } from '@/types/sending'
 import { SEND_STATUS_CONFIG, SEND_METHOD_CONFIG } from '@/types/sending'
-import { deleteQueueItem, retryQueueItem, markAsSent, resetToReview } from '@/app/dashboard/sending/actions'
+import { deleteQueueItem, retryQueueItem, markAsSent, resetToReview, confirmFormNotFound } from '@/app/dashboard/sending/actions'
 
 interface QueueItemProps {
   item: SendQueueItem
@@ -94,6 +97,22 @@ export default function QueueItem({
     const { error } = await resetToReview([item.id])
     setLoading(false)
     if (!error) onUpdated(item.id, '確認待ち')
+  }
+
+  const handleConfirmFormNotFound = async () => {
+    setLoading(true)
+    const { error } = await confirmFormNotFound(item.id)
+    setLoading(false)
+    if (!error) onUpdated(item.id, '手動対応')
+  }
+
+  const [copied, setCopied] = useState(false)
+  const handleCopyEmailText = () => {
+    const companyName = lead?.company_name ?? ''
+    const emailBody = `${companyName} 御中\n\n${item.message_content}`
+    navigator.clipboard.writeText(emailBody)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleDelete = async () => {
@@ -286,6 +305,56 @@ export default function QueueItem({
             </div>
           )}
 
+          {/* フォーム未検出: メール文面コピーセクション */}
+          {item.status === 'form_not_found' && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 text-orange-400" />
+                  <span className="text-xs font-medium text-orange-400">メール送信用テキスト</span>
+                </div>
+                <button
+                  onClick={handleCopyEmailText}
+                  className={clsx(
+                    'flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-all',
+                    copied
+                      ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                      : 'bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 hover:text-white'
+                  )}
+                >
+                  {copied ? (
+                    <>
+                      <CheckCircle2 className="w-3 h-3" />
+                      コピー済み
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" />
+                      文面をコピー
+                    </>
+                  )}
+                </button>
+              </div>
+              <div className="bg-orange-500/5 border border-orange-500/20 rounded-lg p-3">
+                <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed font-sans select-all">
+                  {`${lead?.company_name ?? ''} 御中\n\n${item.message_content}`}
+                </pre>
+              </div>
+              {lead?.email && (
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-gray-500">送信先:</span>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(lead.email!); }}
+                    className="text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                  >
+                    {lead.email}
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Lead info */}
           {lead && (
             <div className="flex items-start gap-2 p-3 bg-gray-800/50 rounded-lg">
@@ -420,8 +489,8 @@ export default function QueueItem({
               </button>
             )}
 
-            {/* 失敗/form_not_found → リトライ */}
-            {(item.status === '失敗' || item.status === 'form_not_found') && (
+            {/* 失敗 → リトライ */}
+            {item.status === '失敗' && (
               <button
                 onClick={handleRetry}
                 disabled={loading}
@@ -430,6 +499,36 @@ export default function QueueItem({
                 <RefreshCw className="w-3.5 h-3.5" />
                 リトライ
               </button>
+            )}
+
+            {/* form_not_found → 3つのアクション */}
+            {item.status === 'form_not_found' && (
+              <>
+                <button
+                  onClick={handleConfirmFormNotFound}
+                  disabled={loading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 text-orange-400 text-xs font-semibold rounded-lg transition-colors"
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                  フォーム未検出確定
+                </button>
+                <button
+                  onClick={handleMarkAsSent}
+                  disabled={loading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-lg transition-colors"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  手動送信済み
+                </button>
+                <button
+                  onClick={handleRetry}
+                  disabled={loading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 text-violet-400 text-xs font-semibold rounded-lg transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  リトライ
+                </button>
+              </>
             )}
 
             {/* Delete */}
