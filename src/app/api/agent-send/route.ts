@@ -296,20 +296,17 @@ export async function POST(req: NextRequest) {
     console.error('Agent send error:', err)
 
     // Agent API エラー時はステータスを「確認待ち」に戻す
-    // → Scheduled Task (bulk-form-send-resume) が自動検出して Chrome MCP で送信
     try {
-      const supabase = await createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user && queueItemId) {
-        await supabase
+      const sb = await createClient()
+      if (queueItemId) {
+        await sb
           .from('send_queue')
           .update({
             status: '確認待ち',
-            error_message: `Agent API失敗: ${err instanceof Error ? err.message : 'unknown'}`,
+            error_message: `Agent API失敗: ${err instanceof Error ? err.message.substring(0, 200) : 'unknown'}`,
             updated_at: new Date().toISOString(),
           })
           .eq('id', queueItemId)
-          .eq('user_id', user.id)
       }
     } catch {
       // ステータス復元失敗は無視
