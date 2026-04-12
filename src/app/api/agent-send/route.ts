@@ -75,6 +75,22 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // 重複送信チェック: 同じリードに既に送信済みのアイテムがあればスキップ
+    const { data: existingSent } = await supabase
+      .from('send_queue')
+      .select('id')
+      .eq('lead_id', item.lead_id)
+      .eq('status', '送信済み')
+      .limit(1)
+
+    if (existingSent && existingSent.length > 0) {
+      return NextResponse.json({
+        success: true,
+        message: 'この企業には既に送信済みです（重複防止でスキップ）',
+        result: { result: 'success', message: '送信済み企業（スキップ）' },
+      })
+    }
+
     // 冪等性チェック: 既に送信承認済み・送信済みなら二重実行を防止
     if (item.status === '送信済み') {
       return NextResponse.json({
