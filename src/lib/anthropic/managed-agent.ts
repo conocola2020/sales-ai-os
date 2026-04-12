@@ -258,7 +258,7 @@ export async function runFormSubmission(
       body: JSON.stringify({
         events: [
           {
-            type: 'user.message',
+            type: 'user',
             content: [
               {
                 type: 'text',
