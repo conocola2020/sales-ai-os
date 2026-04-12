@@ -10,7 +10,7 @@
 import { getAnthropicApiKey } from '@/lib/env'
 
 const API_BASE = 'https://api.anthropic.com'
-const BETA_HEADER = 'agent-api-2026-03-01,environments-2025-11-01'
+const BETA_HEADER = 'agent-api-2026-03-01'
 const AGENT_MODEL = 'claude-sonnet-4-6'
 
 // ─── 型定義 ─────────────────────────────────────
@@ -232,15 +232,13 @@ export async function runFormSubmission(
   req: FormSubmissionRequest
 ): Promise<FormSubmissionResult> {
   const agentId = await getOrCreateAgent()
-  const environmentId = await getOrCreateEnvironment()
 
-  // セッション作成
+  // セッション作成（Environmentは省略 — APIがデフォルト環境を使用）
   const session = await apiRequest<SessionResponse>(
     'POST',
     '/v1/sessions',
     {
       agent: agentId,
-      environment_id: environmentId,
       title: `form-send-${Date.now()}`,
     }
   )
