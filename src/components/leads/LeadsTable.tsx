@@ -17,10 +17,11 @@ import { detectContactMethod } from '@/lib/contact-method'
 import clsx from 'clsx'
 
 const CONTACT_METHOD_BADGE: Record<string, { icon: string; label: string; color: string }> = {
-  form: { icon: '\u{1F4DD}', label: '\u30D5\u30A9\u30FC\u30E0', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  email: { icon: '\u{1F4E7}', label: '\u30E1\u30FC\u30EB', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-  instagram: { icon: '\u{1F4F8}', label: 'Instagram', color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' },
-  manual: { icon: '\u270B', label: '\u624B\u52D5', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' },
+  form: { icon: '📝', label: 'フォーム', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+  email: { icon: '📧', label: 'メール', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  instagram: { icon: '📸', label: 'Instagram', color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' },
+  manual: { icon: '✋', label: '手動', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' },
+  none: { icon: '❌', label: '未検出', color: 'text-red-400 bg-red-500/10 border-red-500/20' },
 }
 
 type SortField = 'company_name' | 'industry' | 'status' | 'created_at'
