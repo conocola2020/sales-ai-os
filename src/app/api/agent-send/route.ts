@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 冪等性チェック: 既に送信中・送信済みなら二重実行を防止
+    // 冪等性チェック: 既に送信承認済み・送信済みなら二重実行を防止
     if (item.status === '送信済み') {
       return NextResponse.json({
         success: true,
@@ -86,19 +86,19 @@ export async function POST(req: NextRequest) {
         result: { result: 'success', message: '送信済み（スキップ）' },
       })
     }
-    if (item.status === '送信中') {
+    if (item.status === '送信承認済み') {
       return NextResponse.json({
         success: true,
-        message: 'このアイテムは現在送信中です',
-        result: { result: 'success', message: '送信中（スキップ）' },
+        message: 'このアイテムは現在処理中です',
+        result: { result: 'success', message: '処理中（スキップ）' },
       })
     }
 
-    // ステータスを「送信中」に即座に変更（二重実行防止ロック）
+    // ステータスを「送信承認済み」に即座に変更（二重実行防止ロック）
     const { error: lockError } = await supabase
       .from('send_queue')
       .update({
-        status: '送信中',
+        status: '送信承認済み',
         updated_at: new Date().toISOString(),
       })
       .eq('id', queueItemId)
