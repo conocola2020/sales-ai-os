@@ -344,11 +344,25 @@ async function submitCF7Form(
   try {
     const res = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'User-Agent': USER_AGENT },
-      body: data,
+      headers: {
+        'User-Agent': USER_AGENT,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Referer': pageUrl,
+        'Origin': origin,
+      },
+      body: data.toString(),
     })
 
-    const json = await res.json() as { status: string; message?: string }
+    const text = await res.text()
+    let json: { status: string; message?: string; invalid_fields?: unknown[] }
+    try {
+      json = JSON.parse(text)
+    } catch {
+      return {
+        result: 'failed',
+        message: `CF7 APIがJSONを返しませんでした (HTTP ${res.status}): ${text.substring(0, 100)}`,
+      }
+    }
 
     if (json.status === 'mail_sent') {
       return {
