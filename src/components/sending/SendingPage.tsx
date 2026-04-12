@@ -503,12 +503,14 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                     </button>
                     <button
                       onClick={async () => {
-                        const { error } = await markAsUnsendable(item.id)
-                        if (!error) {
-                          setQueue(prev => prev.map(q =>
-                            q.id === item.id ? { ...q, status: '送信不可' as const, error_message: '手動確認の結果、送信不可' } : q
-                          ))
+                        const result = await markAsUnsendable(item.id)
+                        if (result.error) {
+                          alert('エラー: ' + result.error)
+                          return
                         }
+                        setQueue(prev => prev.map(q =>
+                          q.id === item.id ? { ...q, status: '送信不可' as const, error_message: '手動確認の結果、送信不可' } : q
+                        ))
                       }}
                       className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 text-xs rounded-xl transition-colors"
                     >
