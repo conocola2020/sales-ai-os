@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import {
-  runFormSubmission,
-  type FormSubmissionRequest,
-} from '@/lib/anthropic/managed-agent'
+import { sendForm } from '@/lib/form-sender'
 
 /**
  * POST /api/agent-send
@@ -186,19 +183,19 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Managed Agent でフォーム送信を実行
-    const submissionReq: FormSubmissionRequest = {
+    // 自前フォーム送信エンジンで送信
+    const result = await sendForm(
       companyUrl,
-      contactUrl: lead.contact_url || undefined,
-      messageContent: item.message_content,
-      senderCompany: userSettings.company_name,
-      senderName: userSettings.representative,
-      senderEmail: userSettings.company_email,
-      senderPhone: userSettings.company_phone || '',
-      subject: item.subject || undefined,
-    }
-
-    const result = await runFormSubmission(submissionReq)
+      lead.contact_url || undefined,
+      {
+        companyName: userSettings.company_name,
+        name: userSettings.representative,
+        email: userSettings.company_email,
+        phone: userSettings.company_phone || '',
+      },
+      item.message_content,
+      item.subject || undefined,
+    )
 
     // 結果に応じてステータス更新
     if (result.result === 'success') {
@@ -207,7 +204,7 @@ export async function POST(req: NextRequest) {
         .update({
           status: '送信済み',
           sent_at: new Date().toISOString(),
-          screenshot_url: `agent_result:${JSON.stringify(result)}`,
+          screenshot_url: `form_engine:${JSON.stringify(result)}`,
           updated_at: new Date().toISOString(),
         })
         .eq('id', queueItemId)
