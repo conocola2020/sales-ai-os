@@ -231,14 +231,16 @@ ${req.messageContent}
 export async function runFormSubmission(
   req: FormSubmissionRequest
 ): Promise<FormSubmissionResult> {
-  const agentId = await getOrCreateAgent()
-
-  // セッション作成（Environmentは省略 — APIがデフォルト環境を使用）
+  // セッション作成（agentをインラインで定義）
   const session = await apiRequest<SessionResponse>(
     'POST',
     '/v1/sessions',
     {
-      agent: agentId,
+      agent: {
+        model: AGENT_MODEL,
+        system: FORM_AGENT_SYSTEM,
+        tools: [{ type: 'agent_toolset_20251212' }],
+      },
       title: `form-send-${Date.now()}`,
     }
   )
