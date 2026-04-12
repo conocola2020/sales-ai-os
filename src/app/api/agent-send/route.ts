@@ -103,11 +103,10 @@ export async function POST(req: NextRequest) {
       })
       .eq('id', queueItemId)
       .eq('user_id', user.id)
-      .in('status', ['確認待ち', '送信承認済み'])
 
     if (lockError) {
       return NextResponse.json(
-        { error: 'ステータスロックに失敗しました' },
+        { error: `ステータスロックに失敗しました: ${lockError.message}` },
         { status: 500 }
       )
     }
