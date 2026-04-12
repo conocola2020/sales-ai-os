@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       .from('send_queue')
       .select(
         `
-        id, message_content, subject, send_method, form_url, status,
+        id, lead_id, message_content, subject, send_method, form_url, status,
         lead:lead_id (
           id, company_name, website_url, company_url, contact_url, contact_name
         )
