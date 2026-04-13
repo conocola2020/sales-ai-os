@@ -82,7 +82,7 @@ export async function getLeadOptions(): Promise<{
     .from('leads')
     .select('id, company_name, contact_name, status, industry, notes, website_url, company_url, email, contact_method')
     .order('created_at', { ascending: false })
-    .limit(2000)
+    .limit(5000)
 
   if (error) return { data: [], error: error.message }
   return { data: data ?? [], error: null }
