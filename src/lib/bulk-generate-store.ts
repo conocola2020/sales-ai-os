@@ -40,13 +40,29 @@ const initialState: BulkGenerateState = {
 }
 
 let state: BulkGenerateState = { ...initialState }
+let restored = false
 const listeners = new Set<() => void>()
 
 function notify() {
   listeners.forEach((l) => l())
 }
 
+// クライアント側で確実にlocalStorageから復元する
+function ensureRestored() {
+  if (restored) return
+  if (typeof window === 'undefined') return
+  restored = true
+  try {
+    const saved = localStorage.getItem('bulk_generate_state')
+    if (saved) {
+      const parsed = JSON.parse(saved) as BulkGenerateState
+      state = { ...parsed, isGenerating: false, batchInfo: null }
+    }
+  } catch { /* ignore */ }
+}
+
 function setState(partial: Partial<BulkGenerateState>) {
+  ensureRestored()
   state = { ...state, ...partial }
   try {
     localStorage.setItem('bulk_generate_state', JSON.stringify(state))
@@ -71,24 +87,22 @@ function loadJob(): GenerationJob | null {
   } catch { return null }
 }
 
-// 起動時にlocalStorageから復元
+// 起動時にlocalStorageから復元（SSRでなければここで動く）
 try {
   if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('bulk_generate_state')
-    if (saved) {
-      const parsed = JSON.parse(saved) as BulkGenerateState
-      state = { ...parsed, isGenerating: false, batchInfo: null }
-    }
+    ensureRestored()
   }
 } catch { /* ignore */ }
 
 // useSyncExternalStore用
 export function subscribe(listener: () => void) {
+  ensureRestored()
   listeners.add(listener)
   return () => listeners.delete(listener)
 }
 
 export function getSnapshot(): BulkGenerateState {
+  ensureRestored()
   return state
 }
 
