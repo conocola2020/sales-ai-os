@@ -290,6 +290,11 @@ async function runGeneration(
     }
     // 全件完了 → ジョブをクリア
     saveJob(null)
+    // 全件キュー済みなら結果もクリア（画面に残らないように）
+    const allQueued = state.results.length > 0 && state.results.every(r => r.queued || r.error)
+    if (allQueued) {
+      setTimeout(() => clearResults(), 2000) // 2秒後にクリア（ユーザーが結果を確認する猶予）
+    }
   } catch (err) {
     console.error('Bulk generate error:', err)
     // 中断された → ジョブは保持（再開可能）
