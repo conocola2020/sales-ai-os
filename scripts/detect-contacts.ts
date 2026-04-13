@@ -109,13 +109,20 @@ async function main() {
     while (i < withUrl.length) {
       const idx = i++
       const lead = withUrl[idx]
-      const url = lead.company_url || lead.website_url!
+      const primaryUrl = lead.company_url || lead.website_url!
+      const fallbackUrl = lead.company_url && lead.website_url && lead.company_url !== lead.website_url
+        ? lead.website_url : null
 
       console.log(`[${idx + 1}/${withUrl.length}] ${lead.company_name}`)
 
       let result: ContactDetectionResult
       try {
-        result = await detectContact(url)
+        result = await detectContact(primaryUrl)
+        // 主URLで見つからなければフォールバックURLも試す
+        if (result.method === 'none' && fallbackUrl) {
+          const fallbackResult = await detectContact(fallbackUrl)
+          if (fallbackResult.method !== 'none') result = fallbackResult
+        }
       } catch (err) {
         result = { method: 'none', error: err instanceof Error ? err.message : 'unknown' }
       }

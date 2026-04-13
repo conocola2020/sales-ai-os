@@ -268,6 +268,11 @@ function mapFieldsToValues(
   const visibleFields = fields.filter(f => f.type !== 'hidden')
   const matched = new Set<string>()
 
+  // 姓名を分割（スペース区切り）
+  const nameParts = sender.name.split(/[\s　]+/)
+  const lastName = nameParts[0] || sender.name
+  const firstName = nameParts[1] || ''
+
   const mapping: [FieldType, string][] = [
     ['company', sender.companyName],
     ['name', sender.name],
@@ -291,8 +296,25 @@ function mapFieldsToValues(
     }
   }
 
+  // 姓名が分かれているフォームに対応（lastname/firstname パターン）
+  for (const f of visibleFields) {
+    if (matched.has(f.name)) continue
+    const lower = (f.name + f.id + f.placeholder).toLowerCase()
+    if ((lower.includes('lastname') || lower.includes('sei') || f.placeholder === '姓') && !lower.includes('kana') && !lower.includes('フリガナ')) {
+      result[f.name] = lastName
+      matched.add(f.name)
+    } else if ((lower.includes('firstname') || lower.includes('mei') || f.placeholder === '名') && !lower.includes('kana') && !lower.includes('フリガナ')) {
+      result[f.name] = firstName || lastName
+      matched.add(f.name)
+    }
+  }
+
   // textarea が body にマッチしなかった場合、最初の textarea を本文として使う
-  if (!Object.values(result).includes(messageContent)) {
+  const hasBody = Object.entries(result).some(([key, val]) => {
+    const field = visibleFields.find(f => f.name === key)
+    return field?.tag === 'textarea' || val.length > 200
+  })
+  if (!hasBody) {
     const firstTextarea = visibleFields.find(f => f.tag === 'textarea' && !matched.has(f.name))
     if (firstTextarea) {
       result[firstTextarea.name] = messageContent
@@ -323,13 +345,13 @@ async function submitCF7Form(
 ): Promise<FormSendResult> {
   const $ = cheerio.load(html)
 
-  // CF7 の hidden フィールドを追加
-  const data = new URLSearchParams()
+  // CF7 の hidden フィールドを追加（FormData 形式で送信）
+  const data = new FormData()
   data.append('_wpcf7', formId)
   data.append('_wpcf7_version', $('input[name="_wpcf7_version"]').val() as string || '5.9')
   data.append('_wpcf7_locale', 'ja')
   data.append('_wpcf7_unit_tag', $('input[name="_wpcf7_unit_tag"]').val() as string || `wpcf7-f${formId}-o1`)
-  data.append('_wpcf7_container_post', '0')
+  data.append('_wpcf7_container_post', $('input[name="_wpcf7_container_post"]').val() as string || '0')
   data.append('_wpcf7_posted_data_hash', '')
 
   for (const [key, val] of Object.entries(formData)) {
@@ -346,11 +368,10 @@ async function submitCF7Form(
       method: 'POST',
       headers: {
         'User-Agent': USER_AGENT,
-        'Content-Type': 'application/x-www-form-urlencoded',
         'Referer': pageUrl,
         'Origin': origin,
       },
-      body: data.toString(),
+      body: data,
     })
 
     const text = await res.text()
@@ -569,8 +590,9 @@ export async function sendForm(
   // 6. フィールドマッピング
   const formData = mapFieldsToValues(fields, sender, messageContent, subject)
 
-  // 本文が入っていなければ失敗
-  if (!Object.values(formData).some(v => v.includes(messageContent.substring(0, 50)))) {
+  // 本文が入っていなければ失敗（200文字以上の値があるかチェック）
+  const hasLongText = Object.values(formData).some(v => v.length > 200)
+  if (!hasLongText) {
     return { result: 'failed', message: '本文フィールドのマッピングに失敗しました' }
   }
 

@@ -10,7 +10,7 @@ import * as cheerio from 'cheerio'
 // ─── 定数 ────────────────────────────────────
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-const FETCH_TIMEOUT = 10000
+const FETCH_TIMEOUT = 60000
 
 const CONTACT_PATHS = [
   '/contact', '/contact/', '/inquiry', '/inquiry/',
