@@ -13,7 +13,6 @@ import CSVImport from './CSVImport'
 import { updateLeadStatus, deleteLeads, createLead } from '@/app/dashboard/leads/actions'
 import type { Lead, LeadStatus } from '@/types/leads'
 import { LEAD_STATUSES, INDUSTRIES, STATUS_CONFIG, PREFECTURES } from '@/types/leads'
-import { detectContactMethod } from '@/lib/contact-method'
 import clsx from 'clsx'
 
 const CONTACT_METHOD_BADGE: Record<string, { icon: string; label: string; color: string }> = {
@@ -21,6 +20,8 @@ const CONTACT_METHOD_BADGE: Record<string, { icon: string; label: string; color:
   email: { icon: '\u{1F4E7}', label: '\u30E1\u30FC\u30EB', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
   instagram: { icon: '\u{1F4F8}', label: 'Instagram', color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' },
   manual: { icon: '\u270B', label: '\u624B\u52D5', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' },
+  none: { icon: '\u274C', label: '\u672A\u691C\u51FA', color: 'text-red-400 bg-red-500/10 border-red-500/20' },
+  unscanned: { icon: '\u{1F50D}', label: '\u672A\u30B9\u30AD\u30E3\u30F3', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
 }
 
 type SortField = 'company_name' | 'industry' | 'status' | 'created_at'
@@ -47,7 +48,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all' | 'queue_確認待ち' | 'queue_失敗' | 'queue_form_not_found'>('all')
   const [industryFilter, setIndustryFilter] = useState('all')
   const [prefectureFilter, setPrefectureFilter] = useState('all')
-  const [methodFilter, setMethodFilter] = useState<'all' | 'email' | 'form'>('all')
+  const [methodFilter, setMethodFilter] = useState<'all' | 'email' | 'form' | 'none' | 'unscanned'>('all')
   const [excludeQueued, setExcludeQueued] = useState(true) // デフォルトで確認待ちを除外
   const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -107,7 +108,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
     }
     if (methodFilter !== 'all') {
       rows = rows.filter((l) => {
-        const method = detectContactMethod(l)
+        const method = l.contact_method ?? 'unscanned'
         return method === methodFilter
       })
     }
@@ -435,12 +436,14 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
           </select>
           <select
             value={methodFilter}
-            onChange={(e) => { setMethodFilter(e.target.value as 'all' | 'email' | 'form'); setPage(1) }}
+            onChange={(e) => { setMethodFilter(e.target.value as typeof methodFilter); setPage(1) }}
             className={clsx(inputCls, 'cursor-pointer')}
           >
-            <option value="all">送信方法: すべて</option>
-            <option value="email">メール</option>
+            <option value="all">連絡方法: すべて</option>
             <option value="form">フォーム</option>
+            <option value="email">メール</option>
+            <option value="none">未検出</option>
+            <option value="unscanned">未スキャン</option>
           </select>
           <button
             onClick={() => { setExcludeQueued(v => !v); setPage(1) }}
@@ -501,7 +504,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
             </div>
           ) : (
             filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((lead) => {
-              const method = lead.contact_method || detectContactMethod(lead)
+              const method = lead.contact_method ?? 'unscanned'
               const badge = CONTACT_METHOD_BADGE[method] || CONTACT_METHOD_BADGE.manual
               return (
                 <div
@@ -712,7 +715,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                             {lead.company_name}
                           </span>
                           {(() => {
-                            const method = lead.contact_method || detectContactMethod(lead)
+                            const method = lead.contact_method ?? 'unscanned'
                             const badge = CONTACT_METHOD_BADGE[method] || CONTACT_METHOD_BADGE.manual
                             return (
                               <span className={clsx('inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border w-fit', badge.color)}>

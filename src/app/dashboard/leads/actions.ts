@@ -74,18 +74,40 @@ export async function getLeadQueueStatuses(): Promise<Record<string, string>> {
 // 軽量版：ドロップダウン用（id・社名・担当者名のみ）
 // ──────────────────────────────────────────
 export async function getLeadOptions(): Promise<{
-  data: Pick<Lead, 'id' | 'company_name' | 'contact_name' | 'status' | 'industry' | 'prefecture' | 'notes' | 'website_url' | 'company_url' | 'email'>[]
+  data: Pick<Lead, 'id' | 'company_name' | 'contact_name' | 'status' | 'industry' | 'notes' | 'website_url' | 'company_url' | 'email' | 'contact_method'>[]
   error: string | null
 }> {
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('leads')
-    .select('id, company_name, contact_name, status, industry, prefecture, notes, website_url, company_url, email')
-    .order('created_at', { ascending: false })
-    .limit(2000)
+  const FIELDS = 'id, company_name, contact_name, status, industry, notes, website_url, company_url, email, contact_method'
+  const PAGE = 1000
 
-  if (error) return { data: [], error: error.message }
-  return { data: data ?? [], error: null }
+  // まず総件数を取得
+  const { count, error: countError } = await supabase
+    .from('leads')
+    .select('*', { count: 'exact', head: true })
+
+  if (countError) return { data: [], error: countError.message }
+  if (!count) return { data: [], error: null }
+
+  // 全ページを並列取得
+  const pageCount = Math.ceil(count / PAGE)
+  const results = await Promise.all(
+    Array.from({ length: pageCount }, (_, i) =>
+      supabase
+        .from('leads')
+        .select(FIELDS)
+        .order('created_at', { ascending: false })
+        .range(i * PAGE, (i + 1) * PAGE - 1)
+    )
+  )
+
+  const all: Pick<Lead, 'id' | 'company_name' | 'contact_name' | 'status' | 'industry' | 'notes' | 'website_url' | 'company_url' | 'email' | 'contact_method'>[] = []
+  for (const result of results) {
+    if (result.error) return { data: all, error: result.error.message }
+    all.push(...(result.data as typeof all))
+  }
+
+  return { data: all, error: null }
 }
 
 // ──────────────────────────────────────────

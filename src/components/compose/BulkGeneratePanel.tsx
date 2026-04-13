@@ -123,16 +123,30 @@ export default function BulkGeneratePanel({
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [contactMethodFilter, setContactMethodFilter] = useState('all')
   const [prefectureFilter, setPrefectureFilter] = useState('all')
   const [visibleCount, setVisibleCount] = useState(VISIBLE_BATCH)
   const [isSavingAll, setIsSavingAll] = useState(false)
   const [isQueuingAll, setIsQueuingAll] = useState(false)
 
-  // Filtered leads（検索クエリ + 都道府県フィルター）
+  // Filtered leads（連絡方法 → 都道府県 → 検索クエリ）
   const filteredLeads = useMemo(() => {
     let rows = leads
+    // 連絡方法フィルター
+    if (contactMethodFilter === 'form') {
+      rows = rows.filter(l => l.contact_method === 'form')
+    } else if (contactMethodFilter === 'email') {
+      rows = rows.filter(l => l.contact_method === 'email')
+    } else if (contactMethodFilter === 'viable') {
+      rows = rows.filter(l => l.contact_method === 'form' || l.contact_method === 'email')
+    } else if (contactMethodFilter === 'none') {
+      rows = rows.filter(l => l.contact_method === 'none')
+    } else if (contactMethodFilter === 'unscanned') {
+      rows = rows.filter(l => !l.contact_method)
+    }
+    // 都道府県フィルター
     if (prefectureFilter !== 'all') {
-      rows = rows.filter(l => (l.prefecture ?? l.notes) === prefectureFilter)
+      rows = rows.filter(l => l.notes === prefectureFilter)
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
@@ -143,7 +157,7 @@ export default function BulkGeneratePanel({
       )
     }
     return rows
-  }, [leads, searchQuery, prefectureFilter])
+  }, [leads, searchQuery, contactMethodFilter, prefectureFilter])
 
   const toggleLead = useCallback((id: string) => {
     setSelectedLeadIds(prev => {
@@ -165,6 +179,12 @@ export default function BulkGeneratePanel({
   const selectWithHp = () => {
     setSelectedLeadIds(new Set(
       filteredLeads.filter(l => l.company_url || l.website_url).map(l => l.id)
+    ))
+  }
+
+  const selectViable = () => {
+    setSelectedLeadIds(new Set(
+      filteredLeads.filter(l => l.contact_method === 'form' || l.contact_method === 'email').map(l => l.id)
     ))
   }
 
@@ -218,6 +238,20 @@ export default function BulkGeneratePanel({
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
           />
 
+          {/* Contact method filter */}
+          <select
+            value={contactMethodFilter}
+            onChange={e => { setContactMethodFilter(e.target.value); setPrefectureFilter('all'); setVisibleCount(VISIBLE_BATCH) }}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+          >
+            <option value="all">連絡方法: すべて ({leads.length})</option>
+            <option value="viable">送信可能のみ ({leads.filter(l => l.contact_method === 'form' || l.contact_method === 'email').length})</option>
+            <option value="form">フォームのみ ({leads.filter(l => l.contact_method === 'form').length})</option>
+            <option value="email">メールのみ ({leads.filter(l => l.contact_method === 'email').length})</option>
+            <option value="none">なし ({leads.filter(l => l.contact_method === 'none').length})</option>
+            <option value="unscanned">未スキャン ({leads.filter(l => !l.contact_method).length})</option>
+          </select>
+
           {/* Prefecture filter */}
           <select
             value={prefectureFilter}
@@ -226,8 +260,15 @@ export default function BulkGeneratePanel({
           >
             <option value="all">都道府県: すべて</option>
             {(() => {
-              const prefs = [...new Set(leads.map(l => l.prefecture ?? l.notes).filter(Boolean))] as string[]
-              return prefs.sort().map(p => <option key={p} value={p}>{p} ({leads.filter(l => (l.prefecture ?? l.notes) === p).length})</option>)
+              // 連絡方法フィルター後のリードから都道府県候補を生成
+              let base = leads
+              if (contactMethodFilter === 'form') base = leads.filter(l => l.contact_method === 'form')
+              else if (contactMethodFilter === 'email') base = leads.filter(l => l.contact_method === 'email')
+              else if (contactMethodFilter === 'viable') base = leads.filter(l => l.contact_method === 'form' || l.contact_method === 'email')
+              else if (contactMethodFilter === 'none') base = leads.filter(l => l.contact_method === 'none')
+              else if (contactMethodFilter === 'unscanned') base = leads.filter(l => !l.contact_method)
+              const prefs = [...new Set(base.map(l => l.notes).filter(Boolean))] as string[]
+              return prefs.sort().map(p => <option key={p} value={p}>{p} ({base.filter(l => l.notes === p).length})</option>)
             })()}
           </select>
 
@@ -242,6 +283,10 @@ export default function BulkGeneratePanel({
             <button onClick={selectWithHp} className="px-2.5 py-1 text-xs font-medium bg-cyan-500/10 border border-cyan-500/20 rounded-lg text-cyan-400 hover:bg-cyan-500/20 transition-colors">
               <Globe className="w-3 h-3 inline mr-1" />
               HP有り
+            </button>
+            <button onClick={selectViable} className="px-2.5 py-1 text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 hover:bg-emerald-500/20 transition-colors">
+              <Send className="w-3 h-3 inline mr-1" />
+              送信可能のみ
             </button>
             <span className="text-xs text-gray-500 ml-auto">{selectedLeadIds.size}件選択</span>
           </div>
