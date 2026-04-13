@@ -403,6 +403,13 @@ export default function BulkGeneratePanel({
               {results.length > 0 && !isGenerating && (
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => clearResults()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700 hover:bg-gray-600 text-gray-300 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                    クリア
+                  </button>
+                  <button
                     onClick={handleSaveAndQueueAll}
                     disabled={(isSavingAll && isQueuingAll) || unqueuedCount === 0}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white transition-colors"
