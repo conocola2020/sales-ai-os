@@ -217,6 +217,7 @@ export default function BulkGeneratePanel({
     )
     setIsSavingAll(false)
     setIsQueuingAll(false)
+    clearResults()
     router.push('/dashboard/sending')
   }
 
