@@ -35,19 +35,33 @@ function isBusinessDay(date: Date): boolean {
 }
 
 /**
- * 翌営業日から3日分の候補日を生成
+ * 指定営業日先から候補日を生成
+ * @param count 候補日の数（デフォルト3）
+ * @param skipBusinessDays 何営業日先から開始するか（デフォルト10）
  * @returns 候補日の配列 [{ date: Date, formatted: string }]
  */
-export function getNextBusinessDays(count: number = 3): { date: Date; formatted: string }[] {
+export function getNextBusinessDays(count: number = 3, skipBusinessDays: number = 10): { date: Date; formatted: string }[] {
   const now = new Date()
   // 日本時間に変換
   const jstOffset = 9 * 60 * 60 * 1000
   const jstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + jstOffset)
 
-  const results: { date: Date; formatted: string }[] = []
   const current = new Date(jstNow)
   current.setDate(current.getDate() + 1) // 翌日から
 
+  // まず skipBusinessDays 分の営業日をスキップ
+  let skipped = 0
+  while (skipped < skipBusinessDays) {
+    if (isBusinessDay(current)) {
+      skipped++
+    }
+    if (skipped < skipBusinessDays) {
+      current.setDate(current.getDate() + 1)
+    }
+  }
+
+  // スキップ後の営業日から count 日分を取得
+  const results: { date: Date; formatted: string }[] = []
   while (results.length < count) {
     if (isBusinessDay(current)) {
       const month = current.getMonth() + 1
