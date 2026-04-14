@@ -1,6 +1,6 @@
 import ComposePage from '@/components/compose/ComposePage'
 import { getLeadOptions } from '@/app/dashboard/leads/actions'
-import { getMessages } from './actions'
+import { getMessages, getQueuedLeadStatuses } from './actions'
 import { getTemplates, seedDefaultTemplates } from '@/app/dashboard/settings/actions'
 
 export const dynamic = 'force-dynamic'
@@ -10,16 +10,18 @@ interface Props {
 }
 
 export default async function ComposePageRoute({ searchParams }: Props) {
-  const [leadsResult, messagesResult, templatesResult, params] = await Promise.all([
+  const [leadsResult, messagesResult, templatesResult, queuedResult, params] = await Promise.all([
     getLeadOptions(),
     getMessages(),
     getTemplates(),
+    getQueuedLeadStatuses(),
     searchParams,
   ])
 
   const leads = leadsResult.data ?? []
   const messages = messagesResult.data ?? []
   let templates = templatesResult.data ?? []
+  const queuedStatuses = queuedResult.data ?? []
   // API側でデモ判定するため、ページ側では常にfalse
   const isDemo = false
 
@@ -39,6 +41,7 @@ export default async function ComposePageRoute({ searchParams }: Props) {
       initialMode={params.mode === 'bulk' ? 'bulk' : undefined}
       initialBulkLeadIds={params.leads?.split(',').filter(Boolean)}
       templates={templates}
+      queuedStatuses={queuedStatuses}
     />
   )
 }

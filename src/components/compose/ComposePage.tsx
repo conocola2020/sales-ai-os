@@ -26,6 +26,7 @@ interface ComposePageProps {
   initialMode?: 'bulk'
   initialBulkLeadIds?: string[]
   templates: MessageTemplate[]
+  queuedStatuses?: { lead_id: string; status: string }[]
 }
 
 export default function ComposePage({
@@ -36,6 +37,7 @@ export default function ComposePage({
   initialMode,
   initialBulkLeadIds,
   templates,
+  queuedStatuses = [],
 }: ComposePageProps) {
   const [mode, setMode] = useState<Mode>(initialMode ?? 'single')
   const [selectedLeadId, setSelectedLeadId] = useState(initialLeadId)
@@ -294,6 +296,7 @@ export default function ComposePage({
           selectedTemplateId={selectedTemplateId}
           onTemplateChange={setSelectedTemplateId}
           initialSelectedIds={initialBulkLeadIds}
+          queuedStatuses={queuedStatuses}
         />
       ) : (
         <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_300px] gap-0 overflow-hidden">

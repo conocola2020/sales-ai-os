@@ -62,6 +62,28 @@ export async function saveMessage(payload: MessageInsert): Promise<{ data: Messa
   }
 }
 
+export async function getQueuedLeadStatuses(): Promise<{ data: { lead_id: string; status: string }[]; error: string | null }> {
+  if (!isConfigured) return { data: [], error: null }
+
+  try {
+    const supabase = await getClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { data: [], error: null }
+
+    const { data, error } = await supabase
+      .from('send_queue')
+      .select('lead_id, status')
+      .eq('user_id', user.id)
+      .in('status', ['送信済み', '確認待ち'])
+
+    if (error) throw error
+    return { data: data ?? [], error: null }
+  } catch (e) {
+    console.error('getQueuedLeadStatuses error:', e)
+    return { data: [], error: String(e) }
+  }
+}
+
 export async function deleteMessage(id: string): Promise<{ error: string | null }> {
   if (!isConfigured) return { error: 'Supabase未設定' }
 

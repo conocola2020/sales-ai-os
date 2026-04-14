@@ -44,23 +44,36 @@ const LeadRow = memo(function LeadRow({
   lead,
   isSelected,
   onToggle,
+  queueStatus,
 }: {
   lead: LeadOption
   isSelected: boolean
   onToggle: (id: string) => void
+  queueStatus?: 'sent' | 'pending'
 }) {
   return (
     <div
       role="button"
       onClick={() => onToggle(lead.id)}
-      className={isSelected
-        ? 'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-xs bg-violet-500/10 border border-violet-500/30 cursor-pointer'
-        : 'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-xs bg-gray-800/50 border border-transparent cursor-pointer'
-      }
+      className={clsx(
+        'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-xs cursor-pointer',
+        isSelected
+          ? 'bg-violet-500/10 border border-violet-500/30'
+          : 'bg-gray-800/50 border border-transparent',
+        queueStatus === 'sent' && 'opacity-50'
+      )}
     >
       {isSelected ? <CheckIcon /> : <UncheckIcon />}
       <div className="flex-1 min-w-0">
-        <span className="text-white truncate block">{lead.company_name}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-white truncate">{lead.company_name}</span>
+          {queueStatus === 'sent' && (
+            <span className="flex-shrink-0 px-1.5 py-0.5 text-[10px] font-medium bg-emerald-500/15 text-emerald-400 rounded">送信済み</span>
+          )}
+          {queueStatus === 'pending' && (
+            <span className="flex-shrink-0 px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/15 text-amber-400 rounded">確認待ち</span>
+          )}
+        </div>
         {lead.industry && <span className="text-gray-500 text-[10px]">{lead.industry}</span>}
       </div>
     </div>
@@ -77,6 +90,7 @@ interface BulkGeneratePanelProps {
   selectedTemplateId: string
   onTemplateChange: (id: string) => void
   initialSelectedIds?: string[]
+  queuedStatuses?: { lead_id: string; status: string }[]
 }
 
 export default function BulkGeneratePanel({
@@ -87,8 +101,18 @@ export default function BulkGeneratePanel({
   selectedTemplateId,
   onTemplateChange,
   initialSelectedIds,
+  queuedStatuses = [],
 }: BulkGeneratePanelProps) {
   const router = useRouter()
+
+  // 送信済み・確認待ちのリードIDセットを作成
+  const sentLeadIds = useMemo(() => new Set(
+    queuedStatuses.filter(q => q.status === '送信済み').map(q => q.lead_id)
+  ), [queuedStatuses])
+  const pendingLeadIds = useMemo(() => new Set(
+    queuedStatuses.filter(q => q.status === '確認待ち').map(q => q.lead_id)
+  ), [queuedStatuses])
+
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(() => {
     // localStorageから復元 + URLパラメータをマージ
     const restored = new Set<string>()
@@ -289,6 +313,11 @@ export default function BulkGeneratePanel({
               <Send className="w-3 h-3 inline mr-1" />
               送信可能のみ
             </button>
+            {(sentLeadIds.size > 0 || pendingLeadIds.size > 0) && (
+              <span className="text-[10px] text-gray-500">
+                送信済み{sentLeadIds.size} / 確認待ち{pendingLeadIds.size}
+              </span>
+            )}
             <span className="text-xs text-gray-500 ml-auto">{selectedLeadIds.size}件選択</span>
           </div>
 
@@ -305,6 +334,7 @@ export default function BulkGeneratePanel({
                 lead={lead}
                 isSelected={selectedLeadIds.has(lead.id)}
                 onToggle={toggleLead}
+                queueStatus={sentLeadIds.has(lead.id) ? 'sent' : pendingLeadIds.has(lead.id) ? 'pending' : undefined}
               />
             ))}
             {visibleCount < filteredLeads.length && (
