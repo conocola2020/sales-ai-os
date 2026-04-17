@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { getAuthenticatedUser } from '@/lib/supabase/server'
 import type { Message, MessageInsert } from '@/types/messages'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -15,8 +16,7 @@ export async function getMessages(leadId?: string): Promise<{ data: Message[]; e
   if (!isConfigured) return { data: [], error: null }
 
   try {
-    const supabase = await getClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase, user, orgId } = await getAuthenticatedUser()
     if (!user) return { data: [], error: null }
 
     let query = supabase
@@ -26,9 +26,8 @@ export async function getMessages(leadId?: string): Promise<{ data: Message[]; e
       .order('created_at', { ascending: false })
       .limit(50)
 
-    if (leadId) {
-      query = query.eq('lead_id', leadId)
-    }
+    if (orgId) query = query.eq('org_id', orgId)
+    if (leadId) query = query.eq('lead_id', leadId)
 
     const { data, error } = await query
     if (error) throw error
@@ -43,13 +42,12 @@ export async function saveMessage(payload: MessageInsert): Promise<{ data: Messa
   if (!isConfigured) return { data: null, error: 'Supabase未設定' }
 
   try {
-    const supabase = await getClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase, user, orgId } = await getAuthenticatedUser()
     if (!user) return { data: null, error: '認証エラー' }
 
     const { data, error } = await supabase
       .from('messages')
-      .insert({ ...payload, user_id: user.id })
+      .insert({ ...payload, user_id: user.id, ...(orgId ? { org_id: orgId } : {}) })
       .select('*, lead:leads(company_name, contact_name)')
       .single()
 
@@ -66,15 +64,17 @@ export async function getQueuedLeadStatuses(): Promise<{ data: { lead_id: string
   if (!isConfigured) return { data: [], error: null }
 
   try {
-    const supabase = await getClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase, user, orgId } = await getAuthenticatedUser()
     if (!user) return { data: [], error: null }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('send_queue')
       .select('lead_id, status')
       .eq('user_id', user.id)
       .in('status', ['送信済み', '確認待ち'])
+    if (orgId) query = query.eq('org_id', orgId)
+
+    const { data, error } = await query
 
     if (error) throw error
     return { data: data ?? [], error: null }

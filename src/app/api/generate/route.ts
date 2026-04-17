@@ -144,13 +144,20 @@ export async function POST(req: NextRequest) {
     let template: MessageTemplate | null = null
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    let orgId: string | null = null
     if (supabaseUrl && supabaseUrl !== 'your-supabase-url') {
-      const { createClient } = await import('@/lib/supabase/server')
-      const supabase = await createClient()
+      const { getAuthenticatedUser } = await import('@/lib/supabase/server')
+      const auth = await getAuthenticatedUser()
+      const supabase = auth.supabase
 
-      // Lead
+      if (!auth.user || !auth.orgId) {
+        return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+      }
+      orgId = auth.orgId
+
+      // Lead（組織スコープ）
       const { data: leadData, error: leadError } = await supabase
-        .from('leads').select('*').eq('id', leadId).single()
+        .from('leads').select('*').eq('id', leadId).eq('org_id', orgId).single()
       if (!leadError && leadData) lead = leadData
 
       // Company analysis
@@ -163,20 +170,22 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
       if (analysisData) analysis = analysisData as Record<string, unknown>
 
-      // User settings (弊社情報)
+      // User settings（組織共通設定）
       const { data: settingsData } = await supabase
         .from('user_settings')
         .select('*')
+        .eq('org_id', orgId)
         .limit(1)
         .maybeSingle()
       if (settingsData) settings = settingsData as UserSettings
 
-      // Message template
+      // Message template（組織スコープ）
       if (templateId) {
         const { data: tplData } = await supabase
           .from('message_templates')
           .select('*')
           .eq('id', templateId)
+          .eq('org_id', orgId)
           .single()
         if (tplData) template = tplData as MessageTemplate
       } else {
@@ -185,6 +194,7 @@ export async function POST(req: NextRequest) {
           .from('message_templates')
           .select('*')
           .eq('is_default', true)
+          .eq('org_id', orgId)
           .limit(1)
           .maybeSingle()
         if (tplData) template = tplData as MessageTemplate

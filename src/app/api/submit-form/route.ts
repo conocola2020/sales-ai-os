@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/server'
 
 /**
  * POST /api/submit-form
@@ -19,16 +19,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { supabase, user, orgId } = await getAuthenticatedUser()
 
-    if (!user) {
+    if (!user || !orgId) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
     }
 
-    // キューアイテムを取得して確認
+    // キューアイテムを取得して確認（組織スコープ）
     const { data: item, error: fetchError } = await supabase
       .from('send_queue')
       .select(`
@@ -36,7 +33,7 @@ export async function POST(req: NextRequest) {
         lead:lead_id (company_name, website_url, company_url)
       `)
       .eq('id', queueItemId)
-      .eq('user_id', user.id)
+      .eq('org_id', orgId)
       .single()
 
     if (fetchError || !item) {
@@ -59,7 +56,7 @@ export async function POST(req: NextRequest) {
       .from('send_queue')
       .update({ status: '送信承認済み', updated_at: new Date().toISOString(), retry_count: 0 })
       .eq('id', queueItemId)
-      .eq('user_id', user.id)
+      .eq('org_id', orgId)
 
     if (updateError) {
       return NextResponse.json(

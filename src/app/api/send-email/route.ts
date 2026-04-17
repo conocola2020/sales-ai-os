@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { getAuthenticatedUser } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,6 +33,12 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // 認証+組織チェック
+    const { user, orgId } = await getAuthenticatedUser()
+    if (!user || !orgId) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+    }
+
     const resend = new Resend(apiKey)
 
     const { data, error } = await resend.emails.send({
@@ -62,12 +69,14 @@ export async function POST(req: NextRequest) {
           sent_at: new Date().toISOString(),
         })
         .eq('id', queueItemId)
+        .eq('org_id', orgId)
 
       if (leadId) {
         await supabase
           .from('leads')
           .update({ status: '送信済み' })
           .eq('id', leadId)
+          .eq('org_id', orgId)
       }
     }
 

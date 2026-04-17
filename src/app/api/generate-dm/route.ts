@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { getAnthropicApiKey } from '@/lib/env'
+import { getAuthenticatedUser } from '@/lib/supabase/server'
 
 const apiKey = getAnthropicApiKey()
 const client = new Anthropic({ apiKey })
@@ -83,6 +84,12 @@ export async function POST(req: NextRequest) {
         body.facility_name ?? null
       )
       return NextResponse.json({ dm })
+    }
+
+    // 認証+組織チェック
+    const { user, orgId } = await getAuthenticatedUser()
+    if (!user || !orgId) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
     }
 
     // Build context for Claude

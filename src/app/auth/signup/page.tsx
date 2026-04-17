@@ -1,11 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Zap, Mail, Lock, User, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
+import { Zap, Mail, Lock, User, AlertCircle, CheckCircle, Loader2, UserPlus } from 'lucide-react'
 
 export default function SignupPage() {
+  const searchParams = useSearchParams()
+  const inviteToken = searchParams.get('token')
+
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -25,12 +29,19 @@ export default function SignupPage() {
     }
 
     const supabase = createClient()
+    const redirectTo = inviteToken
+      ? `${window.location.origin}/auth/callback?next=/dashboard`
+      : `${window.location.origin}/auth/callback?next=/onboarding`
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: name },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          full_name: name,
+          ...(inviteToken ? { invite_token: inviteToken } : {}),
+        },
+        emailRedirectTo: redirectTo,
       },
     })
 
@@ -88,7 +99,14 @@ export default function SignupPage() {
         {/* Card */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl">
           <h2 className="text-2xl font-bold text-white mb-2">新規登録</h2>
-          <p className="text-gray-400 text-sm mb-8">アカウントを作成してください</p>
+          <p className="text-gray-400 text-sm mb-4">アカウントを作成してください</p>
+
+          {inviteToken && (
+            <div className="flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-lg px-4 py-3 mb-6">
+              <UserPlus className="w-4 h-4 text-violet-400 flex-shrink-0" />
+              <p className="text-violet-300 text-sm">招待リンクからの登録です。既存の組織に参加します。</p>
+            </div>
+          )}
 
           <form onSubmit={handleSignup} className="space-y-5">
             {error && (

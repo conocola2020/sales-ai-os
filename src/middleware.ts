@@ -36,9 +36,14 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes
-  if (!user && pathname.startsWith('/dashboard')) {
+  // Protected routes: dashboard and onboarding require auth
+  if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/onboarding'))) {
     return NextResponse.redirect(new URL('/auth/login', request.url))
+  }
+
+  // API routes: return 401 for unauthenticated requests
+  if (!user && pathname.startsWith('/api/') && !pathname.startsWith('/api/public/')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   // Redirect authenticated users away from auth pages

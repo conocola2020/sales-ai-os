@@ -1,21 +1,25 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Lead, LeadInsert, LeadUpdate } from '@/types/leads'
 
 // ──────────────────────────────────────────
-// Fetch all leads for current user
+// Fetch all leads for current org
 // ──────────────────────────────────────────
 export async function getLeads(): Promise<{ data: Lead[]; error: string | null }> {
-  const supabase = await createClient()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
+  if (!user) return { data: [], error: null }
 
   const PAGE = 1000
 
-  // まず総件数を取得（HEADリクエスト・高速）
-  const { count, error: countError } = await supabase
+  // Build base query with org_id filter
+  let countQuery = supabase
     .from('leads')
     .select('*', { count: 'exact', head: true })
+  if (orgId) countQuery = countQuery.eq('org_id', orgId)
+
+  const { count, error: countError } = await countQuery
 
   if (countError) return { data: [], error: countError.message }
   if (!count) return { data: [], error: null }
@@ -23,13 +27,15 @@ export async function getLeads(): Promise<{ data: Lead[]; error: string | null }
   // 全ページを並列取得
   const pageCount = Math.ceil(count / PAGE)
   const results = await Promise.all(
-    Array.from({ length: pageCount }, (_, i) =>
-      supabase
+    Array.from({ length: pageCount }, (_, i) => {
+      let q = supabase
         .from('leads')
         .select('*')
         .order('created_at', { ascending: false })
         .range(i * PAGE, (i + 1) * PAGE - 1)
-    )
+      if (orgId) q = q.eq('org_id', orgId)
+      return q
+    })
   )
 
   const all: Lead[] = []
@@ -46,15 +52,17 @@ export async function getLeads(): Promise<{ data: Lead[]; error: string | null }
 // 失敗 > 確認待ち の優先順位で返す
 // ──────────────────────────────────────────
 export async function getLeadQueueStatuses(): Promise<Record<string, string>> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
   if (!user) return {}
 
-  const { data } = await supabase
+  let query = supabase
     .from('send_queue')
     .select('lead_id, status')
     .eq('user_id', user.id)
     .neq('status', '送信済み') // 送信済みは表示不要
+  if (orgId) query = query.eq('org_id', orgId)
+
+  const { data } = await query
 
   if (!data) return {}
 
@@ -77,14 +85,19 @@ export async function getLeadOptions(): Promise<{
   data: Pick<Lead, 'id' | 'company_name' | 'contact_name' | 'status' | 'industry' | 'notes' | 'website_url' | 'company_url' | 'email' | 'contact_method'>[]
   error: string | null
 }> {
-  const supabase = await createClient()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
+  if (!user) return { data: [], error: null }
+
   const FIELDS = 'id, company_name, contact_name, status, industry, notes, website_url, company_url, email, contact_method'
   const PAGE = 1000
 
   // まず総件数を取得
-  const { count, error: countError } = await supabase
+  let countQuery = supabase
     .from('leads')
     .select('*', { count: 'exact', head: true })
+  if (orgId) countQuery = countQuery.eq('org_id', orgId)
+
+  const { count, error: countError } = await countQuery
 
   if (countError) return { data: [], error: countError.message }
   if (!count) return { data: [], error: null }
@@ -92,13 +105,15 @@ export async function getLeadOptions(): Promise<{
   // 全ページを並列取得
   const pageCount = Math.ceil(count / PAGE)
   const results = await Promise.all(
-    Array.from({ length: pageCount }, (_, i) =>
-      supabase
+    Array.from({ length: pageCount }, (_, i) => {
+      let q = supabase
         .from('leads')
         .select(FIELDS)
         .order('created_at', { ascending: false })
         .range(i * PAGE, (i + 1) * PAGE - 1)
-    )
+      if (orgId) q = q.eq('org_id', orgId)
+      return q
+    })
   )
 
   const all: Pick<Lead, 'id' | 'company_name' | 'contact_name' | 'status' | 'industry' | 'notes' | 'website_url' | 'company_url' | 'email' | 'contact_method'>[] = []
@@ -117,12 +132,17 @@ export async function getLeadSummary(): Promise<{
   data: { total: number; untouched: number } | null
   error: string | null
 }> {
-  const supabase = await createClient()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
+  if (!user) return { data: { total: 0, untouched: 0 }, error: null }
 
-  const [totalRes, untouchedRes] = await Promise.all([
-    supabase.from('leads').select('id', { count: 'exact', head: true }),
-    supabase.from('leads').select('id', { count: 'exact', head: true }).eq('status', '未着手'),
-  ])
+  let totalQuery = supabase.from('leads').select('id', { count: 'exact', head: true })
+  let untouchedQuery = supabase.from('leads').select('id', { count: 'exact', head: true }).eq('status', '未着手')
+  if (orgId) {
+    totalQuery = totalQuery.eq('org_id', orgId)
+    untouchedQuery = untouchedQuery.eq('org_id', orgId)
+  }
+
+  const [totalRes, untouchedRes] = await Promise.all([totalQuery, untouchedQuery])
 
   if (totalRes.error) return { data: null, error: totalRes.error.message }
 
@@ -141,13 +161,12 @@ export async function getLeadSummary(): Promise<{
 export async function createLead(
   lead: LeadInsert
 ): Promise<{ data: Lead | null; error: string | null }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
   if (!user) return { data: null, error: '認証が必要です' }
 
   const { data, error } = await supabase
     .from('leads')
-    .insert({ ...lead, user_id: user.id })
+    .insert({ ...lead, user_id: user.id, ...(orgId ? { org_id: orgId } : {}) })
     .select()
     .single()
 
@@ -162,11 +181,10 @@ export async function createLead(
 export async function bulkCreateLeads(
   leads: LeadInsert[]
 ): Promise<{ count: number; error: string | null }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
   if (!user) return { count: 0, error: '認証が必要です' }
 
-  const rows = leads.map((l) => ({ ...l, user_id: user.id }))
+  const rows = leads.map((l) => ({ ...l, user_id: user.id, ...(orgId ? { org_id: orgId } : {}) }))
 
   const CHUNK = 500
   let inserted = 0

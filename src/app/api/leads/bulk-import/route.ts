@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
@@ -8,13 +8,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'リードデータが必要です' }, { status: 400 })
     }
 
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const { supabase, user, orgId } = await getAuthenticatedUser()
+    if (!user || !orgId) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
     }
 
-    const rows = leads.map((l) => ({ ...l, user_id: user.id }))
+    const rows = leads.map((l) => ({ ...l, user_id: user.id, org_id: orgId }))
 
     // 200件ずつチャンク分割でインサート
     const CHUNK = 200

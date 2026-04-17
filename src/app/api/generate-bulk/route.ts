@@ -81,28 +81,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Supabaseが設定されていません' }, { status: 500 })
     }
 
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
+    const { getAuthenticatedUser } = await import('@/lib/supabase/server')
+    const { supabase, user, orgId } = await getAuthenticatedUser()
 
-    // Fetch user settings
+    if (!user || !orgId) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+    }
+
+    // Fetch user settings（組織共通設定）
     let settings: UserSettings | null = null
     const { data: settingsData } = await supabase
-      .from('user_settings').select('*').limit(1).maybeSingle()
+      .from('user_settings').select('*').eq('org_id', orgId).limit(1).maybeSingle()
     if (settingsData) settings = settingsData as UserSettings
     if (!settings) settings = DEFAULT_USER_SETTINGS as unknown as UserSettings
 
-    // Fetch template
+    // Fetch template（組織スコープ）
     let template: MessageTemplate | null = null
     if (templateId) {
-      const { data } = await supabase.from('message_templates').select('*').eq('id', templateId).single()
+      const { data } = await supabase.from('message_templates').select('*').eq('id', templateId).eq('org_id', orgId).single()
       if (data) template = data as MessageTemplate
     } else {
-      const { data } = await supabase.from('message_templates').select('*').eq('is_default', true).limit(1).maybeSingle()
+      const { data } = await supabase.from('message_templates').select('*').eq('is_default', true).eq('org_id', orgId).limit(1).maybeSingle()
       if (data) template = data as MessageTemplate
     }
 
-    // Fetch all leads at once
-    const { data: leadsData } = await supabase.from('leads').select('*').in('id', leadIds)
+    // Fetch all leads at once（組織スコープ）
+    const { data: leadsData } = await supabase.from('leads').select('*').in('id', leadIds).eq('org_id', orgId)
     const leadsMap = new Map<string, Record<string, string | null>>()
     if (leadsData) {
       for (const lead of leadsData) {

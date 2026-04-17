@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { SendQueueItem, SendQueueInsert, SendStats, SendMethod, SendStatus } from '@/types/sending'
 
@@ -25,21 +25,21 @@ export async function getSendQueue(): Promise<{
   data: SendQueueItem[] | null
   error: string | null
 }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
 
   if (!user) {
     return { data: [], error: null }
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('send_queue')
     .select(LEAD_SELECT)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1000)
+  if (orgId) query = query.eq('org_id', orgId)
+
+  const { data, error } = await query
 
   if (error) {
     console.error('getSendQueue error:', error)
@@ -55,10 +55,7 @@ export async function getSendQueue(): Promise<{
 export async function addToQueue(
   item: SendQueueInsert
 ): Promise<{ data: SendQueueItem | null; error: string | null }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
 
   if (!user) {
     return { data: null, error: '認証が必要です' }
@@ -92,6 +89,7 @@ export async function addToQueue(
     .from('send_queue')
     .insert({
       user_id: user.id,
+      ...(orgId ? { org_id: orgId } : {}),
       lead_id: item.lead_id,
       message_content: item.message_content,
       subject: item.subject ?? null,
@@ -429,10 +427,7 @@ export async function getSendStats(): Promise<{
   data: SendStats | null
   error: string | null
 }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
 
   if (!user) {
     return {
@@ -441,10 +436,13 @@ export async function getSendStats(): Promise<{
     }
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('send_queue')
     .select('status')
     .eq('user_id', user.id)
+  if (orgId) query = query.eq('org_id', orgId)
+
+  const { data, error } = await query
 
   if (error) {
     console.error('getSendStats error:', error)

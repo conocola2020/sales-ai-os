@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { getAuthenticatedUser } from '@/lib/supabase/server'
 import type { UserSettings, UserSettingsInsert, MessageTemplate, MessageTemplateInsert } from '@/types/settings'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -19,15 +20,16 @@ export async function getSettings(): Promise<{ data: UserSettings | null; error:
   if (!isConfigured) return { data: null, error: null }
 
   try {
-    const supabase = await getClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase, user, orgId } = await getAuthenticatedUser()
     if (!user) return { data: null, error: null }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('user_settings')
       .select('*')
       .eq('user_id', user.id)
-      .maybeSingle()
+    if (orgId) query = query.eq('org_id', orgId)
+
+    const { data, error } = await query.maybeSingle()
 
     if (error) throw error
     return { data: data as UserSettings | null, error: null }
@@ -43,8 +45,7 @@ export async function upsertSettings(
   if (!isConfigured) return { data: null, error: 'Supabase未設定' }
 
   try {
-    const supabase = await getClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase, user, orgId } = await getAuthenticatedUser()
     if (!user) return { data: null, error: '認証エラー' }
 
     const { data, error } = await supabase
@@ -52,6 +53,7 @@ export async function upsertSettings(
       .upsert(
         {
           user_id: user.id,
+          ...(orgId ? { org_id: orgId } : {}),
           ...payload,
         },
         { onConflict: 'user_id' }
@@ -76,15 +78,17 @@ export async function getTemplates(): Promise<{ data: MessageTemplate[]; error: 
   if (!isConfigured) return { data: [], error: null }
 
   try {
-    const supabase = await getClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase, user, orgId } = await getAuthenticatedUser()
     if (!user) return { data: [], error: null }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('message_templates')
       .select('*')
       .eq('user_id', user.id)
       .order('sort_order', { ascending: true })
+    if (orgId) query = query.eq('org_id', orgId)
+
+    const { data, error } = await query
 
     if (error) throw error
     return { data: (data ?? []) as MessageTemplate[], error: null }
@@ -100,13 +104,12 @@ export async function createTemplate(
   if (!isConfigured) return { data: null, error: 'Supabase未設定' }
 
   try {
-    const supabase = await getClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase, user, orgId } = await getAuthenticatedUser()
     if (!user) return { data: null, error: '認証エラー' }
 
     const { data, error } = await supabase
       .from('message_templates')
-      .insert({ ...payload, user_id: user.id })
+      .insert({ ...payload, user_id: user.id, ...(orgId ? { org_id: orgId } : {}) })
       .select('*')
       .single()
 
@@ -123,8 +126,7 @@ export async function seedDefaultTemplates(): Promise<{ error: string | null }> 
   if (!isConfigured) return { error: 'Supabase未設定' }
 
   try {
-    const supabase = await getClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase, user, orgId } = await getAuthenticatedUser()
     if (!user) return { error: '認証エラー' }
 
     // Check if already seeded
@@ -138,6 +140,7 @@ export async function seedDefaultTemplates(): Promise<{ error: string | null }> 
     const rows = DEFAULT_TEMPLATES.map((t, i) => ({
       ...t,
       user_id: user.id,
+      ...(orgId ? { org_id: orgId } : {}),
       sort_order: i,
     }))
 

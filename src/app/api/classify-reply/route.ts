@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import type { Sentiment } from '@/types/replies'
 import { getAnthropicApiKey } from '@/lib/env'
+import { getAuthenticatedUser } from '@/lib/supabase/server'
 
 const apiKey = getAnthropicApiKey()
 const client = new Anthropic({ apiKey })
@@ -96,6 +97,12 @@ export async function POST(req: NextRequest) {
       await new Promise(resolve => setTimeout(resolve, 800))
       const result = demoClassify(body.content)
       return NextResponse.json(result)
+    }
+
+    // 認証+組織チェック
+    const { user, orgId } = await getAuthenticatedUser()
+    if (!user || !orgId) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
     }
 
     // Build user message with context

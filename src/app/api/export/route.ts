@@ -28,11 +28,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ data: demoData })
     }
 
-    const { createClient } = await import('@/lib/supabase/server')
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { getAuthenticatedUser } = await import('@/lib/supabase/server')
+    const { supabase, user, orgId } = await getAuthenticatedUser()
 
-    if (!user) {
+    if (!user || !orgId) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
     }
 
@@ -47,7 +46,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabase
       .from(tableMap[type])
       .select('*')
-      .eq('user_id', user.id)
+      .eq('org_id', orgId)
       .order('created_at', { ascending: false })
 
     if (error) {

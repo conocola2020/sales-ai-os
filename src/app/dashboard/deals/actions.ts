@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Deal, DealInsert, DealUpdate, DealStats } from '@/types/deals'
 import { ACTIVE_STAGES } from '@/types/deals'
@@ -12,19 +12,19 @@ export async function getDeals(): Promise<{
   data: Deal[] | null
   error: string | null
 }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
 
   if (!user) return { data: [], error: null }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('deals')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(500)
+  if (orgId) query = query.eq('org_id', orgId)
+
+  const { data, error } = await query
 
   if (error) {
     console.error('getDeals error:', error)
@@ -40,10 +40,7 @@ export async function getDeals(): Promise<{
 export async function createDeal(
   item: DealInsert
 ): Promise<{ data: Deal | null; error: string | null }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
 
   if (!user) return { data: null, error: '認証が必要です' }
 
@@ -51,6 +48,7 @@ export async function createDeal(
     .from('deals')
     .insert({
       user_id: user.id,
+      ...(orgId ? { org_id: orgId } : {}),
       lead_id: item.lead_id ?? null,
       company_name: item.company_name,
       contact_name: item.contact_name ?? null,
@@ -137,8 +135,7 @@ export async function createDealFromReply(
   contactName?: string | null,
   replyContent?: string | null,
 ): Promise<{ data: Deal | null; error: string | null }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
   if (!user) return { data: null, error: '認証が必要です' }
 
   // Check if deal already exists for this lead
@@ -159,6 +156,7 @@ export async function createDealFromReply(
     .from('deals')
     .insert({
       user_id: user.id,
+      ...(orgId ? { org_id: orgId } : {}),
       lead_id: leadId,
       company_name: companyName,
       contact_name: contactName ?? null,
@@ -203,10 +201,7 @@ export async function getDealStats(): Promise<{
   data: DealStats | null
   error: string | null
 }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
 
   if (!user) {
     return {
@@ -223,10 +218,13 @@ export async function getDealStats(): Promise<{
     }
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('deals')
     .select('stage, amount, probability')
     .eq('user_id', user.id)
+  if (orgId) query = query.eq('org_id', orgId)
+
+  const { data, error } = await query
 
   if (error) {
     console.error('getDealStats error:', error)
@@ -279,10 +277,7 @@ export async function getUpcomingDeals(): Promise<{
   data: UpcomingDeal[]
   error: string | null
 }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
 
   if (!user) return { data: [], error: null }
 
@@ -292,7 +287,7 @@ export async function getUpcomingDeals(): Promise<{
   const weekLaterStr = weekLater.toISOString().split('T')[0]
 
   // next_action_date or meeting_date が今日〜14日以内の商談を取得
-  const { data, error } = await supabase
+  let query = supabase
     .from('deals')
     .select('id, company_name, contact_name, stage, next_action, next_action_date, meeting_date, meeting_url')
     .eq('user_id', user.id)
@@ -300,6 +295,9 @@ export async function getUpcomingDeals(): Promise<{
     .or(`next_action_date.gte.${todayStr},meeting_date.gte.${todayStr}`)
     .order('next_action_date', { ascending: true, nullsFirst: false })
     .limit(10)
+  if (orgId) query = query.eq('org_id', orgId)
+
+  const { data, error } = await query
 
   if (error) {
     console.error('getUpcomingDeals error:', error)

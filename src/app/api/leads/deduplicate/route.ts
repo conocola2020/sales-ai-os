@@ -1,15 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function POST() {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const { supabase, user, orgId } = await getAuthenticatedUser()
+    if (!user || !orgId) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
     }
 
-    // 全件取得（ページネーション）
+    // 全件取得（ページネーション・組織スコープ）
     const all: { id: string; company_name: string; created_at: string }[] = []
     const PAGE = 1000
     let from = 0
@@ -17,7 +16,7 @@ export async function POST() {
       const { data, error } = await supabase
         .from('leads')
         .select('id, company_name, created_at')
-        .eq('user_id', user.id)
+        .eq('org_id', orgId)
         .order('created_at', { ascending: true })
         .range(from, from + PAGE - 1)
 

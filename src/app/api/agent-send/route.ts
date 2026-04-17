@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/server'
 import { sendForm } from '@/lib/form-sender'
 
 /**
@@ -37,12 +37,9 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.ANTHROPIC_API_KEY
     const isDemo = !apiKey || apiKey === 'your-anthropic-api-key-here'
 
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { supabase, user, orgId } = await getAuthenticatedUser()
 
-    if (!user) {
+    if (!user || !orgId) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
     }
 
@@ -58,7 +55,7 @@ export async function POST(req: NextRequest) {
       `
       )
       .eq('id', queueItemId)
-      .eq('user_id', user.id)
+      .eq('org_id', orgId)
       .single()
 
     if (fetchError || !item) {
@@ -75,11 +72,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 重複送信チェック: 同じリードに既に送信済みのアイテムがあればスキップ
+    // 重複送信チェック: 同じリードに既に送信済みのアイテムがあればスキップ（組織スコープ）
     const { data: existingSent } = await supabase
       .from('send_queue')
       .select('id')
       .eq('lead_id', item.lead_id)
+      .eq('org_id', orgId)
       .eq('status', '送信済み')
       .limit(1)
 
@@ -115,7 +113,7 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', queueItemId)
-      .eq('user_id', user.id)
+      .eq('org_id', orgId)
 
     if (lockError) {
       return NextResponse.json(
@@ -139,7 +137,7 @@ export async function POST(req: NextRequest) {
         .from('send_queue')
         .update({ status: '確認待ち', updated_at: new Date().toISOString() })
         .eq('id', queueItemId)
-        .eq('user_id', user.id)
+        .eq('org_id', orgId)
 
       return NextResponse.json(
         { error: '企業URLが設定されていません' },
@@ -151,7 +149,7 @@ export async function POST(req: NextRequest) {
     const { data: settings } = await supabase
       .from('user_settings')
       .select('company_name, representative, company_email, company_phone')
-      .eq('user_id', user.id)
+      .eq('org_id', orgId)
       .single()
 
     const userSettings = settings as UserSettings | null
@@ -177,7 +175,7 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', queueItemId)
-      .eq('user_id', user.id)
+      .eq('org_id', orgId)
 
     // デモモードの場合はシミュレーション
     if (isDemo) {
@@ -189,7 +187,7 @@ export async function POST(req: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', queueItemId)
-        .eq('user_id', user.id)
+        .eq('org_id', orgId)
 
       return NextResponse.json({
         success: true,
@@ -224,7 +222,7 @@ export async function POST(req: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', queueItemId)
-        .eq('user_id', user.id)
+        .eq('org_id', orgId)
 
       // leads テーブルのステータスも更新
       await supabase
@@ -262,7 +260,7 @@ export async function POST(req: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', queueItemId)
-        .eq('user_id', user.id)
+        .eq('org_id', orgId)
 
       return NextResponse.json({
         success: false,
@@ -280,7 +278,7 @@ export async function POST(req: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', queueItemId)
-        .eq('user_id', user.id)
+        .eq('org_id', orgId)
 
       return NextResponse.json({
         success: false,
@@ -298,7 +296,7 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', queueItemId)
-      .eq('user_id', user.id)
+      .eq('org_id', orgId)
 
     return NextResponse.json({
       success: false,
@@ -310,6 +308,7 @@ export async function POST(req: NextRequest) {
 
     // Agent API エラー時はステータスを「確認待ち」に戻す
     try {
+      const { createClient } = await import('@/lib/supabase/server')
       const sb = await createClient()
       if (queueItemId) {
         await sb

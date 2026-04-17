@@ -61,11 +61,12 @@ const navItems = [
 interface SidebarProps {
   userName?: string
   userEmail?: string
+  orgName?: string | null
   isOpen?: boolean
   onClose?: () => void
 }
 
-export default function Sidebar({ userName, userEmail, isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ userName, userEmail, orgName, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -172,6 +173,12 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
 
         {/* User info */}
         <div className="px-3 py-3 mt-2 bg-gray-900 rounded-xl border border-gray-800/50">
+          {orgName && (
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Building2 className="w-3 h-3 text-violet-400 flex-shrink-0" />
+              <p className="text-xs font-medium text-violet-300 truncate">{orgName}</p>
+            </div>
+          )}
           <p className="text-sm font-medium text-gray-200 truncate">{userName || 'ユーザー'}</p>
           <p className="text-xs text-gray-500 truncate mt-0.5">{userEmail || ''}</p>
           <button

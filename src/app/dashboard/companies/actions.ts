@@ -1,20 +1,17 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getAuthenticatedUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { CompanyAnalysis, AnalysisResult } from '@/types/analyses'
 
 export async function getAnalyses(): Promise<{ data: CompanyAnalysis[] | null; error: string | null }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
 
   if (!user) {
     return { data: [], error: null }
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('company_analyses')
     .select(
       `
@@ -28,6 +25,9 @@ export async function getAnalyses(): Promise<{ data: CompanyAnalysis[] | null; e
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(30)
+  if (orgId) query = query.eq('org_id', orgId)
+
+  const { data, error } = await query
 
   if (error) {
     console.error('getAnalyses error:', error)
@@ -42,10 +42,7 @@ export async function saveAnalysis(
   url: string,
   leadId?: string | null
 ): Promise<{ data: CompanyAnalysis | null; error: string | null }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { supabase, user, orgId } = await getAuthenticatedUser()
 
   if (!user) {
     return { data: null, error: '認証が必要です' }
@@ -53,6 +50,7 @@ export async function saveAnalysis(
 
   const insertData = {
     user_id: user.id,
+    ...(orgId ? { org_id: orgId } : {}),
     lead_id: leadId ?? null,
     url,
     company_name: analysisResult.company_name,
