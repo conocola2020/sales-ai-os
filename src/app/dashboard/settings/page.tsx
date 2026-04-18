@@ -1,13 +1,17 @@
 import SettingsPage from '@/components/settings/SettingsPage'
 import { getSettings, getTemplates, seedDefaultTemplates } from '@/app/dashboard/settings/actions'
+import { getAuthenticatedUser } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPageRoute() {
-  const [settingsResult, templatesResult] = await Promise.all([
+  const [settingsResult, templatesResult, authResult] = await Promise.all([
     getSettings(),
     getTemplates(),
+    getAuthenticatedUser(),
   ])
+  const currentUserId = authResult.user?.id ?? null
+  const currentRole = authResult.role ?? null
 
   // 初回アクセス時にデフォルトテンプレートを挿入
   if (templatesResult.data.length === 0) {
@@ -18,6 +22,8 @@ export default async function SettingsPageRoute() {
       <SettingsPage
         initialSettings={settingsResult.data}
         templates={refreshed.data}
+        currentUserId={currentUserId}
+        currentRole={currentRole}
       />
     )
   }
@@ -26,6 +32,8 @@ export default async function SettingsPageRoute() {
     <SettingsPage
       initialSettings={settingsResult.data}
       templates={templatesResult.data}
+      currentUserId={currentUserId}
+      currentRole={currentRole}
     />
   )
 }

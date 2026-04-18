@@ -3,19 +3,23 @@
 import { useState, useCallback } from 'react'
 import {
   Settings, Save, CheckCircle2, Plus, Trash2, Package,
-  Building2, User, FileText, Loader2,
+  Building2, User, FileText, Loader2, Users,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { upsertSettings } from '@/app/dashboard/settings/actions'
 import type { UserSettings, Product, MessageTemplate } from '@/types/settings'
 import { DEFAULT_USER_SETTINGS } from '@/types/settings'
+import OrganizationSettings from '@/components/settings/OrganizationSettings'
 
 interface SettingsPageProps {
   initialSettings: UserSettings | null
   templates: MessageTemplate[]
+  currentUserId?: string | null
+  currentRole?: string | null
 }
 
-export default function SettingsPage({ initialSettings, templates }: SettingsPageProps) {
+export default function SettingsPage({ initialSettings, templates, currentUserId, currentRole }: SettingsPageProps) {
+  const [tab, setTab] = useState<'profile' | 'organization'>('profile')
   // フォーム state — 初回はDB値 or デフォルト値
   const defaults = initialSettings ?? { ...DEFAULT_USER_SETTINGS } as unknown as UserSettings
   const [companyName, setCompanyName] = useState(defaults.company_name)
@@ -111,24 +115,60 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
             文面生成AIに反映される弊社プロフィールとテンプレートの管理
           </p>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className={clsx(
-            'flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all',
-            saved
-              ? 'bg-emerald-600 text-white'
-              : 'bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-50'
-          )}
-        >
-          {saving ? (
-            <><Loader2 className="w-4 h-4 animate-spin" />保存中...</>
-          ) : saved ? (
-            <><CheckCircle2 className="w-4 h-4" />保存しました</>
-          ) : (
-            <><Save className="w-4 h-4" />設定を保存</>
-          )}
-        </button>
+        {tab === 'profile' && (
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={clsx(
+              'flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all',
+              saved
+                ? 'bg-emerald-600 text-white'
+                : 'bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-50'
+            )}
+          >
+            {saving ? (
+              <><Loader2 className="w-4 h-4 animate-spin" />保存中...</>
+            ) : saved ? (
+              <><CheckCircle2 className="w-4 h-4" />保存しました</>
+            ) : (
+              <><Save className="w-4 h-4" />設定を保存</>
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="px-6 pt-4 shrink-0">
+        <div className="flex gap-1 border-b border-gray-800">
+          <button
+            onClick={() => setTab('profile')}
+            className={clsx(
+              'px-4 py-2.5 text-sm font-medium transition-colors',
+              tab === 'profile'
+                ? 'border-b-2 border-violet-500 text-white'
+                : 'text-gray-400 hover:text-gray-300'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              プロフィール設定
+            </span>
+          </button>
+          <button
+            onClick={() => setTab('organization')}
+            className={clsx(
+              'px-4 py-2.5 text-sm font-medium transition-colors',
+              tab === 'organization'
+                ? 'border-b-2 border-violet-500 text-white'
+                : 'text-gray-400 hover:text-gray-300'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              組織管理
+            </span>
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -139,6 +179,12 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
+        {tab === 'organization' ? (
+          <OrganizationSettings
+            currentUserId={currentUserId ?? null}
+            currentRole={currentRole ?? null}
+          />
+        ) : (
         <div className="max-w-4xl mx-auto p-6 space-y-8">
 
           {/* ========== 会社基本情報 ========== */}
@@ -397,6 +443,7 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
           {/* 下部余白 */}
           <div className="h-8" />
         </div>
+        )}
       </div>
     </div>
   )
