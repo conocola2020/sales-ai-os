@@ -487,6 +487,10 @@ export async function getTargetStats(): Promise<{
   data: InstagramStats | null
   error: string | null
 }> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!supabaseUrl || supabaseUrl === 'your-supabase-url') {
+    return { data: { total: 0, approached: 0, dmSent: 0, replied: 0, converted: 0, replyRate: null }, error: null }
+  }
   const supabase = await createClient()
   const {
     data: { user },

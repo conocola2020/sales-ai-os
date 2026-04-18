@@ -28,6 +28,12 @@ export async function createClient() {
 
 // 認証済みユーザーの情報+組織情報を取得するヘルパー
 export async function getAuthenticatedUser() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || supabaseUrl === 'your-supabase-url' || !supabaseKey || supabaseKey === 'your-supabase-anon-key') {
+    return { supabase: null as never, user: null, orgId: null, role: null }
+  }
+
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return { supabase, user: null, orgId: null, role: null }
