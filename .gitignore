@@ -40,3 +40,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 scripts/test-form-queue.mjs
+.claude/scheduled_tasks.lock
