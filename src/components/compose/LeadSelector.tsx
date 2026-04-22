@@ -4,6 +4,9 @@ import { useState, useRef, useEffect } from 'react'
 import { Search, Building2, ChevronDown, X } from 'lucide-react'
 import type { Lead, LeadOption } from '@/types/leads'
 import { STATUS_CONFIG } from '@/types/leads'
+
+const FALLBACK_STATUS = { bg: 'bg-gray-500/10', color: 'text-gray-400', border: 'border-gray-500/20', dot: 'bg-gray-400', label: '不明' }
+const getStatusConfig = (status: string) => STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? FALLBACK_STATUS
 import clsx from 'clsx'
 
 interface LeadSelectorProps {
@@ -72,8 +75,8 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
             <div className="flex items-center gap-2 flex-shrink-0">
               <span className={clsx(
                 'px-2 py-0.5 rounded-md text-xs font-medium',
-                STATUS_CONFIG[selectedLead.status].bg,
-                STATUS_CONFIG[selectedLead.status].color
+                getStatusConfig(selectedLead.status).bg,
+                getStatusConfig(selectedLead.status).color
               )}>
                 {selectedLead.status}
               </span>
@@ -140,8 +143,8 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
                   </div>
                   <span className={clsx(
                     'px-2 py-0.5 rounded text-xs font-medium flex-shrink-0',
-                    STATUS_CONFIG[lead.status].bg,
-                    STATUS_CONFIG[lead.status].color
+                    getStatusConfig(lead.status).bg,
+                    getStatusConfig(lead.status).color
                   )}>
                     {lead.status}
                   </span>
