@@ -39,7 +39,7 @@ export async function getSendQueue(): Promise<{
     .select(LEAD_SELECT)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
-    .limit(1000)
+    .limit(100000)
 
   if (error) {
     console.error('getSendQueue error:', error)
