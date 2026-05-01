@@ -34,19 +34,31 @@ export async function getSendQueue(): Promise<{
     return { data: [], error: null }
   }
 
-  const { data, error } = await supabase
-    .from('send_queue')
-    .select(LEAD_SELECT)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(100000)
+  // Supabase PostgREST caps at 1000 rows per request — paginate to get all records
+  const PAGE_SIZE = 1000
+  const allItems: SendQueueItem[] = []
+  let from = 0
 
-  if (error) {
-    console.error('getSendQueue error:', error)
-    return { data: null, error: error.message }
+  while (true) {
+    const { data, error } = await supabase
+      .from('send_queue')
+      .select(LEAD_SELECT)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1)
+
+    if (error) {
+      console.error('getSendQueue error:', error)
+      return { data: null, error: error.message }
+    }
+
+    if (!data || data.length === 0) break
+    allItems.push(...(data as SendQueueItem[]))
+    if (data.length < PAGE_SIZE) break
+    from += PAGE_SIZE
   }
 
-  return { data: data as SendQueueItem[], error: null }
+  return { data: allItems, error: null }
 }
 
 // ──────────────────────────────────────────
