@@ -174,8 +174,10 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
     )
     if (!sendableItems.length) return
     setSelected(new Set())
-    const errors: string[] = []
     setAutoProgress({ total: sendableItems.length, completed: 0, current: null, errors: [], done: false })
+    const recordAutoError = (message: string) => {
+      setAutoProgress(prev => prev ? { ...prev, errors: [...prev.errors, message] } : null)
+    }
 
     for (const item of sendableItems) {
       const companyName = item.lead?.company_name ?? '不明'
@@ -190,7 +192,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
           let data: { error?: string } = {}
           try { data = await res.json() } catch { /* ignore */ }
           if (!res.ok || data.error) {
-            errors.push(`${companyName}: ${data.error ?? `HTTP ${res.status}`}`)
+            recordAutoError(`${companyName}: ${data.error ?? `HTTP ${res.status}`}`)
           } else {
             setQueue(prev => prev.map(q => q.id === item.id ? { ...q, status: '確認待ち' as const } : q))
           }
@@ -209,7 +211,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
           let data: { error?: string } = {}
           try { data = await res.json() } catch { /* ignore */ }
           if (!res.ok || data.error) {
-            errors.push(`${companyName}: ${data.error ?? `HTTP ${res.status}`}`)
+            recordAutoError(`${companyName}: ${data.error ?? `HTTP ${res.status}`}`)
           } else {
             setQueue(prev => prev.map(q => q.id === item.id ? { ...q, status: '送信済み' as const, sent_at: new Date().toISOString() } : q))
           }
@@ -217,40 +219,38 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
           // 手動: 送信済みとしてマーク
           const { error } = await markAsSent(item.id)
           if (error) {
-            errors.push(`${companyName}: ${error}`)
+            recordAutoError(`${companyName}: ${error}`)
           } else {
             setQueue(prev => prev.map(q => q.id === item.id ? { ...q, status: '送信済み' as const, sent_at: new Date().toISOString() } : q))
           }
         }
       } catch (err) {
-        errors.push(`${companyName}: ${err instanceof Error ? err.message : 'ネットワークエラー'}`)
+        recordAutoError(`${companyName}: ${err instanceof Error ? err.message : 'ネットワークエラー'}`)
       }
-      setAutoProgress(prev => prev ? { ...prev, completed: prev.completed + 1, errors: [...errors] } : null)
+      setAutoProgress(prev => prev ? { ...prev, completed: prev.completed + 1 } : null)
     }
     setAutoProgress(prev => prev ? { ...prev, done: true, current: null } : null)
   }
 
-  const filteredQueue = useMemo(
-    () => {
-      let items: SendQueueItem[]
-      if (activeTab === '全て') items = queue.filter(i => i.status !== '手動対応' && i.status !== '送信不可')
-      else if (activeTab === 'フォーム未検出') items = queue.filter(i => i.status === 'form_not_found')
-      else if (activeTab === '送信不可') items = queue.filter(i => i.status === '送信不可')
-      else items = queue.filter(i => i.status === activeTab)
+  const filteredQueue = (() => {
+    const baseItems =
+      activeTab === '全て'
+        ? queue.filter(i => i.status !== '手動対応' && i.status !== '送信不可')
+        : activeTab === 'フォーム未検出'
+          ? queue.filter(i => i.status === 'form_not_found')
+          : activeTab === '送信不可'
+            ? queue.filter(i => i.status === '送信不可')
+            : queue.filter(i => i.status === activeTab)
 
-      // 検索フィルター
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase()
-        items = items.filter(i =>
-          (i.lead?.company_name ?? '').toLowerCase().includes(q) ||
-          (i.message_content ?? '').toLowerCase().includes(q) ||
-          (i.subject ?? '').toLowerCase().includes(q)
-        )
-      }
-      return items
-    },
-    [queue, activeTab, searchQuery]
-  )
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return baseItems
+
+    return baseItems.filter(i =>
+      (i.lead?.company_name ?? '').toLowerCase().includes(q) ||
+      (i.message_content ?? '').toLowerCase().includes(q) ||
+      (i.subject ?? '').toLowerCase().includes(q)
+    )
+  })()
 
   const manualItems = useMemo(
     () => queue.filter(i => i.status === '手動対応'),
@@ -454,7 +454,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <span className="text-[10px] text-gray-500">本文</span>
-                        <p className="text-xs text-gray-400 whitespace-pre-wrap max-h-32 overflow-y-auto">{item.message_content}</p>
+                        <p className="text-xs text-gray-400 whitespace-pre-wrap break-words max-h-32 overflow-y-auto">{item.message_content}</p>
                       </div>
                       <button
                         onClick={() => { navigator.clipboard.writeText(item.message_content || ''); }}

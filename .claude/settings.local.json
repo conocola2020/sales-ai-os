@@ -30,7 +30,9 @@
       "mcp__Claude_in_Chrome__read_network_requests",
       "mcp__Claude_in_Chrome__shortcuts_execute",
       "mcp__Claude_in_Chrome__tabs_close_mcp",
-      "mcp__cab03130-b6e4-4398-a37d-c01309686a60__execute_sql"
+      "mcp__cab03130-b6e4-4398-a37d-c01309686a60__execute_sql",
+      "mcp__af704859-7289-4480-ab06-eee45018c150__list_events",
+      "mcp__793640ae-86ae-4d0c-97cc-9c0ca23d7ea6__search_threads"
     ]
   }
 }

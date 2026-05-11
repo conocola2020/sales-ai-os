@@ -3,12 +3,11 @@
 import { useState, useCallback, useMemo, useEffect, useSyncExternalStore, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Sparkles, Loader2, Check, X, Globe, Mail, Send,
-  ChevronDown, ChevronUp, RefreshCw, Save, CheckSquare, Square, Zap,
+  Sparkles, Loader2, Check, X, Globe, Send,
+  ChevronDown, ChevronUp, RefreshCw,
 } from 'lucide-react'
 import ToneSelector from './ToneSelector'
 import TemplateSelector from './TemplateSelector'
-import { saveMessage } from '@/app/dashboard/compose/actions'
 import { addToQueue } from '@/app/dashboard/sending/actions'
 import {
   subscribe,
@@ -18,14 +17,11 @@ import {
   hasPendingJob,
   getPendingCount,
   resumeGeneration,
-  type BulkResult,
 } from '@/lib/bulk-generate-store'
-import type { Lead, LeadOption } from '@/types/leads'
+import type { LeadOption } from '@/types/leads'
 import type { Tone } from '@/types/messages'
 import type { MessageTemplate } from '@/types/settings'
 import clsx from 'clsx'
-
-// BulkResult はストアから import
 
 // Memoized lead row — only re-renders when its own isSelected changes
 // チェックアイコン（軽量インラインSVG）
@@ -91,6 +87,7 @@ interface BulkGeneratePanelProps {
   onTemplateChange: (id: string) => void
   initialSelectedIds?: string[]
   queuedStatuses?: { lead_id: string; status: string }[]
+  generationMode: 'free' | 'claude'
 }
 
 export default function BulkGeneratePanel({
@@ -102,6 +99,7 @@ export default function BulkGeneratePanel({
   onTemplateChange,
   initialSelectedIds,
   queuedStatuses = [],
+  generationMode,
 }: BulkGeneratePanelProps) {
   const router = useRouter()
 
@@ -220,9 +218,10 @@ export default function BulkGeneratePanel({
       tone,
       customInstructions,
       templateId: selectedTemplateId || undefined,
+      generationMode,
       leads: leads.map(l => ({ id: l.id, company_name: l.company_name })),
     })
-  }, [selectedLeadIds, tone, customInstructions, selectedTemplateId, leads])
+  }, [selectedLeadIds, tone, customInstructions, selectedTemplateId, generationMode, leads])
 
   // キュー追加は1件ずつストリーム受信時に自動実行済み
   // 以下は手動での再キュー追加用
@@ -387,6 +386,14 @@ export default function BulkGeneratePanel({
               </>
             )}
           </button>
+          <p className={clsx(
+            'text-[11px] leading-relaxed',
+            generationMode === 'free' ? 'text-emerald-400' : 'text-violet-400'
+          )}>
+            {generationMode === 'free'
+              ? '無料生成モード: Claude APIを使わず、HP分析とテンプレートで生成します。'
+              : 'Claudeモード: ANTHROPIC_API_KEYを使って生成します。'}
+          </p>
         </div>
       </div>
 
@@ -524,7 +531,7 @@ export default function BulkGeneratePanel({
                       )}
                       <div className="bg-gray-800/60 rounded-lg px-3 py-2">
                         <p className="text-xs text-gray-500 mb-0.5">本文 ({result.body.length}字)</p>
-                        <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed font-sans max-h-[200px] overflow-y-auto">
+                        <pre className="text-xs text-gray-300 whitespace-pre-wrap break-words leading-relaxed font-sans max-h-[200px] overflow-y-auto">
                           {result.body}
                         </pre>
                       </div>

@@ -172,6 +172,8 @@ export function buildSystemPrompt(
   parts.push('')
   parts.push('【文体ルール】')
   parts.push('- 段落ごとに空行を入れて読みやすくする')
+  parts.push('- 本文は横に長くなりすぎないよう、1行あたり全角45〜55字程度を目安に自然な位置で改行する')
+  parts.push('- 長い一文は避け、句点「。」や読点「、」の直後で読みやすく改行する')
   parts.push('- 絵文字は使わない')
   parts.push('- テンプレ臭を消す。相手固有の情報を最低2箇所以上に入れる')
   parts.push('- 毎回同じ表現・構成にならないよう、施設ごとに書き出しや展開を変える')

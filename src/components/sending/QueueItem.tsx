@@ -343,7 +343,7 @@ export default function QueueItem({
                 </button>
               </div>
               <div className="bg-orange-500/5 border border-orange-500/20 rounded-lg p-3">
-                <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed font-sans select-all">
+                <pre className="text-xs text-gray-300 whitespace-pre-wrap break-words leading-relaxed font-sans select-all">
                   {`${lead?.company_name ?? ''} 御中\n\n${item.message_content}`}
                 </pre>
               </div>
@@ -452,7 +452,7 @@ export default function QueueItem({
           <div>
             <p className="text-xs font-medium text-gray-500 mb-2">送信文面</p>
             <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg p-3">
-              <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed font-sans">
+              <pre className="text-xs text-gray-300 whitespace-pre-wrap break-words leading-relaxed font-sans">
                 {item.message_content}
               </pre>
             </div>
