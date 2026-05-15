@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   Zap,
+  LayoutDashboard,
   Users,
   Building2,
   FileText,
@@ -23,8 +24,9 @@ import clsx from 'clsx'
 
 const navItems = [
   {
-    section: 'メイン',
+    section: 'ワークスペース',
     items: [
+      { label: '概要', href: '/dashboard', icon: LayoutDashboard, badge: null },
       { label: 'リード管理', href: '/dashboard/leads', icon: Users, badge: null },
       { label: '企業分析', href: '/dashboard/companies', icon: Building2, badge: null },
       { label: '文面生成', href: '/dashboard/compose', icon: FileText, badge: 'AI' },
@@ -68,6 +70,7 @@ interface SidebarProps {
 export default function Sidebar({ userName, userEmail, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const userInitial = (userName || userEmail || 'U').slice(0, 1).toUpperCase()
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -81,23 +84,24 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
   }
 
   const sidebarContent = (
-    <aside className="w-72 md:w-64 h-full bg-gray-950 border-r border-gray-800/50 flex flex-col">
+    <aside className="flex h-full w-72 flex-col border-r border-white/[0.08] bg-[#0d0f12] md:w-[268px]">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-gray-800/50 flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-5">
         <Link href="/dashboard" className="flex items-center gap-3 group" onClick={handleNavClick}>
-          <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30 group-hover:shadow-violet-500/50 transition-shadow">
-            <Zap className="w-4 h-4 text-white" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-400 text-neutral-950 shadow-[0_12px_36px_rgba(20,184,166,0.2)] transition-transform group-hover:scale-[1.03]">
+            <Zap className="h-4 w-4" />
           </div>
           <div>
-            <span className="text-sm font-bold text-white leading-none block">Sales AI OS</span>
-            <span className="text-xs text-gray-500 mt-0.5 block">営業自動化</span>
+            <span className="block text-sm font-bold leading-none text-white">Sales AI OS</span>
+            <span className="mt-1 block text-xs text-stone-500">営業オペレーション基盤</span>
           </div>
         </Link>
         {/* Close button (mobile only) */}
         {onClose && (
           <button
             onClick={onClose}
-            className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-400 transition-colors hover:bg-white/[0.07] hover:text-white md:hidden"
+            aria-label="メニューを閉じる"
           >
             <X className="w-5 h-5" />
           </button>
@@ -105,15 +109,17 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-6">
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
         {navItems.map((group) => (
           <div key={group.section}>
-            <p className="px-3 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-600">
               {group.section}
             </p>
             <ul className="space-y-1">
               {group.items.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                const isActive = item.href === '/dashboard'
+                  ? pathname === '/dashboard'
+                  : pathname === item.href || pathname.startsWith(item.href + '/')
                 const Icon = item.icon
 
                 return (
@@ -122,33 +128,36 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
                       href={item.href}
                       onClick={handleNavClick}
                       className={clsx(
-                        'flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-xl text-sm font-medium transition-all group',
+                        'group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all md:py-2.5',
                         isActive
-                          ? 'bg-violet-600/15 text-violet-300 border border-violet-500/20'
-                          : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/60'
+                          ? 'border border-white/[0.10] bg-white/[0.07] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+                          : 'text-stone-400 hover:bg-white/[0.05] hover:text-stone-100'
                       )}
                     >
+                      {isActive && (
+                        <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-r-full bg-teal-300" />
+                      )}
                       <Icon
                         className={clsx(
-                          'w-5 h-5 md:w-4 md:h-4 flex-shrink-0 transition-colors',
-                          isActive ? 'text-violet-400' : 'text-gray-500 group-hover:text-gray-300'
+                          'h-5 w-5 flex-shrink-0 transition-colors md:h-4 md:w-4',
+                          isActive ? 'text-teal-300' : 'text-stone-500 group-hover:text-stone-300'
                         )}
                       />
                       <span className="flex-1">{item.label}</span>
                       {item.badge && (
                         <span
                           className={clsx(
-                            'text-xs px-1.5 py-0.5 rounded-md font-semibold',
+                            'rounded-md px-1.5 py-0.5 text-[10px] font-bold tracking-wide',
                             item.badge === 'AI'
-                              ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
-                              : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                              ? 'border border-teal-400/25 bg-teal-400/10 text-teal-200'
+                              : 'border border-red-500/30 bg-red-500/20 text-red-300'
                           )}
                         >
                           {item.badge}
                         </span>
                       )}
                       {isActive && (
-                        <ChevronRight className="w-3 h-3 text-violet-400/60" />
+                        <ChevronRight className="h-3 w-3 text-teal-300/70" />
                       )}
                     </Link>
                   </li>
@@ -160,23 +169,35 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
       </nav>
 
       {/* Bottom section */}
-      <div className="px-3 py-4 border-t border-gray-800/50 space-y-1">
+      <div className="space-y-2 border-t border-white/[0.08] px-3 py-4">
         <Link
           href="/dashboard/settings"
           onClick={handleNavClick}
-          className="flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition-all"
+          className={clsx(
+            'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all md:py-2.5',
+            pathname === '/dashboard/settings'
+              ? 'border border-white/[0.10] bg-white/[0.07] text-white'
+              : 'text-stone-400 hover:bg-white/[0.05] hover:text-stone-100'
+          )}
         >
-          <Settings className="w-5 h-5 md:w-4 md:h-4 text-gray-500" />
+          <Settings className="h-5 w-5 text-stone-500 md:h-4 md:w-4" />
           <span>設定</span>
         </Link>
 
         {/* User info */}
-        <div className="px-3 py-3 mt-2 bg-gray-900 rounded-xl border border-gray-800/50">
-          <p className="text-sm font-medium text-gray-200 truncate">{userName || 'ユーザー'}</p>
-          <p className="text-xs text-gray-500 truncate mt-0.5">{userEmail || ''}</p>
+        <div className="mt-2 rounded-xl border border-white/[0.08] bg-white/[0.04] p-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-stone-200 text-sm font-bold text-neutral-950">
+              {userInitial}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-stone-100">{userName || 'ユーザー'}</p>
+              <p className="mt-0.5 truncate text-xs text-stone-500">{userEmail || ''}</p>
+            </div>
+          </div>
           <button
             onClick={handleLogout}
-            className="mt-3 flex items-center gap-2 text-xs text-gray-500 hover:text-red-400 transition-colors py-1"
+            className="mt-3 flex items-center gap-2 rounded-lg py-1 text-xs text-stone-500 transition-colors hover:text-red-300"
           >
             <LogOut className="w-3 h-3" />
             ログアウト
@@ -196,14 +217,14 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
       {/* Mobile: overlay drawer */}
       <div
         className={clsx(
-          'md:hidden fixed inset-0 z-50 transition-all duration-300',
+          'fixed inset-0 z-50 transition-all duration-300 md:hidden',
           isOpen ? 'visible' : 'invisible'
         )}
       >
         {/* Backdrop */}
         <div
           className={clsx(
-            'absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300',
+            'absolute inset-0 bg-black/65 backdrop-blur-sm transition-opacity duration-300',
             isOpen ? 'opacity-100' : 'opacity-0'
           )}
           onClick={onClose}

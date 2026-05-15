@@ -106,7 +106,19 @@ async function fetchSinglePage(url: string, timeoutMs = 10000): Promise<string |
   }
 }
 
-const ADDITIONAL_PATHS = ['/menu', '/price', '/about', '/food', '/drink', '/facility']
+const ADDITIONAL_PATHS = [
+  '/menu',
+  '/price',
+  '/about',
+  '/food',
+  '/drink',
+  '/facility',
+  '/spa',
+  '/spa/',
+  '/spa/fujitsuka.html',
+  '/sauna',
+  '/onsen',
+]
 
 /**
  * メインURL + 追加ページをまとめて取得し、構造化データを返す

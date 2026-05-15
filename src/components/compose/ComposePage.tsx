@@ -11,12 +11,13 @@ import BulkGeneratePanel from './BulkGeneratePanel'
 import { saveMessage } from '@/app/dashboard/compose/actions'
 import { addToQueue } from '@/app/dashboard/sending/actions'
 import { parseSubjectAndBody } from '@/lib/prompt-builder'
-import type { Lead, LeadOption } from '@/types/leads'
+import type { LeadOption } from '@/types/leads'
 import type { Message, Tone } from '@/types/messages'
 import type { MessageTemplate } from '@/types/settings'
 import clsx from 'clsx'
 
 type Mode = 'single' | 'bulk'
+type GenerationMode = 'free' | 'claude'
 
 interface ComposePageProps {
   leads: LeadOption[]
@@ -40,6 +41,7 @@ export default function ComposePage({
   queuedStatuses = [],
 }: ComposePageProps) {
   const [mode, setMode] = useState<Mode>(initialMode ?? 'single')
+  const [generationMode, setGenerationMode] = useState<GenerationMode>('free')
   const [selectedLeadId, setSelectedLeadId] = useState(initialLeadId)
   const [tone, setTone] = useState<Tone>('丁寧')
   const [selectedTemplateId, setSelectedTemplateId] = useState(
@@ -97,6 +99,7 @@ export default function ComposePage({
           tone,
           customInstructions,
           templateId: selectedTemplateId || undefined,
+          generationMode,
         }),
       })
 
@@ -145,7 +148,7 @@ export default function ComposePage({
         }
       }
     }
-  }, [selectedLeadId, tone, customInstructions, selectedTemplateId, parseStreamingText, autoQueue])
+  }, [selectedLeadId, tone, customInstructions, selectedTemplateId, generationMode, parseStreamingText, autoQueue])
 
   const handleSave = async () => {
     if (!generatedMessage) return
@@ -233,12 +236,35 @@ export default function ComposePage({
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
         <div>
-          <h1 className="text-lg font-semibold text-white">文面生成AI</h1>
+          <h1 className="text-lg font-semibold text-white">文面生成</h1>
           <p className="text-xs text-gray-500 mt-0.5">
             HP分析 + 弊社情報をもとに、パーソナライズされた営業メッセージを生成
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Engine toggle */}
+          <div className="flex items-center bg-gray-800 rounded-lg border border-gray-700 p-0.5">
+            <button
+              onClick={() => setGenerationMode('free')}
+              className={clsx(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                generationMode === 'free' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'
+              )}
+            >
+              <Zap className="w-3 h-3" />
+              無料生成
+            </button>
+            <button
+              onClick={() => setGenerationMode('claude')}
+              className={clsx(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                generationMode === 'claude' ? 'bg-violet-600 text-white' : 'text-gray-400 hover:text-white'
+              )}
+            >
+              <Sparkles className="w-3 h-3" />
+              Claude
+            </button>
+          </div>
           {/* Mode toggle */}
           <div className="flex items-center bg-gray-800 rounded-lg border border-gray-700 p-0.5">
             <button
@@ -262,14 +288,27 @@ export default function ComposePage({
               一括生成
             </button>
           </div>
-          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-500/10 border border-violet-500/20 rounded-lg text-xs font-medium text-violet-400">
-            <Sparkles className="w-3 h-3" />
-            claude-sonnet-4-6
+          <span className={clsx(
+            'flex items-center gap-1.5 px-2.5 py-1 border rounded-lg text-xs font-medium',
+            generationMode === 'free'
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              : 'bg-violet-500/10 border-violet-500/20 text-violet-400'
+          )}>
+            {generationMode === 'free' ? <Zap className="w-3 h-3" /> : <Sparkles className="w-3 h-3" />}
+            {generationMode === 'free' ? 'API課金なし' : 'claude-sonnet-4-6'}
           </span>
         </div>
       </div>
 
       {/* Banners */}
+      {generationMode === 'free' && (
+        <div className="mx-6 mt-4 flex items-start gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
+          <Info className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-emerald-300">
+            <span className="font-semibold">無料生成:</span> Claude APIは使わず、HP取得・キーワード分析・テンプレート差し込みで生成します。
+          </p>
+        </div>
+      )}
       {isDemo && (
         <div className="mx-6 mt-4 flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
           <Info className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
@@ -297,6 +336,7 @@ export default function ComposePage({
           onTemplateChange={setSelectedTemplateId}
           initialSelectedIds={initialBulkLeadIds}
           queuedStatuses={queuedStatuses}
+          generationMode={generationMode}
         />
       ) : (
         <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_300px] gap-0 overflow-hidden">

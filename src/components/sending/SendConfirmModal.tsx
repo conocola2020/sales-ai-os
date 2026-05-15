@@ -295,7 +295,7 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
                   </button>
                 </div>
                 <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4">
-                  <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed font-sans">
+                  <pre className="text-xs text-gray-300 whitespace-pre-wrap break-words leading-relaxed font-sans">
                     {item.message_content}
                   </pre>
                 </div>
