@@ -34,19 +34,34 @@ export async function getSendQueue(): Promise<{
     return { data: [], error: null }
   }
 
-  const { data, error } = await supabase
-    .from('send_queue')
-    .select(LEAD_SELECT)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1000)
+  // Supabase PostgREST returns at most 1000 rows per request by default.
+  // Page through the queue so counters and search are based on the full history.
+  const PAGE_SIZE = 1000
+  const allItems: SendQueueItem[] = []
+  let from = 0
 
-  if (error) {
-    console.error('getSendQueue error:', error)
-    return { data: null, error: error.message }
+  while (true) {
+    const { data, error } = await supabase
+      .from('send_queue')
+      .select(LEAD_SELECT)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1)
+
+    if (error) {
+      console.error('getSendQueue error:', error)
+      return { data: null, error: error.message }
+    }
+
+    if (!data || data.length === 0) break
+
+    allItems.push(...(data as SendQueueItem[]))
+    if (data.length < PAGE_SIZE) break
+
+    from += PAGE_SIZE
   }
 
-  return { data: data as SendQueueItem[], error: null }
+  return { data: allItems, error: null }
 }
 
 // ──────────────────────────────────────────
@@ -441,25 +456,45 @@ export async function getSendStats(): Promise<{
     }
   }
 
-  const { data, error } = await supabase
-    .from('send_queue')
-    .select('status')
-    .eq('user_id', user.id)
+  const countByStatus = async (status?: SendStatus) => {
+    let query = supabase
+      .from('send_queue')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
 
-  if (error) {
-    console.error('getSendStats error:', error)
-    return { data: null, error: error.message }
+    if (status) {
+      query = query.eq('status', status)
+    }
+
+    const { count, error } = await query
+    if (error) throw error
+    return count ?? 0
   }
 
-  const rows = data as { status: string }[]
-  const stats: SendStats = {
-    total: rows.length,
-    reviewing: rows.filter(r => r.status === '確認待ち').length,
-    sent: rows.filter(r => r.status === '送信済み').length,
-    failed: rows.filter(r => r.status === '失敗').length,
-    manual: rows.filter(r => r.status === '手動対応').length,
-    formNotFound: rows.filter(r => r.status === 'form_not_found').length,
-    unsendable: rows.filter(r => r.status === '送信不可').length,
+  let stats: SendStats
+  try {
+    const [total, reviewing, sent, failed, manual, formNotFound, unsendable] = await Promise.all([
+      countByStatus(),
+      countByStatus('確認待ち'),
+      countByStatus('送信済み'),
+      countByStatus('失敗'),
+      countByStatus('手動対応'),
+      countByStatus('form_not_found'),
+      countByStatus('送信不可'),
+    ])
+
+    stats = {
+      total,
+      reviewing,
+      sent,
+      failed,
+      manual,
+      formNotFound,
+      unsendable,
+    }
+  } catch (error) {
+    console.error('getSendStats error:', error)
+    return { data: null, error: error instanceof Error ? error.message : '送信統計の取得に失敗しました' }
   }
 
   return { data: stats, error: null }
