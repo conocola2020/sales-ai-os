@@ -54,10 +54,8 @@ export async function getSendQueue(): Promise<{
     }
 
     if (!data || data.length === 0) break
-
     allItems.push(...(data as SendQueueItem[]))
     if (data.length < PAGE_SIZE) break
-
     from += PAGE_SIZE
   }
 
