@@ -202,7 +202,7 @@ function parseArgs(): CliOptions {
 }
 
 function extractAddressComponent(place: RawPlace, type: string): string | null {
-  return place.addressComponents?.find(component => component.types.includes(type))?.longText || null
+  return place.addressComponents?.find(component => component.types?.includes(type))?.longText || null
 }
 
 function placeName(place: RawPlace): string {
