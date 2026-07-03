@@ -8,6 +8,7 @@ import { analyzeForConocola, formatAnalysis } from '@/lib/hp-analyzer'
 import { buildSystemPrompt, buildUserPrompt } from '@/lib/prompt-builder'
 import { generateFreeSalesMessage } from '@/lib/free-message-generator'
 import { wrapGeneratedText } from '@/lib/message-formatting'
+import { isAiGenerationEnabled } from '@/lib/env'
 import type { HpAnalysis } from '@/lib/hp-analyzer'
 import type { StructuredHpContent } from '@/lib/hp-fetcher'
 
@@ -108,6 +109,7 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.ANTHROPIC_API_KEY
     const shouldUseFreeGenerator =
+      !isAiGenerationEnabled() ||
       generationMode === 'free' ||
       !apiKey ||
       apiKey === 'your-anthropic-api-key-here'

@@ -42,6 +42,8 @@ export default function ComposePage({
 }: ComposePageProps) {
   const [mode, setMode] = useState<Mode>(initialMode ?? 'single')
   const [generationMode, setGenerationMode] = useState<GenerationMode>('free')
+  // API生成はサーバー側でも同フラグで無効化される（src/lib/env.ts の isAiGenerationEnabled）
+  const aiGenerationEnabled = process.env.NEXT_PUBLIC_ENABLE_AI_GENERATION === 'true'
   const [selectedLeadId, setSelectedLeadId] = useState(initialLeadId)
   const [tone, setTone] = useState<Tone>('丁寧')
   const [selectedTemplateId, setSelectedTemplateId] = useState(
@@ -254,16 +256,18 @@ export default function ComposePage({
               <Zap className="w-3 h-3" />
               無料生成
             </button>
-            <button
-              onClick={() => setGenerationMode('claude')}
-              className={clsx(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
-                generationMode === 'claude' ? 'bg-violet-600 text-white' : 'text-gray-400 hover:text-white'
-              )}
-            >
-              <Sparkles className="w-3 h-3" />
-              Claude
-            </button>
+            {aiGenerationEnabled && (
+              <button
+                onClick={() => setGenerationMode('claude')}
+                className={clsx(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                  generationMode === 'claude' ? 'bg-violet-600 text-white' : 'text-gray-400 hover:text-white'
+                )}
+              >
+                <Sparkles className="w-3 h-3" />
+                Claude
+              </button>
+            )}
           </div>
           {/* Mode toggle */}
           <div className="flex items-center bg-gray-800 rounded-lg border border-gray-700 p-0.5">
