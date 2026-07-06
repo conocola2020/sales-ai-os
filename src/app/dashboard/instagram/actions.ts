@@ -78,7 +78,8 @@ export async function createTarget(
     .from('instagram_targets')
     .insert({
       user_id: user.id,
-      username: item.username.replace(/^@/, '').trim(),
+      // UNIQUE (user_id, username) は小文字前提（migration 020）
+      username: item.username.replace(/^@/, '').trim().toLowerCase(),
       display_name: item.display_name ?? null,
       bio: item.bio ?? null,
       industry: item.industry ?? null,
@@ -122,7 +123,7 @@ export async function updateTarget(
 
   // Normalize username if provided
   if (changes.username) {
-    changes = { ...changes, username: changes.username.replace(/^@/, '').trim() }
+    changes = { ...changes, username: changes.username.replace(/^@/, '').trim().toLowerCase() }
   }
 
   const { data, error } = await supabase
@@ -224,7 +225,8 @@ export async function bulkCreateTargets(
 
   const rows = items.map(item => ({
     user_id: user.id,
-    username: item.username.replace(/^@/, '').trim(),
+    // UNIQUE (user_id, username) は小文字前提（migration 020）
+    username: item.username.replace(/^@/, '').trim().toLowerCase(),
     display_name: item.display_name ?? null,
     bio: item.bio ?? null,
     industry: item.industry ?? null,

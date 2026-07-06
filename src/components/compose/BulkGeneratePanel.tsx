@@ -146,6 +146,7 @@ export default function BulkGeneratePanel({
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [contactMethodFilter, setContactMethodFilter] = useState('all')
+  const [industryFilter, setIndustryFilter] = useState('all')
   const [prefectureFilter, setPrefectureFilter] = useState('all')
   const [visibleCount, setVisibleCount] = useState(VISIBLE_BATCH)
   const [isSavingAll, setIsSavingAll] = useState(false)
@@ -166,6 +167,10 @@ export default function BulkGeneratePanel({
     } else if (contactMethodFilter === 'unscanned') {
       rows = rows.filter(l => !l.contact_method)
     }
+    // 業種フィルター
+    if (industryFilter !== 'all') {
+      rows = rows.filter(l => l.industry === industryFilter)
+    }
     // 都道府県フィルター
     if (prefectureFilter !== 'all') {
       rows = rows.filter(l => l.notes === prefectureFilter)
@@ -179,7 +184,7 @@ export default function BulkGeneratePanel({
       )
     }
     return rows
-  }, [leads, searchQuery, contactMethodFilter, prefectureFilter])
+  }, [leads, searchQuery, contactMethodFilter, industryFilter, prefectureFilter])
 
   const toggleLead = useCallback((id: string) => {
     setSelectedLeadIds(prev => {
@@ -274,6 +279,20 @@ export default function BulkGeneratePanel({
             <option value="email">メールのみ ({leads.filter(l => l.contact_method === 'email').length})</option>
             <option value="none">なし ({leads.filter(l => l.contact_method === 'none').length})</option>
             <option value="unscanned">未スキャン ({leads.filter(l => !l.contact_method).length})</option>
+          </select>
+
+          {/* Industry filter */}
+          <select
+            value={industryFilter}
+            onChange={e => { setIndustryFilter(e.target.value); setVisibleCount(VISIBLE_BATCH) }}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+          >
+            <option value="all">業種: すべて</option>
+            {[...new Set(leads.map(l => l.industry).filter(Boolean))].sort().map(ind => (
+              <option key={ind as string} value={ind as string}>
+                {ind} ({leads.filter(l => l.industry === ind).length})
+              </option>
+            ))}
           </select>
 
           {/* Prefecture filter */}
