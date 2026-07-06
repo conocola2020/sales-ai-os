@@ -10,9 +10,9 @@
     "typecheck": "tsc --noEmit",
     "send": "node --env-file=.env.local --import tsx scripts/send-forms.ts",
     "detect": "node --env-file=.env.local --import tsx scripts/detect-contacts.ts",
-    "fetch:cafe": "node --env-file=.env.local --import tsx scripts/fetch-cafe-prospects.ts",
-    "enrich:cafe": "node --env-file=.env.local --import tsx scripts/enrich-cafe-prospects.ts",
-    "promote:cafe": "node --env-file=.env.local --import tsx scripts/promote-cafe-prospects.ts"
+    "fetch:prospects": "node --env-file=.env.local --import tsx scripts/fetch-prospects.ts",
+    "enrich:prospects": "node --env-file=.env.local --import tsx scripts/enrich-prospects.ts",
+    "promote:prospects": "node --env-file=.env.local --import tsx scripts/promote-prospects.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

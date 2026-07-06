@@ -20,8 +20,8 @@ export interface AddressComponent {
   types: string[]
 }
 
-/** Supabase cafe_prospects 実スキーマ（migration 017）に合わせた保存行 */
-export interface CafeProspectRow {
+/** Supabase prospects 実スキーマ（migration 017/019）に合わせた保存行 */
+export interface ProspectRow {
   user_id: string
   place_id: string
   name: string
@@ -39,6 +39,7 @@ export interface CafeProspectRow {
   notes: string | null
   raw_data: RawPlace
   source: 'google_places_api'
+  industry: string
 }
 
 export interface SearchAreaConfig {
@@ -68,7 +69,7 @@ export interface FetchStats {
 
 export interface ClassifiedPlace {
   place: RawPlace
-  status: CafeProspectRow['status']
+  status: ProspectRow['status']
   excludedReason: string | null
   hasWebsite: boolean
 }

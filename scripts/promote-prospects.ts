@@ -1,14 +1,15 @@
 /**
- * カフェ見込み顧客 昇格スクリプト（cafe_prospects → leads）
+ * 見込み顧客 昇格スクリプト（prospects → leads・業種汎用）
  *
- * 連絡先抽出済み（contact_method あり）の cafe_prospects を leads に昇格し、
+ * 連絡先抽出済み（contact_method あり）の prospects を leads に昇格し、
  * 既存の送信パイプライン（文面生成 → send_queue → フォーム送信）に乗せられる状態にする。
+ * leads.industry には prospects.industry がそのまま引き継がれ、業種別文面生成に連動する。
  *
  * このスクリプトは leads を作るだけで、send_queue には一切触れない（送信しない）。
  *
- * npm run promote:cafe -- --method form --limit 10 --dry-run
- * npm run promote:cafe -- --method form
- * npm run promote:cafe -- --method form,manual,email
+ * npm run promote:prospects -- --method form --limit 10 --dry-run
+ * npm run promote:prospects -- --method form --industry 焼肉
+ * npm run promote:prospects -- --method form,manual,email
  */
 
 import { createClient } from '@supabase/supabase-js'
@@ -29,6 +30,8 @@ interface CliOptions {
   limit: number | null
   dryRun: boolean
   userId: string
+  /** 指定時はこの業種のみ昇格（未指定=全業種） */
+  industry: string | null
 }
 
 interface ProspectRow {
@@ -40,6 +43,7 @@ interface ProspectRow {
   contact_form_url: string | null
   instagram_url: string | null
   contact_method: string
+  industry: string | null
 }
 
 interface ExistingLead {
@@ -102,6 +106,7 @@ function parseArgs(): CliOptions {
     limit: parsePositiveInt(getArg(args, '--limit'), null),
     dryRun: hasFlag(args, '--dry-run'),
     userId: getArg(args, '--user-id') || process.env.OWNER_USER_ID || '',
+    industry: getArg(args, '--industry'),
   }
 }
 
@@ -135,15 +140,19 @@ async function fetchTargets(opts: CliOptions): Promise<ProspectRow[]> {
   if (!supabase) throw new Error('Supabase 接続情報がありません')
 
   const all = await fetchAllPages<ProspectRow>(async offset => {
-    const { data, error } = await supabase!
-      .from('cafe_prospects')
-      .select('id, name, website, phone, email, contact_form_url, instagram_url, contact_method')
+    let query = supabase!
+      .from('prospects')
+      .select('id, name, website, phone, email, contact_form_url, instagram_url, contact_method, industry')
       .eq('user_id', opts.userId)
       .eq('status', 'untouched')
       .is('lead_id', null)
       .in('contact_method', opts.methods)
       .order('created_at', { ascending: true })
       .range(offset, offset + FETCH_PAGE_SIZE - 1)
+    if (opts.industry) {
+      query = query.eq('industry', opts.industry)
+    }
+    const { data, error } = await query
     if (error) throw new Error(`対象取得エラー: ${error.message}`)
     return (data || []) as ProspectRow[]
   })
@@ -165,7 +174,7 @@ async function fetchExistingLeads(opts: CliOptions): Promise<ExistingLead[]> {
 
 async function markPromoted(prospectId: string, leadId: string, opts: CliOptions): Promise<void> {
   const { error } = await supabase!
-    .from('cafe_prospects')
+    .from('prospects')
     .update({ status: 'promoted', lead_id: leadId, updated_at: new Date().toISOString() })
     .eq('id', prospectId)
     .eq('user_id', opts.userId)
@@ -186,9 +195,9 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
-  console.log('⬆️  cafe_prospects → leads 昇格を開始します')
+  console.log('⬆️  prospects → leads 昇格を開始します')
   console.log(`   モード: ${opts.dryRun ? 'dry-run（DB更新なし）' : '本番（DB更新あり）'}`)
-  console.log(`   対象 contact_method: ${opts.methods.join(', ')} / 上限: ${opts.limit ?? 'なし（全件）'}`)
+  console.log(`   対象 contact_method: ${opts.methods.join(', ')} / 業種: ${opts.industry ?? '全業種'} / 上限: ${opts.limit ?? 'なし（全件）'}`)
   console.log('')
 
   const [targets, existingLeads] = await Promise.all([
@@ -257,9 +266,9 @@ async function main(): Promise<void> {
           company_url: p.website,
           contact_url: p.contact_form_url,
           contact_method: p.contact_method,
-          industry: 'カフェ',
+          industry: p.industry,
           status: '未着手',
-          notes: '愛知カフェVol.1（Google Places収集）から昇格',
+          notes: `Google Places収集（${p.industry ?? '業種不明'}）から昇格`,
         })
         .select('id')
         .single()

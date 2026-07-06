@@ -1,12 +1,12 @@
 /**
- * カフェ見込み顧客 連絡先抽出スクリプト（Phase 3）
+ * 見込み顧客 連絡先抽出スクリプト（Phase 3・業種汎用）
  *
- * cafe_prospects の website を巡回し、メール / 問い合わせフォーム / Instagram を
+ * prospects の website を巡回し、メール / 問い合わせフォーム / Instagram を
  * 抽出して email / contact_form_url / instagram_url / contact_method を埋める。
  *
- * npm run enrich:cafe -- --limit 10 --dry-run
- * npm run enrich:cafe -- --limit 30
- * npm run enrich:cafe
+ * npm run enrich:prospects -- --limit 10 --dry-run
+ * npm run enrich:prospects -- --industry 焼肉 --limit 30
+ * npm run enrich:prospects
  */
 
 import { createClient } from '@supabase/supabase-js'
@@ -33,6 +33,8 @@ interface CliOptions {
   force: boolean
   userId: string
   verbose: boolean
+  /** 指定時はこの業種のみ処理（未指定=全業種） */
+  industry: string | null
 }
 
 interface TargetRow {
@@ -101,6 +103,7 @@ function parseArgs(): CliOptions {
     force: hasFlag(args, '--force'),
     userId: getArg(args, '--user-id') || process.env.OWNER_USER_ID || '',
     verbose: hasFlag(args, '--verbose'),
+    industry: getArg(args, '--industry'),
   }
 }
 
@@ -213,7 +216,7 @@ async function fetchTargets(opts: CliOptions): Promise<TargetRow[]> {
 
   while (true) {
     let query = supabase
-      .from('cafe_prospects')
+      .from('prospects')
       .select('id, name, website')
       .eq('user_id', opts.userId)
       .eq('status', 'untouched')
@@ -224,6 +227,9 @@ async function fetchTargets(opts: CliOptions): Promise<TargetRow[]> {
 
     if (!opts.force) {
       query = query.is('contact_method', null)
+    }
+    if (opts.industry) {
+      query = query.eq('industry', opts.industry)
     }
 
     const { data, error } = await query
@@ -245,7 +251,7 @@ async function saveResult(row: TargetRow, result: EnrichResult, opts: CliOptions
   if (opts.dryRun || !supabase) return
 
   const { error } = await supabase
-    .from('cafe_prospects')
+    .from('prospects')
     .update({
       email: result.email,
       contact_form_url: result.contactFormUrl,
@@ -314,7 +320,7 @@ async function main(): Promise<void> {
   console.log('')
 
   const targets = await fetchTargets(opts)
-  console.log(`   対象: ${targets.length}件（website あり・status='untouched'${opts.force ? '' : '・未処理'}）`)
+  console.log(`   対象: ${targets.length}件（website あり・status='untouched'${opts.force ? '' : '・未処理'}${opts.industry ? `・業種=${opts.industry}` : ''}）`)
   console.log('')
 
   if (targets.length === 0) {

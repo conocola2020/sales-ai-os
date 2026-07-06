@@ -3,14 +3,15 @@ export interface BlacklistResult {
   reason: string | null
 }
 
-interface BlacklistEntry {
+export interface BlacklistEntry {
   id: string
   patterns: string[]
   matchType: 'exact' | 'contains'
-  category: 'chain' | 'fastfood' | 'regional' | 'mall' | 'manga' | 'concept' | 'animal' | 'bookcafe'
+  category: string
 }
 
-export const BLACKLIST: BlacklistEntry[] = [
+/** カフェ業種の除外リスト（industry-configs から参照される） */
+export const CAFE_BLACKLIST: BlacklistEntry[] = [
   { id: 'starbucks', patterns: ['スターバックス', 'starbucks'], matchType: 'contains', category: 'chain' },
   { id: 'doutor', patterns: ['ドトール', 'doutor'], matchType: 'contains', category: 'chain' },
   { id: 'tullys', patterns: ['タリーズ', 'tullys', "tully's"], matchType: 'contains', category: 'chain' },
@@ -78,10 +79,14 @@ export function normalizeName(name: string): string {
     .trim()
 }
 
-export function isBlacklisted(name: string, types?: string[]): BlacklistResult {
+export function isBlacklisted(
+  name: string,
+  types: string[] | undefined,
+  blacklist: readonly BlacklistEntry[],
+): BlacklistResult {
   const normalized = normalizeName(name)
 
-  for (const entry of BLACKLIST) {
+  for (const entry of blacklist) {
     for (const pattern of entry.patterns) {
       const normalizedPattern = normalizeName(pattern)
       if (entry.matchType === 'exact' && normalized === normalizedPattern) {
