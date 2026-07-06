@@ -43,6 +43,9 @@ function demoDm(
   const name = facilityName || displayName || `@${username}`
   // リンクは入れない: フォロー外DMリクエストではリンクが開けず、スパム判定リスクにもなる。
   // ゴールは返信をもらうことなので、軽い質問で締める。
+  if (industry && (industry.includes('カフェ') || industry.includes('喫茶') || industry.includes('珈琲') || industry.includes('コーヒー'))) {
+    return `はじめまして、CONOCOLAの河野です！${name}さんの投稿、素敵な雰囲気で拝見しました☕ 名古屋で無添加・スパイス10種のクラフトコーラを作っていて、コーヒー以外の一杯としてカフェさんでの導入が増えています。ドリンクメニューの追加ってご検討されることありますか？`
+  }
   if (industry && (industry.includes('サウナ') || industry.includes('温浴') || industry.includes('銭湯') || industry.includes('スパ'))) {
     return `はじめまして、CONOCOLAの河野です！${name}さんの素敵な施設、投稿で拝見しました🧖 サウナー専用コーラを全国60施設以上でお取り扱いいただいてまして、ととのい後の一杯にぴったりだと好評です！よろしければサンプルお送りしてもいいですか？`
   }

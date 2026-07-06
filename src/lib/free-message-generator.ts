@@ -7,6 +7,8 @@ import type { Tone } from '@/types/messages'
 import type { MessageTemplate, UserSettings } from '@/types/settings'
 import { generateCtaWithDates } from '@/lib/date-utils'
 import { wrapGeneratedText } from '@/lib/message-formatting'
+import { normalizeIndustry } from '@/lib/industries'
+import { getIndustryProfile, type IndustryMessageProfile } from '@/lib/industry-profiles'
 import type { HpAnalysis } from '@/lib/hp-analyzer'
 import type { StructuredHpContent } from '@/lib/hp-fetcher'
 
@@ -417,6 +419,74 @@ function compactInstructions(customInstructions?: string): string {
   return text.length > 120 ? `${text.slice(0, 120)}...` : text
 }
 
+/**
+ * 業種プロファイルに基づく生成（サウナ以外の12業種）。
+ * サウナ向けのHP解析ロジックは使わず、業種ごとの提案の型を差し込む。
+ */
+function generateIndustryMessage(
+  profile: IndustryMessageProfile,
+  { lead, tone, customInstructions, settings, hpContent }: GenerateFreeMessageInput,
+): { subject: string; body: string; text: string } {
+  const company = lead.company_name?.trim() || profile.honorific
+  const subject = profile.subject(company)
+  const instructions = compactInstructions(customInstructions)
+
+  // HPタイトルが店名と別の情報を持っていれば書き出しの具体材料に使う
+  const rawTitle = hpContent?.title?.replace(/\s+/g, ' ').trim() || ''
+  const titleFeature =
+    rawTitle && rawTitle !== company && !rawTitle.startsWith(company)
+      ? `「${rawTitle.slice(0, 40)}」という打ち出し`
+      : null
+  const feature = titleFeature || profile.defaultFeature
+
+  const openingLines = [`${company} ご担当者様`, '']
+  if (tone === 'フレンドリー') {
+    openingLines.push(`${profile.honorific}のHPを拝見し、${feature}がとても素敵だと感じました。`)
+    openingLines.push(profile.openingFallback)
+  } else if (tone === '簡潔') {
+    openingLines.push(`${profile.honorific}のHPを拝見し、${feature}が印象的でご連絡いたしました。`)
+  } else {
+    // openingFallback が「ご連絡いたしました」で締めるため、1行目は言い切らない
+    openingLines.push(`${profile.honorific}のHPを拝見し、${feature}に魅力を感じております。`)
+    openingLines.push(profile.openingFallback)
+  }
+
+  const companyIntro = profile.companyIntro
+    .replace('{company}', settings.company_name || '弊社')
+    .replace('{rep}', settings.representative || '担当者')
+
+  const proposal: string[] = [
+    companyIntro,
+    '',
+    profile.proposalSentence,
+    profile.productDetail,
+    '',
+    profile.proofLine,
+  ]
+  if (profile.secondProposal) {
+    proposal.push('', profile.secondProposal)
+  }
+  if (instructions) {
+    proposal.push('', `なお、${instructions}`)
+  }
+
+  const body = wrapGeneratedText([
+    openingLines.join('\n'),
+    '',
+    ...proposal,
+    '',
+    buildCta(settings),
+    '',
+    buildSignature(settings),
+  ].join('\n'))
+
+  return {
+    subject,
+    body,
+    text: `件名：${subject}\n---\n${body}`,
+  }
+}
+
 export function generateFreeSalesMessage({
   lead,
   tone,
@@ -426,6 +496,13 @@ export function generateFreeSalesMessage({
   hpContent,
   hpAnalysis,
 }: GenerateFreeMessageInput): { subject: string; body: string; text: string } {
+  // 業種プロファイルがあればそちらで生成（サウナ・不明業種は従来ロジック）
+  const industry = normalizeIndustry(typeof lead.industry === 'string' ? lead.industry : null)
+  const profile = getIndustryProfile(industry)
+  if (profile) {
+    return generateIndustryMessage(profile, { lead, tone, customInstructions, settings, template, hpContent, hpAnalysis })
+  }
+
   const company = lead.company_name?.trim() || '貴施設'
   const features = pickFeatures(hpContent, hpAnalysis)
   const researchSignals = pickResearchSignals(hpContent)
