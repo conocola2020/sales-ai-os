@@ -18,6 +18,10 @@ import {
   Settings,
   X,
   ReceiptText,
+  MapPin,
+  Star,
+  Share2,
+  Bot,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -42,6 +46,15 @@ const navItems = [
     section: 'SNS',
     items: [
       { label: 'Instagram', href: '/dashboard/instagram', icon: Instagram, badge: null },
+    ],
+  },
+  {
+    section: 'MEO / AIO',
+    items: [
+      { label: 'MEOダッシュボード', href: '/dashboard/meo', icon: MapPin, badge: null },
+      { label: '口コミ管理', href: '/dashboard/meo/reviews', icon: Star, badge: 'AI' },
+      { label: 'サイテーション', href: '/dashboard/meo/citations', icon: Share2, badge: null },
+      { label: 'AIO可視性', href: '/dashboard/meo/aio', icon: Bot, badge: 'AI' },
     ],
   },
   {

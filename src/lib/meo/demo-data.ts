@@ -1,0 +1,190 @@
+// Supabase未設定・未ログイン時に使うMEOモジュールのデモデータ
+
+import type { MeoLocation, MeoReview, MeoCitation, MeoAioCheck } from '@/types/meo'
+
+const DEMO_USER = 'demo-user'
+const DEMO_LOCATION_ID = 'demo-location-1'
+
+const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString()
+
+export const demoLocation: MeoLocation = {
+  id: DEMO_LOCATION_ID,
+  user_id: DEMO_USER,
+  name: 'コーノスパイス',
+  address: '愛知県名古屋市',
+  category: 'スパイスカレー・スパイス料理店',
+  website: 'https://conocola.com',
+  google_place_id: null,
+  created_at: daysAgo(30),
+}
+
+export const demoReviews: MeoReview[] = [
+  {
+    id: 'demo-review-1',
+    user_id: DEMO_USER,
+    location_id: DEMO_LOCATION_ID,
+    source: 'google',
+    author: '田中 健太',
+    rating: 5,
+    body: 'スパイスカレーの香りが最高でした。チキンカレーは複雑なスパイスの層があって、名古屋でここまで本格的なお店は貴重です。また必ず行きます！',
+    review_date: daysAgo(2),
+    reply_body: null,
+    reply_status: '未返信',
+    replied_at: null,
+    created_at: daysAgo(2),
+  },
+  {
+    id: 'demo-review-2',
+    user_id: DEMO_USER,
+    location_id: DEMO_LOCATION_ID,
+    source: 'google',
+    author: 'Yuki M',
+    rating: 5,
+    body: 'クラフトコーラとあいがけカレーのセットが絶品。店主さんのスパイスへのこだわりが伝わってきます。',
+    review_date: daysAgo(3),
+    reply_body: null,
+    reply_status: '未返信',
+    replied_at: null,
+    created_at: daysAgo(3),
+  },
+  {
+    id: 'demo-review-3',
+    user_id: DEMO_USER,
+    location_id: DEMO_LOCATION_ID,
+    source: 'google',
+    author: '佐藤 美咲',
+    rating: 4,
+    body: 'ランチで利用。ラムキーマが美味しかったです。少し待ちましたが値段も手頃で満足。',
+    review_date: daysAgo(5),
+    reply_body:
+      'ご来店ありがとうございます。ラムキーマをお楽しみいただけて嬉しいです。混雑時はお待たせしてしまい申し訳ありません。またのご来店をお待ちしております。',
+    reply_status: '返信済み',
+    replied_at: daysAgo(4),
+    created_at: daysAgo(5),
+  },
+  {
+    id: 'demo-review-4',
+    user_id: DEMO_USER,
+    location_id: DEMO_LOCATION_ID,
+    source: 'google',
+    author: 'Hiroshi K',
+    rating: 5,
+    body: 'サウナ帰りに寄りました。サウナ専用コーラ、話のネタにもなるし本当に美味しい。カレーとの相性も抜群です。',
+    review_date: daysAgo(7),
+    reply_body:
+      'ありがとうございます！ととのい後の一杯に合うよう設計したコーラです。ぜひまたサ活帰りにお立ち寄りください。',
+    reply_status: '自動返信済',
+    replied_at: daysAgo(6),
+    created_at: daysAgo(7),
+  },
+  {
+    id: 'demo-review-5',
+    user_id: DEMO_USER,
+    location_id: DEMO_LOCATION_ID,
+    source: 'google',
+    author: '匿名ユーザー',
+    rating: 3,
+    body: '味は良かったですが、提供までかなり時間がかかりました。',
+    review_date: daysAgo(10),
+    reply_body: null,
+    reply_status: '未返信',
+    replied_at: null,
+    created_at: daysAgo(10),
+  },
+  {
+    id: 'demo-review-6',
+    user_id: DEMO_USER,
+    location_id: DEMO_LOCATION_ID,
+    source: 'google',
+    author: '中村 大輔',
+    rating: 5,
+    body: 'スパイスの効いたカレーが好きな人には間違いなくおすすめ。限定メニューも毎回楽しみです。',
+    review_date: daysAgo(14),
+    reply_body:
+      'ご来店ありがとうございます。限定メニューは月替わりでご用意していますので、ぜひまたお越しください。',
+    reply_status: '返信済み',
+    replied_at: daysAgo(13),
+    created_at: daysAgo(14),
+  },
+]
+
+const citation = (
+  id: string,
+  kind: MeoCitation['kind'],
+  name: string,
+  domain: string | null,
+  status: MeoCitation['status'],
+  indexed: boolean,
+  listing_url: string | null = null
+): MeoCitation => ({
+  id,
+  user_id: DEMO_USER,
+  location_id: DEMO_LOCATION_ID,
+  kind,
+  name,
+  domain,
+  status,
+  indexed,
+  listing_url,
+  last_synced_at: status === '同期済み' ? daysAgo(2) : null,
+  created_at: daysAgo(20),
+})
+
+export const demoCitations: MeoCitation[] = [
+  citation('demo-cit-1', 'ai', 'ChatGPT', 'openai.com', '同期済み', true),
+  citation('demo-cit-2', 'ai', 'Gemini', 'gemini.google.com', '同期済み', true),
+  citation('demo-cit-3', 'ai', 'Perplexity', 'perplexity.ai', '同期済み', true),
+  citation('demo-cit-4', 'ai', 'Copilot', 'copilot.microsoft.com', '同期済み', true),
+  citation('demo-cit-5', 'ai', 'Claude', 'claude.ai', '送信済み', false),
+  citation('demo-cit-6', 'voice', 'Cortana', null, '同期済み', true),
+  citation('demo-cit-7', 'voice', 'Alexa', null, '同期済み', true),
+  citation('demo-cit-8', 'voice', 'Siri', null, '同期済み', true),
+  citation('demo-cit-9', 'platform', 'Hotfrog', 'hotfrog.com', '同期済み', true, 'https://www.hotfrog.com'),
+  citation('demo-cit-10', 'platform', 'BeLocalFocussed', 'belocalfocussed.com', '同期済み', true, 'https://belocalfocussed.com'),
+  citation('demo-cit-11', 'platform', 'arrivebusiness', 'arrivebusiness.com', '同期済み', true, 'https://arrivebusiness.com'),
+  citation('demo-cit-12', 'platform', 'cityoptimum', 'cityoptimum.com', '同期済み', true, 'https://cityoptimum.com'),
+  citation('demo-cit-13', 'platform', 'GoLocalPages', 'golocalpages.com', '同期済み', true, 'https://golocalpages.com'),
+  citation('demo-cit-14', 'platform', 'ProSearchDirectory', 'prosearchdirectory.com', '同期済み', true, 'https://prosearchdirectory.com'),
+  citation('demo-cit-15', 'platform', 'SmartBusinessSearch', 'smartbusinesssearch.com', '同期済み', true, 'https://smartbusinesssearch.com'),
+  citation('demo-cit-16', 'platform', 'US City', 'uscity.net', '送信済み', false, 'https://uscity.net'),
+  citation('demo-cit-17', 'platform', 'YpListing', 'yplisting.com', '未連携', false),
+]
+
+export const demoAioChecks: MeoAioCheck[] = [
+  {
+    id: 'demo-aio-1',
+    user_id: DEMO_USER,
+    location_id: DEMO_LOCATION_ID,
+    engine: 'claude',
+    query: '名古屋 スパイスカレー おすすめ',
+    mentioned: true,
+    rank: 3,
+    snippet: '「コーノスパイス」はスパイスの調合にこだわった専門店として知られています…',
+    answer: null,
+    checked_at: daysAgo(1),
+  },
+  {
+    id: 'demo-aio-2',
+    user_id: DEMO_USER,
+    location_id: DEMO_LOCATION_ID,
+    engine: 'claude',
+    query: '名古屋 クラフトコーラ 飲める店',
+    mentioned: true,
+    rank: 1,
+    snippet: 'コーノスパイス（CONOCOLA）はサウナー専用コーラで有名…',
+    answer: null,
+    checked_at: daysAgo(1),
+  },
+  {
+    id: 'demo-aio-3',
+    user_id: DEMO_USER,
+    location_id: DEMO_LOCATION_ID,
+    engine: 'claude',
+    query: '愛知 カレー ランチ 人気',
+    mentioned: false,
+    rank: null,
+    snippet: null,
+    answer: null,
+    checked_at: daysAgo(1),
+  },
+]
