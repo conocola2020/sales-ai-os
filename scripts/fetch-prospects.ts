@@ -8,7 +8,7 @@
 import { createInterface } from 'readline/promises'
 import { stdin as input, stdout as output } from 'process'
 import { createClient } from '@supabase/supabase-js'
-import { isBlacklisted } from '../src/lib/prospects/blacklist'
+import { isBlacklisted, normalizeName } from '../src/lib/prospects/blacklist'
 import { isTargetType, isOperational, hasWebsite } from '../src/lib/prospects/filters'
 import { searchText, type SearchTextResponse } from '../src/lib/prospects/places-client'
 import { buildSearchAreas, availableAreas } from '../src/lib/prospects/search-areas'
@@ -216,6 +216,14 @@ function placeName(place: RawPlace): string {
 function classifyPlace(place: RawPlace, config: IndustryConfig): { status: ProspectRow['status']; reason: string | null } {
   if (!isTargetType(place.types, place.primaryType, config.placesTypes)) {
     return { status: 'excluded', reason: 'not_target_type' }
+  }
+  // タイプで絞りきれない業種向けの店名フィルタ（お土産屋等）
+  if (config.nameMustIncludeAny) {
+    const name = normalizeName(placeName(place))
+    const hit = config.nameMustIncludeAny.some(keyword => name.includes(normalizeName(keyword)))
+    if (!hit) {
+      return { status: 'excluded', reason: 'not_target_type' }
+    }
   }
   if (!isOperational(place.businessStatus)) {
     return { status: 'excluded', reason: 'closed' }

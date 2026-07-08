@@ -21,6 +21,12 @@ export interface IndustryConfig {
   placesTypes: string[]
   /** 除外チェーン等 */
   blacklist: BlacklistEntry[]
+  /**
+   * Placesタイプで絞りきれない業種向けの店名フィルタ。
+   * 指定時、店名にいずれかを含まない場合は not_target_type で除外する
+   * （例: お土産屋は gift_shop タイプだけでは雑貨屋と区別できない）
+   */
+  nameMustIncludeAny?: string[]
 }
 
 const chain = (id: string, ...patterns: string[]): BlacklistEntry => ({
@@ -112,6 +118,68 @@ export const INDUSTRY_CONFIGS: Record<string, IndustryConfig> = {
       chain('choki', 'チョキペタ'),
     ],
   },
+}
+
+INDUSTRY_CONFIGS['百貨店'] = {
+  id: '百貨店',
+  searchKeywords: ['百貨店', 'デパート'],
+  placesTypes: ['department_store'],
+  // 百貨店は大手こそ商談対象（催事・ギフト）なので基本除外しない。
+  // ただしモール・アウトレットは業態が違うため除外
+  blacklist: [
+    chain('aeonmall', 'イオンモール'),
+    chain('lalaport', 'ららぽーと'),
+    chain('outlet', 'アウトレット'),
+  ],
+}
+
+INDUSTRY_CONFIGS['スーパーマーケット'] = {
+  id: 'スーパーマーケット',
+  searchKeywords: ['スーパーマーケット'],
+  placesTypes: ['supermarket', 'grocery_store'],
+  // 狙いは地場・独立系スーパー（地元商品棚）。全国・広域チェーンは除外
+  blacklist: [
+    chain('aeon', 'イオン', 'マックスバリュ'),
+    chain('apita', 'アピタ', 'ピアゴ'),
+    chain('valor', 'バロー'),
+    chain('yamanaka', 'ヤマナカ', 'フェルナ'),
+    chain('gyomu', '業務スーパー'),
+    chain('seiyu', '西友'),
+    chain('yokado', 'イトーヨーカドー', 'ヨークベニマル'),
+    chain('donki', 'ドン・キホーテ', 'ドンキホーテ'),
+    chain('costco', 'コストコ', 'costco'),
+    chain('lopia', 'ロピア'),
+    chain('conbini', 'セブンイレブン', 'ファミリーマート', 'ローソン', 'ミニストップ'),
+  ],
+}
+
+INDUSTRY_CONFIGS['雑貨屋'] = {
+  id: '雑貨屋',
+  searchKeywords: ['雑貨', 'セレクトショップ'],
+  placesTypes: ['gift_shop', 'home_goods_store'],
+  blacklist: [
+    chain('muji', '無印良品', 'muji'),
+    chain('nitori', 'ニトリ'),
+    chain('3coins', '3coins', 'スリーコインズ'),
+    chain('francfranc', 'フランフラン', 'francfranc'),
+    chain('loft', 'ロフト', 'loft'),
+    chain('hands', '東急ハンズ', 'ハンズ'),
+    chain('seria', 'セリア'),
+    chain('daiso', 'ダイソー', 'スタンダードプロダクツ'),
+    chain('cando', 'キャンドゥ'),
+    chain('watts', 'ワッツ'),
+  ],
+}
+
+INDUSTRY_CONFIGS['お土産屋'] = {
+  id: 'お土産屋',
+  // ⚠️「物産」を検索語に入れると商社（〇〇物産株式会社）を大量に拾う（実データで確認済み）
+  searchKeywords: ['お土産'],
+  placesTypes: ['gift_shop', 'store', 'shopping_mall'],
+  // gift_shop タイプだけでは雑貨屋と区別できないため店名で絞る。
+  // 「物産」単体は商社と衝突するため、店舗形態を表す複合語のみ許可
+  nameMustIncludeAny: ['土産', 'みやげ', '物産店', '物産館', '物産センター', '名産', '特産', 'アンテナショップ', 'souvenir', 'キヨスク'],
+  blacklist: [],
 }
 
 export function getIndustryConfig(industry: string): IndustryConfig | null {
