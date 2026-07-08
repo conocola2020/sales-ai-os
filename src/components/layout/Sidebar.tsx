@@ -19,6 +19,7 @@ import {
   Settings,
   X,
   ReceiptText,
+  Compass,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -44,6 +45,12 @@ const navItems = [
     section: 'SNS',
     items: [
       { label: 'Instagram', href: '/dashboard/instagram', icon: Instagram, badge: null },
+    ],
+  },
+  {
+    section: 'プロダクト',
+    items: [
+      { label: 'MEOコンパス', href: '/meo', icon: Compass, badge: null },
     ],
   },
   {
