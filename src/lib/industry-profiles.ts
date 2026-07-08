@@ -8,7 +8,7 @@
  * isSauna = true とし、文言は free-message-generator 内の既存実装が担当する。
  */
 
-import type { Industry } from '@/lib/industries'
+import { normalizeIndustry, type Industry } from '@/lib/industries'
 
 export interface IndustryMessageProfile {
   industry: Industry
@@ -32,6 +32,12 @@ export interface IndustryMessageProfile {
   proofLine: string
   /** 第2提案（OEM等）。不要なら null */
   secondProposal: string | null
+  /**
+   * Instagram DM の文面（1通目）。
+   * ルール: 150〜250字・リンク禁止（DMリクエストでは開けずスパム判定リスク）・
+   * 相手が一言で返せる質問で締める・サウナ文脈を出さない
+   */
+  dmMessage: (name: string) => string
 }
 
 const BRAND_BASE =
@@ -53,6 +59,8 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
     proofLine: '現在、全国60以上の店舗・施設で継続的にお取り扱いいただいております。',
     secondProposal:
       'また、店名入りのオリジナルクラフトコーラを小ロットからお作りするOEMも承っており、物販やギフトとして展開いただくことも可能です。',
+    dmMessage: name =>
+      `はじめまして、CONOCOLAの河野です！${name}さんの投稿、素敵な雰囲気で拝見しました☕ 名古屋で無添加・スパイス10種のクラフトコーラを作っていて、コーヒー以外の一杯としてカフェさんでの導入が増えています。ドリンクメニューの追加ってご検討されることありますか？`,
   },
 
   美容サロン: {
@@ -70,6 +78,8 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
     proofLine: 'NHKをはじめメディア掲載多数、2024年にはパリコレクションでの提供実績もございます。',
     secondProposal:
       'また、サロン名入りのオリジナルラベルを小ロットからお作りするOEMもございます。自店ブランドの物販商品としてご活用いただけます。',
+    dmMessage: name =>
+      `はじめまして、CONOCOLAの河野です！${name}さんの投稿、素敵な世界観で拝見しました✨ 名古屋で無添加・生薬10種のクラフトコーラを作っていて、施術後の「ご褒美ドリンク」としてサロンのレジ横物販で人気です。物販アイテムって増やされるご予定ありますか？`,
   },
 
   中華: {
@@ -87,6 +97,8 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
     proofLine: '現在、全国60以上の店舗・施設で継続的にお取り扱いいただいております。',
     secondProposal:
       'また、店名入りオリジナルコーラのOEM（小ロット対応）も承っております。',
+    dmMessage: name =>
+      `はじめまして、CONOCOLAの河野です！${name}さんの投稿、どのお料理も本当に美味しそうで拝見しました🥟 名古屋で無添加・スパイス10種のクラフトコーラを作っていて、餃子や中華との相性が良く食中ドリンクとして導入いただいています。ドリンクメニューの追加ってご検討されることありますか？`,
   },
 
   焼肉: {
@@ -104,6 +116,8 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
     proofLine: '現在、全国60以上の店舗・施設で継続的にお取り扱いいただいております。',
     secondProposal:
       'また、店名入りオリジナルコーラのOEM（小ロット対応）もございます。記念日のお客様への一本や手土産需要にもお使いいただけます。',
+    dmMessage: name =>
+      `はじめまして、CONOCOLAの河野です！${name}さんの投稿、お肉の焼き色まで美味しそうで見入ってしまいました🔥 名古屋で無添加・スパイス10種のクラフトコーラを作っていて、焼肉との相性抜群でノンアル需要の受け皿として導入が増えています。ドリンクメニューの追加ってご検討されることありますか？`,
   },
 
   フレンチ: {
@@ -122,6 +136,8 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
       '2024年にはパリコレクションでの提供実績があり、2026年には高級外資系ホテルへの導入も予定しております。',
     secondProposal:
       'また、レストランオリジナルレシピのOEMも承っており、コースの世界観に合わせた一杯を共同開発することも可能です。',
+    dmMessage: name =>
+      `はじめまして、CONOCOLAの河野と申します。${name}さんのお料理の投稿を拝見し、ご連絡いたしました。名古屋で生薬とスパイス10種のクラフトコーラを作っており、2024年にはパリコレクションでの提供実績もございます。お酒を飲まれないお客様へのノンアルコールペアリングとして、ご興味ございませんか？`,
   },
 
   イタリアン: {
@@ -138,6 +154,8 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
       '無添加・無着色でお子様にも安心してお出しいただけ、瓶のまま提供できるためオペレーションはほとんど変わりません。SNS映えする見た目も好評です。',
     proofLine: '現在、全国60以上の店舗・施設で継続的にお取り扱いいただいております。',
     secondProposal: 'また、店名入りオリジナルコーラのOEM（小ロット対応）も承っております。',
+    dmMessage: name =>
+      `はじめまして、CONOCOLAの河野です！${name}さんの投稿、素敵な雰囲気で拝見しました🍕 名古屋で無添加・スパイス10種のクラフトコーラを作っていて、ピッツァやパスタとの相性が良くイタリアンでの導入が増えています。ノンアルのドリンクメニューって強化されるご予定ありますか？`,
   },
 
   キッチンカー: {
@@ -154,6 +172,8 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
       '常温保存できるため在庫管理が楽で、設備投資もゼロ。屋外イベントでは1日20杯以上の販売実績もあり、フード待ちのお客様への「もう一品」として売上を積み増せます。',
     proofLine: '現在、全国60以上の店舗・施設で継続的にお取り扱いいただいております。',
     secondProposal: 'また、車体ブランド名入りのオリジナルコーラOEM（小ロット対応）もございます。',
+    dmMessage: name =>
+      `はじめまして、CONOCOLAの河野です！${name}さんの出店投稿、いつも賑わっていて素敵です🚚 名古屋で瓶のクラフトコーラを作っていて、注ぐだけ・場所を取らない高利益ドリンクとしてキッチンカーでの導入が増えています。ドリンクの一品追加ってご検討されることありますか？`,
   },
 
   雑貨屋: {
@@ -171,6 +191,8 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
     proofLine: '全国60以上の店舗・施設での導入実績と、多数のメディア掲載実績がございます。',
     secondProposal:
       'また、店名入りオリジナルラベルのOEM（小ロット対応）で、自店ブランド商品として展開いただくことも可能です。',
+    dmMessage: name =>
+      `はじめまして、CONOCOLAの河野です！${name}さんのセレクト、どれも素敵で拝見しました✨ 名古屋で瓶のクラフトコーラを作っていて、デザインと名古屋発のストーリーで「置くだけで語れる商品」として雑貨屋さんでのお取り扱いが増えています。小ロットからの仕入れって、ご興味ありますか？`,
   },
 
   スーパーマーケット: {
@@ -187,6 +209,8 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
       'NHK・東海テレビなどの露出による指名買いが期待でき、話題性のある地元商品として回転が見込めます。小ロットからの納品・柔軟な取引条件に対応しております。',
     proofLine: '全国60以上の店舗・施設での導入実績と、継続率の高さが強みです。',
     secondProposal: null,
+    dmMessage: name =>
+      `はじめまして、CONOCOLAの河野と申します。${name}さんの売場づくりの投稿を拝見し、ご連絡いたしました。名古屋発・メディア掲載多数のクラフトコーラを作っており、地元商品コーナーでのお取り扱いが増えています。地場商品の新規お取り扱いって、ご検討されることありますか？`,
   },
 
   百貨店: {
@@ -203,6 +227,8 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
       '2024年パリコレクションでの提供、2026年の高級外資系ホテル導入予定、アニメIP・球場とのコラボ実績など、催事の集客につながる話題性をご用意できます。',
     proofLine: 'NHKをはじめとするメディア掲載多数、全国60以上の店舗・施設での導入実績がございます。',
     secondProposal: 'また、百貨店様限定パッケージのOEMもご相談可能です。',
+    dmMessage: name =>
+      `はじめまして、CONOCOLAの河野と申します。${name}様の催事や地元名品の取り組みを拝見し、ご連絡いたしました。名古屋発のクラフトコーラで、パリコレクション提供やメディア掲載の実績がございます。催事やギフトの文脈でご紹介の機会をいただくことは可能でしょうか？`,
   },
 
   高級食品スーパー: {
@@ -219,6 +245,8 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
       '2024年パリコレクションでの提供実績、2026年の高級外資系ホテル導入予定など、価格帯に見合うブランドストーリーを備えています。瓶のデザイン性からギフト・手土産用途でも動きやすい商品です。',
     proofLine: 'NHKをはじめとするメディア掲載多数、全国60以上の店舗・施設での導入実績がございます。',
     secondProposal: 'また、店舗限定ラベルのOEMもご相談可能です。',
+    dmMessage: name =>
+      `はじめまして、CONOCOLAの河野と申します。${name}さんの品揃えの投稿を拝見し、ご連絡いたしました。名古屋で無添加・生薬10種のプレミアムクラフトコーラを作っており、パリコレクション提供などの実績もございます。ギフト向け商品の新規お取り扱いって、ご検討されることありますか？`,
   },
 
   お土産屋: {
@@ -235,6 +263,8 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
       'さらに、その土地の名前や素材を使った「ご当地オリジナルコーラ」を小ロットからOEMでお作りできます。アニメIPや時代劇とのコラボ商品の実績もあり、他店にない限定商品を低リスクで展開いただけます。',
     proofLine: 'NHKをはじめとするメディア掲載多数、全国60以上の店舗・施設での導入実績がございます。',
     secondProposal: null,
+    dmMessage: name =>
+      `はじめまして、CONOCOLAの河野です！${name}さんの投稿を拝見し、ご連絡しました。名古屋発のクラフトコーラを作っていて、その土地の名前や素材で作る「ご当地オリジナルコーラ」のOEMも小ロットから承っています。他にはない限定商品って、ご興味ありますか？`,
   },
 }
 
@@ -245,4 +275,13 @@ export const INDUSTRY_PROFILES: Partial<Record<Industry, IndustryMessageProfile>
 export function getIndustryProfile(industry: Industry | null): IndustryMessageProfile | null {
   if (!industry || industry === 'サウナ') return null
   return INDUSTRY_PROFILES[industry] ?? null
+}
+
+/**
+ * 業種の生テキスト（表記揺れ可）から Instagram DM 文面を返す。
+ * サウナ・未知業種は null（呼び出し側の従来ロジックにフォールバック）。
+ */
+export function getIndustryDmMessage(industryRaw: string | null | undefined, name: string): string | null {
+  const profile = getIndustryProfile(normalizeIndustry(industryRaw))
+  return profile ? profile.dmMessage(name) : null
 }
