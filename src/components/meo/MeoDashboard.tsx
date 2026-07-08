@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, Bot, MessageSquare, Share2 } from 'lucide-react'
-import type { MeoData } from '@/app/dashboard/meo/actions'
+import type { MeoData } from '@/app/meo/actions'
 import { StatCard, Stars, ReplyStatusBadge, CitationStatusBadge, DemoBanner } from './shared'
 
 export default function MeoDashboard({ data }: { data: MeoData }) {
@@ -71,7 +71,7 @@ export default function MeoDashboard({ data }: { data: MeoData }) {
               <h2 className="text-sm font-bold text-white">最近の口コミ</h2>
             </div>
             <Link
-              href="/dashboard/meo/reviews"
+              href="/meo/reviews"
               className="text-xs text-violet-400 hover:text-violet-300 inline-flex items-center gap-1"
             >
               すべて見る <ArrowRight className="w-3 h-3" />
@@ -101,7 +101,7 @@ export default function MeoDashboard({ data }: { data: MeoData }) {
               <h2 className="text-sm font-bold text-white">AIリスティング</h2>
             </div>
             <Link
-              href="/dashboard/meo/citations"
+              href="/meo/citations"
               className="text-xs text-violet-400 hover:text-violet-300 inline-flex items-center gap-1"
             >
               サイテーション一覧 <ArrowRight className="w-3 h-3" />
@@ -125,7 +125,7 @@ export default function MeoDashboard({ data }: { data: MeoData }) {
           </div>
           <div className="px-5 py-4 border-t border-gray-800">
             <Link
-              href="/dashboard/meo/aio"
+              href="/meo/aio"
               className="inline-flex items-center gap-2 text-sm text-violet-400 hover:text-violet-300 font-medium"
             >
               <Share2 className="w-4 h-4" />

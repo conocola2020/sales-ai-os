@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { Bot, Mic, Globe, ExternalLink, Send, Loader2, CheckCircle2 } from 'lucide-react'
 import type { MeoCitation, MeoLocation, CitationKind } from '@/types/meo'
 import { CitationStatusBadge, DemoBanner } from './shared'
-import { updateCitationStatus } from '@/app/dashboard/meo/actions'
+import { updateCitationStatus } from '@/app/meo/actions'
 
 interface Props {
   location: MeoLocation

@@ -118,8 +118,8 @@ export async function saveReviewReply(
     return { error: error.message }
   }
 
-  revalidatePath('/dashboard/meo/reviews')
-  revalidatePath('/dashboard/meo')
+  revalidatePath('/meo/reviews')
+  revalidatePath('/meo')
   return { error: null }
 }
 
@@ -152,7 +152,7 @@ export async function updateCitationStatus(
     return { error: error.message }
   }
 
-  revalidatePath('/dashboard/meo/citations')
-  revalidatePath('/dashboard/meo')
+  revalidatePath('/meo/citations')
+  revalidatePath('/meo')
   return { error: null }
 }

@@ -13,7 +13,7 @@ import clsx from 'clsx'
 import type { MeoLocation, MeoReview } from '@/types/meo'
 import type { ReplyTone } from '@/lib/meo/prompts'
 import { ReplyStatusBadge, Stars, DemoBanner } from './shared'
-import { saveReviewReply } from '@/app/dashboard/meo/actions'
+import { saveReviewReply } from '@/app/meo/actions'
 
 interface Props {
   location: MeoLocation
