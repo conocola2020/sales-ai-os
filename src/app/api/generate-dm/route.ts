@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { getAnthropicApiKey } from '@/lib/env'
+import { getAnthropicApiKey, isAiGenerationEnabled } from '@/lib/env'
+import { getIndustryDmMessage } from '@/lib/industry-profiles'
 
 const apiKey = getAnthropicApiKey()
 const client = new Anthropic({ apiKey })
@@ -16,13 +17,17 @@ const DM_SYSTEM_PROMPT = [
   'ターゲット（主にサウナ施設）のプロフィール情報をもとに、自然で親しみやすいDMを日本語で生成してください。',
   '',
   '【DM生成ルール】',
-  '- 200文字以内の簡潔なDM',
+  '- 150〜250文字程度の簡潔なDM（長い営業文はスパムに見える）',
   '- カジュアルで親しみやすいトーン（Instagram DMらしく）',
   '- 「サウナー専用コーラ」CONOCOLAを自然に紹介する',
-  '- 相手の施設情報やプロフィールに具体的に言及する（HP情報がある場合は活用）',
+  '- 相手の施設情報やプロフィールに具体的に言及する（HP情報がある場合は活用）。',
+  '  誰にでも送れる文面にしない。「この店を見て書いた」と伝わる固有の一文を必ず入れる',
   '- 冒頭に@ユーザー名を含めない（直接メッセージなので不要）',
   '- 「はじめまして、CONOCOLAの河野です！」のように自然に始める',
-  '- 最後に商談予約リンクを案内: https://timerex.net/s/daichi_3022_c34c/a78a4d68',
+  '- リンク・URLは絶対に含めない（フォロー外からのDMリクエストではリンクが開けず、',
+  '  同一URLの大量送信はスパム判定でアカウント制限のリスクになる）',
+  '- ゴールは返信をもらうこと。最後は相手が一言で答えられる軽い質問で締める',
+  '  （例: 「ドリンクの物販はされていますか？」「サンプルお送りしてもいいですか？」など文脈に合うもの）',
   '- 押しつけがましくなく、興味があれば気軽にという姿勢',
   '',
   'DM文面のみを返してください（説明・補足不要）。',
@@ -37,14 +42,19 @@ function demoDm(
   facilityName: string | null
 ): string {
   const name = facilityName || displayName || `@${username}`
-  const timerexUrl = 'https://timerex.net/s/daichi_3022_c34c/a78a4d68'
+  // リンクは入れない: フォロー外DMリクエストではリンクが開けず、スパム判定リスクにもなる。
+  // ゴールは返信をもらうことなので、軽い質問で締める。
+  // 業種プロファイル（12業種）に一致すればその文面を使う
+  const industryDm = getIndustryDmMessage(industry, name)
+  if (industryDm) return industryDm
+
   if (industry && (industry.includes('サウナ') || industry.includes('温浴') || industry.includes('銭湯') || industry.includes('スパ'))) {
-    return `はじめまして、CONOCOLAの河野です！${name}さんの素敵な施設、投稿で拝見しました🧖 サウナー専用コーラを全国60施設以上でお取り扱いいただいてまして、ととのい後の一杯にぴったりだと好評です！もしご興味あれば気軽にお話しさせてください✨ ${timerexUrl}`
+    return `はじめまして、CONOCOLAの河野です！${name}さんの素敵な施設、投稿で拝見しました🧖 サウナー専用コーラを全国60施設以上でお取り扱いいただいてまして、ととのい後の一杯にぴったりだと好評です！よろしければサンプルお送りしてもいいですか？`
   }
   if (bio && (bio.includes('サウナ') || bio.includes('ととの') || bio.includes('温泉'))) {
-    return `はじめまして、CONOCOLAの河野です！${name}さんのサウナ愛が伝わる投稿、いつも楽しく見ています🔥 サウナー専用コーラを全国60施設以上に導入してまして、ご興味あれば詳しくお話しさせてください！ ${timerexUrl}`
+    return `はじめまして、CONOCOLAの河野です！${name}さんのサウナ愛が伝わる投稿、いつも楽しく見ています🔥 サウナー専用コーラを全国60施設以上に導入してるのですが、施設でのドリンク提供や物販ってされていますか？`
   }
-  return `はじめまして、CONOCOLAの河野です！${name}さんの投稿いつも拝見しています✨ サウナー専用コーラを展開しているのですが、もしお取り扱いにご興味あれば気軽にお話しできればうれしいです🙌 ${timerexUrl}`
+  return `はじめまして、CONOCOLAの河野です！${name}さんの投稿いつも拝見しています✨ サウナー専用のクラフトコーラを展開しているのですが、お店でドリンクの物販ってされていますか？もしご興味あればぜひ気軽にお話しできたらうれしいです🙌`
 }
 
 // ──────────────────────────────────────────
@@ -70,6 +80,7 @@ export async function POST(req: NextRequest) {
     }
 
     const isDemo =
+      !isAiGenerationEnabled() ||
       !getAnthropicApiKey() ||
       getAnthropicApiKey() === 'your-anthropic-api-key-here'
 

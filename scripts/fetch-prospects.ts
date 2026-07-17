@@ -1,18 +1,19 @@
 /**
- * カフェ見込み顧客取得スクリプト
+ * 見込み顧客取得スクリプト（業種汎用・Phase 2B）
  *
- * npm run fetch:cafe -- --area nagoya-naka --limit 50 --dry-run
- * npm run fetch:cafe -- --area nagoya-naka --limit 50
+ * npm run fetch:prospects -- --industry 焼肉 --area nagoya-naka --limit 50 --dry-run
+ * npm run fetch:prospects -- --industry カフェ --area aichi-vol1 --target 1000
  */
 
 import { createInterface } from 'readline/promises'
 import { stdin as input, stdout as output } from 'process'
 import { createClient } from '@supabase/supabase-js'
-import { isBlacklisted } from '../src/lib/cafe-prospects/blacklist'
-import { isCafeType, isOperational, hasWebsite } from '../src/lib/cafe-prospects/filters'
-import { searchText, type SearchTextResponse } from '../src/lib/cafe-prospects/places-client'
-import { SEARCH_AREAS } from '../src/lib/cafe-prospects/search-areas'
-import type { CafeProspectRow, FetchStats, RawPlace, SearchAreaConfig } from '../src/lib/cafe-prospects/types'
+import { isBlacklisted, normalizeName } from '../src/lib/prospects/blacklist'
+import { isTargetType, isOperational, hasWebsite } from '../src/lib/prospects/filters'
+import { searchText, type SearchTextResponse } from '../src/lib/prospects/places-client'
+import { buildSearchAreas, availableAreas } from '../src/lib/prospects/search-areas'
+import { getIndustryConfig, availableIndustries, type IndustryConfig } from '../src/lib/prospects/industry-configs'
+import type { ProspectRow, FetchStats, RawPlace, SearchAreaConfig } from '../src/lib/prospects/types'
 
 // ─── 設定 ─────────────────────────────────────
 
@@ -116,6 +117,7 @@ const DRY_RUN_PLACES: RawPlace[] = [
 // ─── 型定義 ─────────────────────────────────
 
 interface CliOptions {
+  industry: string
   area: string
   limit: number | null
   target: number
@@ -183,6 +185,7 @@ function formatDuration(ms: number): string {
 
 function parseArgs(): CliOptions {
   const args = process.argv.slice(2)
+  const industry = getArg(args, '--industry') || ''
   const area = getArg(args, '--area') || 'nagoya-naka'
   const limit = parsePositiveInt(getArg(args, '--limit'), null)
   const target = parsePositiveInt(getArg(args, '--target'), 1000) || 1000
@@ -190,6 +193,7 @@ function parseArgs(): CliOptions {
   const userId = getArg(args, '--user-id') || process.env.OWNER_USER_ID || (dryRun ? '00000000-0000-0000-0000-000000000000' : '')
 
   return {
+    industry,
     area,
     limit,
     target,
@@ -209,22 +213,31 @@ function placeName(place: RawPlace): string {
   return place.displayName?.text || '(名称なし)'
 }
 
-function classifyPlace(place: RawPlace): { status: CafeProspectRow['status']; reason: string | null } {
-  if (!isCafeType(place.types, place.primaryType)) {
-    return { status: 'excluded', reason: 'not_cafe_type' }
+function classifyPlace(place: RawPlace, config: IndustryConfig): { status: ProspectRow['status']; reason: string | null } {
+  if (!isTargetType(place.types, place.primaryType, config.placesTypes)) {
+    return { status: 'excluded', reason: 'not_target_type' }
+  }
+  // タイプで絞りきれない業種向けの店名フィルタ（お土産屋等）
+  if (config.nameMustIncludeAny) {
+    const name = normalizeName(placeName(place))
+    const hit = config.nameMustIncludeAny.some(keyword => name.includes(normalizeName(keyword)))
+    if (!hit) {
+      return { status: 'excluded', reason: 'not_target_type' }
+    }
   }
   if (!isOperational(place.businessStatus)) {
     return { status: 'excluded', reason: 'closed' }
   }
-  const blacklist = isBlacklisted(placeName(place), place.types)
+  const blacklist = isBlacklisted(placeName(place), place.types, config.blacklist)
   if (blacklist.matched) {
     return { status: 'excluded', reason: blacklist.reason }
   }
   return { status: 'untouched', reason: null }
 }
 
-function toRow(place: RawPlace, userId: string, status: CafeProspectRow['status'], reason: string | null): CafeProspectRow {
+function toRow(place: RawPlace, userId: string, status: ProspectRow['status'], reason: string | null, industry: string): ProspectRow {
   return {
+    industry,
     user_id: userId,
     place_id: place.id,
     name: placeName(place),
@@ -304,7 +317,7 @@ async function fetchAreaPlaces(area: SearchAreaConfig, opts: CliOptions, remaini
   return { places, pagesFetched, lastPageResults }
 }
 
-async function upsertRows(rows: CafeProspectRow[], dryRun: boolean): Promise<number> {
+async function upsertRows(rows: ProspectRow[], dryRun: boolean): Promise<number> {
   if (rows.length === 0) return 0
 
   if (dryRun) {
@@ -325,7 +338,7 @@ async function upsertRows(rows: CafeProspectRow[], dryRun: boolean): Promise<num
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const placeIds = rows.slice(i, i + BATCH_SIZE).map(row => row.place_id)
     const { data, error } = await supabase
-      .from('cafe_prospects')
+      .from('prospects')
       .select('place_id, status, notes')
       .eq('user_id', ownerId)
       .in('place_id', placeIds)
@@ -348,7 +361,7 @@ async function upsertRows(rows: CafeProspectRow[], dryRun: boolean): Promise<num
 
     return {
       ...row,
-      status: existing.status as CafeProspectRow['status'],
+      status: existing.status as ProspectRow['status'],
       notes: existing.notes,
     }
   })
@@ -357,7 +370,7 @@ async function upsertRows(rows: CafeProspectRow[], dryRun: boolean): Promise<num
   for (let i = 0; i < rowsToUpsert.length; i += BATCH_SIZE) {
     const batch = rowsToUpsert.slice(i, i + BATCH_SIZE)
     const { error } = await supabase
-      .from('cafe_prospects')
+      .from('prospects')
       .upsert(batch, { onConflict: 'user_id,place_id', ignoreDuplicates: false })
 
     if (!error) {
@@ -369,7 +382,7 @@ async function upsertRows(rows: CafeProspectRow[], dryRun: boolean): Promise<num
     for (let j = 0; j < batch.length; j += 10) {
       const smallBatch = batch.slice(j, j + 10)
       const retry = await supabase
-        .from('cafe_prospects')
+        .from('prospects')
         .upsert(smallBatch, { onConflict: 'user_id,place_id', ignoreDuplicates: false })
       if (retry.error) {
         console.error(`❌ 再投入失敗（${smallBatch.length}件）:`, retry.error.message)
@@ -398,7 +411,7 @@ function printSummary(target: number): void {
   console.log(`   総API呼び出し数: ${apiRequestCount}`)
   console.log(`   取得（重複排除前）: ${stats.rawCount}件`)
   console.log(`   重複排除後: ${stats.uniqueCount}件`)
-  console.log(`   カテゴリ外除外: ${stats.notCafeTypeCount}件（notes='not_cafe_type'）`)
+  console.log(`   カテゴリ外除外: ${stats.notCafeTypeCount}件（notes='not_target_type'）`)
   console.log(`   閉業・休業除外: ${stats.closedCount}件（notes='closed'）`)
   console.log(`   ブラックリスト除外: ${stats.blacklistedCount}件（notes='blacklist:*'）`)
   console.log(`   採用（status='untouched'）: ${adoptedTotal}件`)
@@ -440,15 +453,23 @@ async function main() {
   const opts = parseArgs()
   validateEnv(opts)
 
-  const areas = SEARCH_AREAS[opts.area]
+  const config = getIndustryConfig(opts.industry)
+  if (!config) {
+    console.error(`❌ --industry が未指定または未対応の業種です: ${opts.industry || '(なし)'}`)
+    console.error(`   利用可能: ${availableIndustries().join(', ')}`)
+    process.exit(1)
+  }
+
+  const areas = buildSearchAreas(config, opts.area)
   if (!areas) {
     console.error(`❌ 未知のエリアです: ${opts.area}`)
-    console.error(`   利用可能: ${Object.keys(SEARCH_AREAS).join(', ')}`)
+    console.error(`   利用可能: ${availableAreas().join(', ')}`)
     process.exit(1)
   }
 
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log('☕ カフェ見込み顧客取得（Google Places API）')
+  console.log(`🏪 見込み顧客取得: ${config.id}（Google Places API）`)
+  console.log(`   検索キーワード: ${config.searchKeywords.join(' / ')}`)
   console.log(`   エリア: ${opts.area}`)
   console.log(`   目標件数: ${opts.target}`)
   console.log(`   上限: ${opts.limit ?? 'なし'}件`)
@@ -488,7 +509,7 @@ async function main() {
     const beforeUnique = stats.uniqueCount
     const beforeBlacklisted = stats.blacklistedCount
     const beforeAdopted = stats.adoptedWithWebsite + stats.adoptedWithoutWebsite
-    const rows: CafeProspectRow[] = []
+    const rows: ProspectRow[] = []
 
     try {
       const queryResult = await fetchAreaPlaces(area, opts, () => {
@@ -527,8 +548,8 @@ async function main() {
         seenPlaceIds.add(place.id)
         stats.uniqueCount++
 
-        const classified = classifyPlace(place)
-        if (classified.reason === 'not_cafe_type') stats.notCafeTypeCount++
+        const classified = classifyPlace(place, config)
+        if (classified.reason === 'not_target_type') stats.notCafeTypeCount++
         if (classified.reason === 'closed') stats.closedCount++
         if (classified.reason?.startsWith('blacklist:')) stats.blacklistedCount++
 
@@ -551,7 +572,7 @@ async function main() {
           console.log(`⏭️  スキップ: ${placeName(place)}（${classified.reason}）`)
         }
 
-        rows.push(toRow(place, opts.userId, classified.status, classified.reason))
+        rows.push(toRow(place, opts.userId, classified.status, classified.reason, config.id))
 
         if (area.maxCount && (groupCounts.get(groupKey) ?? 0) >= area.maxCount) {
           console.log(`   🎯 グループ ${groupKey} が上限 ${area.maxCount}件（websiteあり）に到達`)

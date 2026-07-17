@@ -39,11 +39,13 @@ export const LEAD_STATUSES: LeadStatus[] = [
   '未着手', '送信済み', '返信あり', '商談中', '成約', 'NG', 'お断り'
 ]
 
+// 営業対象の業種（Phase 4 の13業種 + 実データに存在する値）
+// 'サウナ・温浴施設' と 'カフェ' は leads.industry の実値と一致させること
 export const INDUSTRIES = [
-  'IT・ソフトウェア', 'SaaS・クラウド', 'EC・小売', '製造業',
-  '建設・不動産', '金融・保険', '医療・ヘルスケア', '教育',
-  'メディア・広告', '飲食・食品', '物流・運輸', 'コンサルティング',
-  'その他',
+  'サウナ・温浴施設', 'カフェ', '美容サロン', '中華', '焼肉',
+  'フレンチ', 'イタリアン', 'キッチンカー', '雑貨屋',
+  'スーパーマーケット', '百貨店', '高級食品スーパー', 'お土産屋',
+  '飲食・食品', 'その他',
 ]
 
 export const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string; border: string; dot: string }> = {

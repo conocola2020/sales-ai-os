@@ -29,6 +29,7 @@ interface GenerationJob {
   tone: string
   customInstructions: string
   templateId?: string
+  generationMode?: 'free' | 'claude'
   leads: Array<{ id: string; company_name: string }>
 }
 
@@ -150,6 +151,7 @@ export function resumeGeneration() {
     tone: job.tone,
     customInstructions: job.customInstructions,
     templateId: job.templateId,
+    generationMode: job.generationMode ?? 'free',
     leads: job.leads,
   }, true)
 }
@@ -160,6 +162,7 @@ export function startBulkGeneration(params: {
   tone: string
   customInstructions: string
   templateId?: string
+  generationMode?: 'free' | 'claude'
   leads: Array<{ id: string; company_name: string }>
 }) {
   runGeneration(params, false)
@@ -171,11 +174,12 @@ async function runGeneration(
     tone: string
     customInstructions: string
     templateId?: string
+    generationMode?: 'free' | 'claude'
     leads: Array<{ id: string; company_name: string }>
   },
   isResume: boolean
 ) {
-  const { leadIds, tone, customInstructions, templateId, leads } = params
+  const { leadIds, tone, customInstructions, templateId, generationMode = 'free', leads } = params
   const BATCH_SIZE = 8
   const total = isResume ? (state.progress.total || leadIds.length) : leadIds.length
   const batches: string[][] = []
@@ -192,6 +196,7 @@ async function runGeneration(
     tone,
     customInstructions,
     templateId,
+    generationMode,
     leads,
   }
   saveJob(job)
@@ -222,6 +227,7 @@ async function runGeneration(
           tone,
           customInstructions,
           templateId: templateId || undefined,
+          generationMode,
         }),
       })
 

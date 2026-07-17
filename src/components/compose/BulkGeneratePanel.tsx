@@ -3,12 +3,11 @@
 import { useState, useCallback, useMemo, useEffect, useSyncExternalStore, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Sparkles, Loader2, Check, X, Globe, Mail, Send,
-  ChevronDown, ChevronUp, RefreshCw, Save, CheckSquare, Square, Zap,
+  Sparkles, Loader2, Check, X, Globe, Send,
+  ChevronDown, ChevronUp, RefreshCw,
 } from 'lucide-react'
 import ToneSelector from './ToneSelector'
 import TemplateSelector from './TemplateSelector'
-import { saveMessage } from '@/app/dashboard/compose/actions'
 import { addToQueue } from '@/app/dashboard/sending/actions'
 import {
   subscribe,
@@ -18,14 +17,11 @@ import {
   hasPendingJob,
   getPendingCount,
   resumeGeneration,
-  type BulkResult,
 } from '@/lib/bulk-generate-store'
-import type { Lead, LeadOption } from '@/types/leads'
+import type { LeadOption } from '@/types/leads'
 import type { Tone } from '@/types/messages'
 import type { MessageTemplate } from '@/types/settings'
 import clsx from 'clsx'
-
-// BulkResult はストアから import
 
 // Memoized lead row — only re-renders when its own isSelected changes
 // チェックアイコン（軽量インラインSVG）
@@ -91,6 +87,7 @@ interface BulkGeneratePanelProps {
   onTemplateChange: (id: string) => void
   initialSelectedIds?: string[]
   queuedStatuses?: { lead_id: string; status: string }[]
+  generationMode: 'free' | 'claude'
 }
 
 export default function BulkGeneratePanel({
@@ -102,6 +99,7 @@ export default function BulkGeneratePanel({
   onTemplateChange,
   initialSelectedIds,
   queuedStatuses = [],
+  generationMode,
 }: BulkGeneratePanelProps) {
   const router = useRouter()
 
@@ -148,6 +146,7 @@ export default function BulkGeneratePanel({
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [contactMethodFilter, setContactMethodFilter] = useState('all')
+  const [industryFilter, setIndustryFilter] = useState('all')
   const [prefectureFilter, setPrefectureFilter] = useState('all')
   const [visibleCount, setVisibleCount] = useState(VISIBLE_BATCH)
   const [isSavingAll, setIsSavingAll] = useState(false)
@@ -168,6 +167,10 @@ export default function BulkGeneratePanel({
     } else if (contactMethodFilter === 'unscanned') {
       rows = rows.filter(l => !l.contact_method)
     }
+    // 業種フィルター
+    if (industryFilter !== 'all') {
+      rows = rows.filter(l => l.industry === industryFilter)
+    }
     // 都道府県フィルター
     if (prefectureFilter !== 'all') {
       rows = rows.filter(l => l.notes === prefectureFilter)
@@ -181,7 +184,7 @@ export default function BulkGeneratePanel({
       )
     }
     return rows
-  }, [leads, searchQuery, contactMethodFilter, prefectureFilter])
+  }, [leads, searchQuery, contactMethodFilter, industryFilter, prefectureFilter])
 
   const toggleLead = useCallback((id: string) => {
     setSelectedLeadIds(prev => {
@@ -220,9 +223,10 @@ export default function BulkGeneratePanel({
       tone,
       customInstructions,
       templateId: selectedTemplateId || undefined,
+      generationMode,
       leads: leads.map(l => ({ id: l.id, company_name: l.company_name })),
     })
-  }, [selectedLeadIds, tone, customInstructions, selectedTemplateId, leads])
+  }, [selectedLeadIds, tone, customInstructions, selectedTemplateId, generationMode, leads])
 
   // キュー追加は1件ずつストリーム受信時に自動実行済み
   // 以下は手動での再キュー追加用
@@ -275,6 +279,20 @@ export default function BulkGeneratePanel({
             <option value="email">メールのみ ({leads.filter(l => l.contact_method === 'email').length})</option>
             <option value="none">なし ({leads.filter(l => l.contact_method === 'none').length})</option>
             <option value="unscanned">未スキャン ({leads.filter(l => !l.contact_method).length})</option>
+          </select>
+
+          {/* Industry filter */}
+          <select
+            value={industryFilter}
+            onChange={e => { setIndustryFilter(e.target.value); setVisibleCount(VISIBLE_BATCH) }}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+          >
+            <option value="all">業種: すべて</option>
+            {[...new Set(leads.map(l => l.industry).filter(Boolean))].sort().map(ind => (
+              <option key={ind as string} value={ind as string}>
+                {ind} ({leads.filter(l => l.industry === ind).length})
+              </option>
+            ))}
           </select>
 
           {/* Prefecture filter */}
@@ -387,6 +405,14 @@ export default function BulkGeneratePanel({
               </>
             )}
           </button>
+          <p className={clsx(
+            'text-[11px] leading-relaxed',
+            generationMode === 'free' ? 'text-emerald-400' : 'text-violet-400'
+          )}>
+            {generationMode === 'free'
+              ? '無料生成モード: Claude APIを使わず、HP分析とテンプレートで生成します。'
+              : 'Claudeモード: ANTHROPIC_API_KEYを使って生成します。'}
+          </p>
         </div>
       </div>
 
@@ -524,7 +550,7 @@ export default function BulkGeneratePanel({
                       )}
                       <div className="bg-gray-800/60 rounded-lg px-3 py-2">
                         <p className="text-xs text-gray-500 mb-0.5">本文 ({result.body.length}字)</p>
-                        <pre className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed font-sans max-h-[200px] overflow-y-auto">
+                        <pre className="text-xs text-gray-300 whitespace-pre-wrap break-words leading-relaxed font-sans max-h-[200px] overflow-y-auto">
                           {result.body}
                         </pre>
                       </div>
