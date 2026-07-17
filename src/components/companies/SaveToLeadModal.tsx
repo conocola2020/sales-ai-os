@@ -102,26 +102,26 @@ export default function SaveToLeadModal({
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-          <h2 className="text-sm font-semibold text-white">リードに紐付けて保存</h2>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+          <h2 className="text-sm font-semibold text-gray-900">リードに紐付けて保存</h2>
           <button
             onClick={onClose}
-            className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+            className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-800">
+        <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveTab('new')}
             className={clsx(
               'flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2',
               activeTab === 'new'
-                ? 'text-violet-400 border-violet-500'
+                ? 'text-violet-600 border-violet-500'
                 : 'text-gray-500 border-transparent hover:text-gray-400'
             )}
           >
@@ -133,7 +133,7 @@ export default function SaveToLeadModal({
             className={clsx(
               'flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2',
               activeTab === 'existing'
-                ? 'text-violet-400 border-violet-500'
+                ? 'text-violet-600 border-violet-500'
                 : 'text-gray-500 border-transparent hover:text-gray-400'
             )}
           >
@@ -145,7 +145,7 @@ export default function SaveToLeadModal({
         {/* Content */}
         <div className="p-5 max-h-96 overflow-y-auto">
           {error && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-600">
               {error}
             </div>
           )}
@@ -154,14 +154,14 @@ export default function SaveToLeadModal({
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-gray-400 mb-1">
-                  会社名 <span className="text-red-400">*</span>
+                  会社名 <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
                   value={newLead.company_name}
                   onChange={e => setNewLead(p => ({ ...p, company_name: e.target.value }))}
                   placeholder="例: 株式会社サンプル"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -172,7 +172,7 @@ export default function SaveToLeadModal({
                     value={newLead.contact_name}
                     onChange={e => setNewLead(p => ({ ...p, contact_name: e.target.value }))}
                     placeholder="例: 山田 太郎"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -182,7 +182,7 @@ export default function SaveToLeadModal({
                     value={newLead.industry}
                     onChange={e => setNewLead(p => ({ ...p, industry: e.target.value }))}
                     placeholder="例: IT・ソフトウェア"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -193,7 +193,7 @@ export default function SaveToLeadModal({
                   value={newLead.email}
                   onChange={e => setNewLead(p => ({ ...p, email: e.target.value }))}
                   placeholder="例: contact@example.com"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -202,7 +202,7 @@ export default function SaveToLeadModal({
                   value={newLead.notes}
                   onChange={e => setNewLead(p => ({ ...p, notes: e.target.value }))}
                   rows={2}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -215,7 +215,7 @@ export default function SaveToLeadModal({
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="会社名・担当者名で検索..."
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
               </div>
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
@@ -229,20 +229,20 @@ export default function SaveToLeadModal({
                       key={lead.id}
                       onClick={() => handleLinkExisting(lead)}
                       disabled={loading}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 bg-gray-800/60 border border-gray-700/50 hover:border-violet-500/40 hover:bg-gray-800 rounded-xl text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 bg-gray-50/60 border border-gray-200/50 hover:border-violet-500/40 hover:bg-gray-100 rounded-xl text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-semibold text-gray-300">
+                      <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-semibold text-gray-700">
                         {lead.company_name.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white truncate">
+                        <p className="text-sm font-medium text-gray-900 truncate">
                           {lead.company_name}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
                           {lead.contact_name ?? lead.industry ?? '担当者未登録'}
                         </p>
                       </div>
-                      <span className="text-xs text-gray-600">選択</span>
+                      <span className="text-xs text-gray-400">選択</span>
                     </button>
                   ))
                 )}
@@ -253,7 +253,7 @@ export default function SaveToLeadModal({
 
         {/* Footer */}
         {activeTab === 'new' && (
-          <div className="px-5 py-4 border-t border-gray-800">
+          <div className="px-5 py-4 border-t border-gray-200">
             <button
               onClick={handleCreateNewLead}
               disabled={loading || !newLead.company_name.trim()}

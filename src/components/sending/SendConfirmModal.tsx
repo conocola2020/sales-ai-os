@@ -114,28 +114,28 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
         onClick={step === 'confirm' ? onClose : undefined}
       />
 
-      <div className="relative w-full max-w-lg bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div className="flex items-center gap-2">
             {step === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             ) : step === 'error' ? (
-              <AlertCircle className="w-4 h-4 text-red-400" />
+              <AlertCircle className="w-4 h-4 text-red-600" />
             ) : (
-              <Send className="w-4 h-4 text-violet-400" />
+              <Send className="w-4 h-4 text-violet-600" />
             )}
-            <h2 className="text-sm font-semibold text-white">
+            <h2 className="text-sm font-semibold text-gray-900">
               {step === 'success' ? '送信完了' : step === 'error' ? '送信エラー' : step === 'sending' ? '送信中...' : '送信確認'}
             </h2>
             {remainingCount > 0 && step !== 'sending' && (
-              <span className="ml-2 px-2 py-0.5 bg-violet-500/20 border border-violet-500/30 rounded-full text-[10px] text-violet-300 font-medium">
+              <span className="ml-2 px-2 py-0.5 bg-violet-500/20 border border-violet-500/30 rounded-full text-[10px] text-violet-600 font-medium">
                 残り{remainingCount}件
               </span>
             )}
           </div>
           {step !== 'sending' && (
-            <button onClick={step === 'success' ? handleSuccess : onClose} className="p-1 text-gray-500 hover:text-gray-300 transition-colors">
+            <button onClick={step === 'success' ? handleSuccess : onClose} className="p-1 text-gray-500 hover:text-gray-700 transition-colors">
               <X className="w-4 h-4" />
             </button>
           )}
@@ -146,10 +146,10 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
           {step === 'success' && (
             <div className="flex flex-col items-center py-6 gap-3">
               <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center">
-                <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+                <CheckCircle2 className="w-7 h-7 text-emerald-600" />
               </div>
               <div className="text-center">
-                <p className="text-base font-semibold text-white">
+                <p className="text-base font-semibold text-gray-900">
                   {sendMethod === 'form' ? 'フォーム自動送信を受け付けました' : '送信完了しました'}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
@@ -165,18 +165,18 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
           {step === 'error' && (
             <div className="flex flex-col items-center py-4 gap-3">
               <div className="w-14 h-14 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center">
-                <AlertCircle className="w-7 h-7 text-red-400" />
+                <AlertCircle className="w-7 h-7 text-red-600" />
               </div>
               <div className="text-center">
-                <p className="text-base font-semibold text-white">送信に失敗しました</p>
-                <p className="text-sm text-red-400 mt-1">{errorMsg}</p>
+                <p className="text-base font-semibold text-gray-900">送信に失敗しました</p>
+                <p className="text-sm text-red-600 mt-1">{errorMsg}</p>
               </div>
             </div>
           )}
 
           {step === 'sending' && (
             <div className="flex flex-col items-center py-8 gap-4">
-              <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+              <Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
               <p className="text-sm text-gray-400">
                 {sendMethod === 'form' ? '自動送信を登録中...' : sendMethod === 'email' ? 'メール送信中...' : '送信処理中...'}
               </p>
@@ -191,8 +191,8 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
                   onClick={() => setSendMethod('manual')}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-medium border transition-all ${
                     sendMethod === 'manual'
-                      ? 'bg-violet-600/20 text-violet-400 border-violet-500/30'
-                      : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-600'
+                      ? 'bg-violet-600/20 text-violet-600 border-violet-500/30'
+                      : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -203,8 +203,8 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
                   disabled={!lead?.email}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-medium border transition-all ${
                     sendMethod === 'email'
-                      ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30'
-                      : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-600'
+                      ? 'bg-emerald-600/20 text-emerald-600 border-emerald-500/30'
+                      : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300'
                   } disabled:opacity-40 disabled:cursor-not-allowed`}
                 >
                   <Mail className="w-3.5 h-3.5" />
@@ -215,8 +215,8 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
                   disabled={!lead?.company_url}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-medium border transition-all ${
                     sendMethod === 'form'
-                      ? 'bg-cyan-600/20 text-cyan-400 border-cyan-500/30'
-                      : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-600'
+                      ? 'bg-cyan-600/20 text-cyan-600 border-cyan-500/30'
+                      : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300'
                   } disabled:opacity-40 disabled:cursor-not-allowed`}
                 >
                   <Globe className="w-3.5 h-3.5" />
@@ -226,12 +226,12 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
 
               {/* Lead info */}
               {lead && (
-                <div className="flex items-start gap-3 p-3 bg-gray-800/50 border border-gray-700/50 rounded-xl">
-                  <div className="w-9 h-9 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-semibold text-gray-300">
+                <div className="flex items-start gap-3 p-3 bg-gray-50/50 border border-gray-200/50 rounded-xl">
+                  <div className="w-9 h-9 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-semibold text-gray-700">
                     {lead.company_name?.charAt(0) ?? '?'}
                   </div>
                   <div className="flex-1 min-w-0 space-y-0.5">
-                    <p className="text-sm font-semibold text-white">{lead.company_name}</p>
+                    <p className="text-sm font-semibold text-gray-900">{lead.company_name}</p>
                     {lead.contact_name && <p className="text-xs text-gray-500">担当: {lead.contact_name}</p>}
                     {lead.email && (
                       <p className="text-xs text-gray-400 flex items-center gap-1">
@@ -240,14 +240,14 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
                       </p>
                     )}
                     {lead.company_url && (
-                      <a href={lead.company_url} target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+                      <a href={lead.company_url} target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-600 hover:text-cyan-600 flex items-center gap-1">
                         <Globe className="w-3 h-3" />
                         企業HP: {lead.company_url}
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     )}
                     {lead.website_url && (
-                      <a href={lead.website_url} target="_blank" rel="noopener noreferrer" className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1">
+                      <a href={lead.website_url} target="_blank" rel="noopener noreferrer" className="text-xs text-violet-600 hover:text-violet-600 flex items-center gap-1">
                         <Building2 className="w-3 h-3" />
                         {lead.website_url}
                         <ExternalLink className="w-3 h-3" />
@@ -265,7 +265,7 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
                     type="text"
                     value={emailSubject}
                     onChange={e => setEmailSubject(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500"
                     placeholder="メールの件名"
                   />
                 </div>
@@ -273,8 +273,8 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
 
               {/* Warning */}
               <div className="flex items-start gap-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-300/90">
+                <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-600/90">
                   {sendMethod === 'form'
                     ? 'AIエージェントが企業HPの問い合わせフォームを自動検出し、送信します。失敗した場合はClaude に「送信して」と指示して手動送信できます。'
                     : sendMethod === 'email'
@@ -289,13 +289,13 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
                   <p className="text-xs font-medium text-gray-400">送信文面</p>
                   <button
                     onClick={() => navigator.clipboard.writeText(item.message_content)}
-                    className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                    className="text-xs text-violet-600 hover:text-violet-600 transition-colors"
                   >
                     コピー
                   </button>
                 </div>
-                <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4">
-                  <pre className="text-xs text-gray-300 whitespace-pre-wrap break-words leading-relaxed font-sans">
+                <div className="bg-gray-50/60 border border-gray-200/50 rounded-xl p-4">
+                  <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words leading-relaxed font-sans">
                     {item.message_content}
                   </pre>
                 </div>
@@ -307,7 +307,7 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
                   href={lead.company_url || lead.website_url || ''}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-sm text-gray-300 font-medium rounded-xl transition-colors"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-gray-50 hover:bg-gray-200 border border-gray-200 text-sm text-gray-700 font-medium rounded-xl transition-colors"
                 >
                   <ExternalLink className="w-4 h-4" />
                   問い合わせページを開く
@@ -318,18 +318,18 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-gray-800">
+        <div className="px-5 py-4 border-t border-gray-200">
           {step === 'confirm' && (
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-xl transition-colors"
+                className="flex-1 py-2.5 bg-gray-50 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-xl transition-colors"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleSend}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-white text-sm font-semibold rounded-xl transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-gray-900 text-sm font-semibold rounded-xl transition-colors ${
                   sendMethod === 'form'
                     ? 'bg-cyan-600 hover:bg-cyan-500'
                     : 'bg-emerald-600 hover:bg-emerald-500'
@@ -365,7 +365,7 @@ export default function SendConfirmModal({ item, onClose, onSent, onSkip, remain
             <div className="flex gap-3">
               <button
                 onClick={() => onSkip ? onSkip(item.id) : onClose()}
-                className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-xl transition-colors"
+                className="flex-1 py-2.5 bg-gray-50 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-xl transition-colors"
               >
                 {remainingCount > 0 ? `スキップ → 次へ (残り${remainingCount}件)` : '閉じる'}
               </button>

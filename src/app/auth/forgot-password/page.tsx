@@ -32,30 +32,30 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
           <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
-            <Zap className="w-5 h-5 text-white" />
+            <Zap className="w-5 h-5 text-gray-900" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white leading-none">Sales AI OS</h1>
+            <h1 className="text-xl font-bold text-gray-900 leading-none">Sales AI OS</h1>
             <p className="text-xs text-gray-400 mt-0.5">営業自動化プラットフォーム</p>
           </div>
         </div>
 
         {/* Card */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl">
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-2xl">
           {sent ? (
             <>
               <div className="flex flex-col items-center text-center py-4">
                 <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mb-4">
-                  <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+                  <CheckCircle2 className="w-7 h-7 text-emerald-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">メールを送信しました</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">メールを送信しました</h2>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  <span className="text-white font-medium">{email}</span> にパスワードリセット用のリンクを送信しました。
+                  <span className="text-gray-900 font-medium">{email}</span> にパスワードリセット用のリンクを送信しました。
                   メールに記載されたリンクからパスワードを再設定してください。
                 </p>
                 <p className="text-gray-500 text-xs mt-4">
@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
               <div className="mt-6">
                 <Link
                   href="/auth/login"
-                  className="flex items-center justify-center gap-2 w-full py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition-colors"
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-gray-50 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   ログインに戻る
@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
             </>
           ) : (
             <>
-              <h2 className="text-2xl font-bold text-white mb-2">パスワードリセット</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">パスワードリセット</h2>
               <p className="text-gray-400 text-sm mb-8">
                 登録済みのメールアドレスを入力してください。パスワードリセット用のリンクをお送りします。
               </p>
@@ -82,13 +82,13 @@ export default function ForgotPasswordPage() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {error && (
                   <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
-                    <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                    <p className="text-red-400 text-sm">{error}</p>
+                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                    <p className="text-red-600 text-sm">{error}</p>
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">メールアドレス</label>
+                  <label className="text-sm font-medium text-gray-700">メールアドレス</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                     <input
@@ -97,7 +97,7 @@ export default function ForgotPasswordPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       placeholder="you@example.com"
-                      className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                       autoFocus
                     />
                   </div>
@@ -122,7 +122,7 @@ export default function ForgotPasswordPage() {
               <div className="mt-6 text-center">
                 <Link
                   href="/auth/login"
-                  className="text-gray-500 hover:text-gray-300 text-sm transition-colors inline-flex items-center gap-1"
+                  className="text-gray-500 hover:text-gray-700 text-sm transition-colors inline-flex items-center gap-1"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   ログインに戻る

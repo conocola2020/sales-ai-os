@@ -141,13 +141,13 @@ export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdde
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 flex-shrink-0">
-          <h2 className="text-sm font-semibold text-white">返信を追加</h2>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 flex-shrink-0">
+          <h2 className="text-sm font-semibold text-gray-900">返信を追加</h2>
           <button
             onClick={onClose}
-            className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+            className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -156,7 +156,7 @@ export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdde
         {/* Body */}
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-600">
               {error}
             </div>
           )}
@@ -170,13 +170,13 @@ export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdde
             {/* 送信済みリードのクイック選択 */}
             {!selectedLead && sentLeads.length > 0 && !leadSearch && (
               <div className="mb-2">
-                <p className="text-[10px] text-gray-600 mb-1.5">📨 送信済み企業（クリックで選択）</p>
+                <p className="text-[10px] text-gray-400 mb-1.5">📨 送信済み企業（クリックで選択）</p>
                 <div className="flex flex-wrap gap-1.5">
                   {sentLeads.slice(0, 10).map(lead => (
                     <button
                       key={lead.id}
                       onClick={() => setSelectedLead(lead)}
-                      className="px-2.5 py-1.5 text-xs bg-violet-500/10 border border-violet-500/20 hover:border-violet-500/40 rounded-lg text-violet-300 hover:text-violet-200 transition-all"
+                      className="px-2.5 py-1.5 text-xs bg-violet-500/10 border border-violet-500/20 hover:border-violet-500/40 rounded-lg text-violet-600 hover:text-violet-200 transition-all"
                     >
                       {lead.company_name}
                     </button>
@@ -192,16 +192,16 @@ export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdde
                 value={leadSearch}
                 onChange={e => setLeadSearch(e.target.value)}
                 placeholder="会社名・担当者名で検索..."
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
               />
             </div>
 
             {selectedLead ? (
               <div className="flex items-center justify-between px-3 py-2 bg-violet-500/10 border border-violet-500/20 rounded-xl">
                 <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-violet-400" />
+                  <Building2 className="w-4 h-4 text-violet-600" />
                   <div>
-                    <p className="text-sm font-semibold text-white">{selectedLead.company_name}</p>
+                    <p className="text-sm font-semibold text-gray-900">{selectedLead.company_name}</p>
                     {selectedLead.contact_name && (
                       <p className="text-xs text-gray-500">{selectedLead.contact_name}</p>
                     )}
@@ -209,7 +209,7 @@ export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdde
                 </div>
                 <button
                   onClick={() => setSelectedLead(null)}
-                  className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                  className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   解除
                 </button>
@@ -229,13 +229,13 @@ export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdde
                           setSelectedLead(lead)
                           setLeadSearch('')
                         }}
-                        className="w-full flex items-center gap-3 px-3 py-2 bg-gray-800/60 border border-gray-700/50 hover:border-violet-500/40 rounded-xl text-left transition-all"
+                        className="w-full flex items-center gap-3 px-3 py-2 bg-gray-50/60 border border-gray-200/50 hover:border-violet-500/40 rounded-xl text-left transition-all"
                       >
-                        <div className="w-7 h-7 bg-gray-700 rounded-lg flex items-center justify-center text-xs font-bold text-gray-300 border border-gray-600 flex-shrink-0">
+                        <div className="w-7 h-7 bg-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-700 border border-gray-300 flex-shrink-0">
                           {lead.company_name.charAt(0)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white truncate">{lead.company_name}</p>
+                          <p className="text-sm font-medium text-gray-900 truncate">{lead.company_name}</p>
                           {lead.contact_name && (
                             <p className="text-xs text-gray-500 truncate">{lead.contact_name}</p>
                           )}
@@ -251,7 +251,7 @@ export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdde
           {/* Reply content */}
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
-              返信内容 <span className="text-red-400">*</span>
+              返信内容 <span className="text-red-600">*</span>
             </label>
             <textarea
               value={content}
@@ -261,7 +261,7 @@ export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdde
               }}
               rows={6}
               placeholder="受信した返信メッセージを貼り付けてください..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent leading-relaxed"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent leading-relaxed"
             />
           </div>
 
@@ -269,12 +269,12 @@ export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdde
           <button
             onClick={handleClassify}
             disabled={isClassifying || !content.trim()}
-            className="w-full flex items-center justify-center gap-2 py-2 bg-gray-800 hover:bg-gray-750 disabled:opacity-40 disabled:cursor-not-allowed border border-gray-700 text-gray-300 text-sm font-medium rounded-xl transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2 bg-gray-50 hover:bg-gray-750 disabled:opacity-40 disabled:cursor-not-allowed border border-gray-200 text-gray-700 text-sm font-medium rounded-xl transition-colors"
           >
             {isClassifying ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Sparkles className="w-4 h-4 text-violet-400" />
+              <Sparkles className="w-4 h-4 text-violet-600" />
             )}
             {isClassifying ? 'AI分類中...' : 'AIで感情分析・返信文案を生成'}
           </button>
@@ -292,7 +292,7 @@ export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdde
               </div>
               {classifyResult.sentiment === '興味あり' && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                  <span className="text-xs text-emerald-400">🎯 前向きな返信です！追加後に商談管理へ移行できます</span>
+                  <span className="text-xs text-emerald-600">🎯 前向きな返信です！追加後に商談管理へ移行できます</span>
                 </div>
               )}
             </div>
@@ -300,7 +300,7 @@ export default function AddReplyModal({ leads, sentLeadIds = [], onClose, onAdde
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-gray-800 flex-shrink-0">
+        <div className="px-5 py-4 border-t border-gray-200 flex-shrink-0">
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || !content.trim()}

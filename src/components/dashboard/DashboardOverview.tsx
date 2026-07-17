@@ -82,7 +82,7 @@ export default function DashboardOverview({
       value: sendStats.sent.toLocaleString(),
       detail: `確認待ち ${sendStats.reviewing.toLocaleString()}件`,
       icon: Send,
-      tone: 'text-teal-300',
+      tone: 'text-teal-600',
       surface: 'bg-teal-400/10 border-teal-400/20',
       href: '/dashboard/sending',
     },
@@ -91,7 +91,7 @@ export default function DashboardOverview({
       value: replyStats.total.toLocaleString(),
       detail: `未読 ${replyStats.unread.toLocaleString()}件`,
       icon: MessageSquare,
-      tone: 'text-emerald-300',
+      tone: 'text-emerald-600',
       surface: 'bg-emerald-400/10 border-emerald-400/20',
       href: '/dashboard/replies',
     },
@@ -100,7 +100,7 @@ export default function DashboardOverview({
       value: `${replyRate}%`,
       detail: `興味あり ${replyStats.interested.toLocaleString()}件`,
       icon: TrendingUp,
-      tone: 'text-amber-300',
+      tone: 'text-amber-600',
       surface: 'bg-amber-400/10 border-amber-400/20',
       href: '/dashboard/reports',
     },
@@ -113,7 +113,7 @@ export default function DashboardOverview({
       unit: '件',
       icon: ListChecks,
       href: '/dashboard/sending',
-      tone: 'text-amber-300 bg-amber-400/10 border-amber-400/20',
+      tone: 'text-amber-600 bg-amber-400/10 border-amber-400/20',
     },
     {
       label: '未読返信',
@@ -121,7 +121,7 @@ export default function DashboardOverview({
       unit: '件',
       icon: MessageSquare,
       href: '/dashboard/replies',
-      tone: 'text-emerald-300 bg-emerald-400/10 border-emerald-400/20',
+      tone: 'text-emerald-600 bg-emerald-400/10 border-emerald-400/20',
     },
     {
       label: '進行中の商談',
@@ -137,7 +137,7 @@ export default function DashboardOverview({
       unit: '件',
       icon: AlertCircle,
       href: '/dashboard/sending',
-      tone: 'text-red-300 bg-red-400/10 border-red-400/20',
+      tone: 'text-red-600 bg-red-400/10 border-red-400/20',
     },
   ]
 
@@ -161,8 +161,8 @@ export default function DashboardOverview({
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-300/80">Command Center</p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-white md:text-3xl">営業ダッシュボード</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-600/80">Command Center</p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">営業ダッシュボード</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-400">
             リード、送信、返信、商談の状態をひとつの流れで把握できます。
           </p>
@@ -187,10 +187,10 @@ export default function DashboardOverview({
         <div className="rounded-2xl border border-white/[0.08] bg-[#111315] p-4 shadow-[0_22px_70px_rgba(0,0,0,0.24)] md:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-base font-semibold text-white">営業オペレーション</h2>
+              <h2 className="text-base font-semibold text-gray-900">営業オペレーション</h2>
               <p className="mt-1 text-xs text-stone-500">状態確認から次の作業へ移りやすい指標</p>
             </div>
-            <Link href="/dashboard/reports" className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-200 hover:text-white">
+            <Link href="/dashboard/reports" className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-200 hover:text-gray-900">
               詳細レポート <ArrowUpRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -210,7 +210,7 @@ export default function DashboardOverview({
                     </div>
                     <ArrowUpRight className="h-4 w-4 text-stone-600 transition-colors group-hover:text-stone-300" />
                   </div>
-                  <p className="text-2xl font-bold tracking-tight text-white">{stat.value}</p>
+                  <p className="text-2xl font-bold tracking-tight text-gray-900">{stat.value}</p>
                   <div className="mt-1 flex flex-col gap-0.5">
                     <p className="text-xs font-medium text-stone-300">{stat.label}</p>
                     <p className="text-xs text-stone-500">{stat.detail}</p>
@@ -224,10 +224,10 @@ export default function DashboardOverview({
         <div className="rounded-2xl border border-white/[0.08] bg-[#111315] p-4 md:p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold text-white">優先確認</h2>
+              <h2 className="text-base font-semibold text-gray-900">優先確認</h2>
               <p className="mt-1 text-xs text-stone-500">滞留しやすい項目</p>
             </div>
-            <ShieldCheck className="h-4 w-4 text-teal-300" />
+            <ShieldCheck className="h-4 w-4 text-teal-600" />
           </div>
           <div className="space-y-2">
             {focusItems.map((item) => {
@@ -242,7 +242,7 @@ export default function DashboardOverview({
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-stone-200 group-hover:text-white">{item.label}</p>
+                    <p className="truncate text-sm font-medium text-stone-200 group-hover:text-gray-900">{item.label}</p>
                     <p className="text-xs text-stone-500">現在 {item.value.toLocaleString()}{item.unit}</p>
                   </div>
                   <ArrowUpRight className="h-4 w-4 text-stone-600 group-hover:text-stone-300" />
@@ -259,7 +259,7 @@ export default function DashboardOverview({
         <Link href="/dashboard/deals" className="block rounded-2xl border border-white/[0.08] bg-[#111315] p-5 transition-all hover:border-white/[0.16] hover:bg-[#15181b]">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold text-white">営業パイプライン</h2>
+              <h2 className="text-base font-semibold text-gray-900">営業パイプライン</h2>
               <p className="mt-1 text-xs text-stone-500">接点から成約まで</p>
             </div>
             <Handshake className="h-4 w-4 text-stone-500" />
@@ -271,7 +271,7 @@ export default function DashboardOverview({
                 <div key={stage.stage}>
                   <div className="mb-1.5 flex items-center justify-between">
                     <span className="text-sm text-stone-300">{stage.stage}</span>
-                    <span className="text-sm font-semibold text-white">{stage.count.toLocaleString()}</span>
+                    <span className="text-sm font-semibold text-gray-900">{stage.count.toLocaleString()}</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-white/[0.07]">
                     <div
@@ -286,7 +286,7 @@ export default function DashboardOverview({
           <div className="mt-5 border-t border-white/[0.08] pt-4">
             <div className="flex items-center justify-between text-sm">
               <span className="text-stone-400">成約率</span>
-              <span className="font-semibold text-emerald-300">
+              <span className="font-semibold text-emerald-600">
                 {dealStats.winRate != null ? `${dealStats.winRate}%` : '---'}
               </span>
             </div>
@@ -297,7 +297,7 @@ export default function DashboardOverview({
         <Link href="/dashboard/deals" className="block rounded-2xl border border-white/[0.08] bg-[#111315] p-5 transition-all hover:border-white/[0.16] hover:bg-[#15181b]">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold text-white">重要指標</h2>
+              <h2 className="text-base font-semibold text-gray-900">重要指標</h2>
               <p className="mt-1 text-xs text-stone-500">売上見込みとリスク</p>
             </div>
             <Target className="h-4 w-4 text-stone-500" />
@@ -305,33 +305,33 @@ export default function DashboardOverview({
           <div className="space-y-2">
             <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
               <div className="flex items-center gap-3">
-                <DollarSign className="h-4 w-4 text-amber-300" />
+                <DollarSign className="h-4 w-4 text-amber-600" />
                 <span className="text-sm text-stone-300">パイプライン合計</span>
               </div>
-              <span className="text-sm font-bold text-white">{formatCurrency(dealStats.pipelineAmount)}</span>
+              <span className="text-sm font-bold text-gray-900">{formatCurrency(dealStats.pipelineAmount)}</span>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
               <div className="flex items-center gap-3">
-                <Target className="h-4 w-4 text-emerald-300" />
+                <Target className="h-4 w-4 text-emerald-600" />
                 <span className="text-sm text-stone-300">加重見込み額</span>
               </div>
-              <span className="text-sm font-bold text-emerald-300">{formatCurrency(dealStats.weightedAmount)}</span>
+              <span className="text-sm font-bold text-emerald-600">{formatCurrency(dealStats.weightedAmount)}</span>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
               <div className="flex items-center gap-3">
-                <Instagram className="h-4 w-4 text-pink-300" />
+                <Instagram className="h-4 w-4 text-pink-600" />
                 <span className="text-sm text-stone-300">IG DM返信率</span>
               </div>
-              <span className="text-sm font-bold text-pink-300">
+              <span className="text-sm font-bold text-pink-600">
                 {igStats.replyRate != null ? `${igStats.replyRate}%` : '---'}
               </span>
             </div>
             <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
               <div className="flex items-center gap-3">
-                <AlertCircle className="h-4 w-4 text-red-300" />
+                <AlertCircle className="h-4 w-4 text-red-600" />
                 <span className="text-sm text-stone-300">送信失敗</span>
               </div>
-              <span className="text-sm font-bold text-red-300">{sendStats.failed.toLocaleString()}件</span>
+              <span className="text-sm font-bold text-red-600">{sendStats.failed.toLocaleString()}件</span>
             </div>
           </div>
         </Link>
@@ -340,10 +340,10 @@ export default function DashboardOverview({
         <div className="rounded-2xl border border-white/[0.08] bg-[#111315] p-5">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold text-white">商談予定</h2>
+              <h2 className="text-base font-semibold text-gray-900">商談予定</h2>
               <p className="mt-1 text-xs text-stone-500">直近のアクション</p>
             </div>
-            <Link href="/dashboard/deals" className="flex items-center gap-1 text-xs font-medium text-teal-200 hover:text-white">
+            <Link href="/dashboard/deals" className="flex items-center gap-1 text-xs font-medium text-teal-200 hover:text-gray-900">
               一覧 <ArrowUpRight className="w-3 h-3" />
             </Link>
           </div>
@@ -369,13 +369,13 @@ export default function DashboardOverview({
                     <div className={clsx(
                       'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border text-xs font-bold',
                       urgent
-                        ? 'border-red-400/20 bg-red-400/10 text-red-300'
-                        : 'border-teal-400/20 bg-teal-400/10 text-teal-300'
+                        ? 'border-red-400/20 bg-red-400/10 text-red-600'
+                        : 'border-teal-400/20 bg-teal-400/10 text-teal-600'
                     )}>
                       {dateLabel || <CalendarDays className="h-4 w-4" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-medium text-stone-200 transition-colors group-hover:text-white">
+                      <p className="truncate text-sm font-medium text-stone-200 transition-colors group-hover:text-gray-900">
                         {deal.company_name}
                       </p>
                       <p className="truncate text-xs text-stone-500">
@@ -385,7 +385,7 @@ export default function DashboardOverview({
                     {deal.meeting_url && (
                       <div className="flex-shrink-0">
                         <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-400/20 bg-emerald-400/10">
-                          <ArrowUpRight className="h-3.5 w-3.5 text-emerald-300" />
+                          <ArrowUpRight className="h-3.5 w-3.5 text-emerald-600" />
                         </div>
                       </div>
                     )}
@@ -408,10 +408,10 @@ export default function DashboardOverview({
               className="group flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.035] p-3 transition-all hover:border-white/[0.15] hover:bg-white/[0.06]"
             >
               <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-teal-400/20 bg-teal-400/10 transition-colors group-hover:bg-teal-400/15">
-                <Icon className="h-4 w-4 text-teal-300" />
+                <Icon className="h-4 w-4 text-teal-600" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-stone-200 transition-colors group-hover:text-white">{action.label}</p>
+                <p className="truncate text-sm font-medium text-stone-200 transition-colors group-hover:text-gray-900">{action.label}</p>
                 <p className="truncate text-xs text-stone-500">{action.desc}</p>
               </div>
             </Link>

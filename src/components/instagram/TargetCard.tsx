@@ -52,7 +52,7 @@ export default function TargetCard({
   const cfg = STATUS_CONFIG[target.status]
 
   return (
-    <div className="bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-4 transition-all duration-150">
+    <div className="bg-white border border-gray-200 hover:border-gray-200 rounded-xl p-4 transition-all duration-150">
       <div className="flex items-start gap-3">
         {/* Avatar */}
         <button onClick={onEdit} className="shrink-0">
@@ -66,7 +66,7 @@ export default function TargetCard({
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={onEdit}
-                  className="text-sm font-semibold text-white hover:text-violet-400 transition-colors truncate"
+                  className="text-sm font-semibold text-gray-900 hover:text-violet-600 transition-colors truncate"
                 >
                   @{target.username}
                 </button>
@@ -75,7 +75,7 @@ export default function TargetCard({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={e => e.stopPropagation()}
-                  className="text-gray-600 hover:text-pink-400 transition-colors shrink-0"
+                  className="text-gray-400 hover:text-pink-600 transition-colors shrink-0"
                   title="Instagramで開く"
                 >
                   <ExternalLink className="w-3 h-3" />
@@ -108,7 +108,7 @@ export default function TargetCard({
           {/* Meta row: industry + follower count + engagement */}
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
             {target.industry && (
-              <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">
+              <span className="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full">
                 {target.industry}
               </span>
             )}
@@ -138,8 +138,8 @@ export default function TargetCard({
               className={clsx(
                 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',
                 target.liked
-                  ? 'bg-pink-500/15 text-pink-400 border-pink-500/30'
-                  : 'bg-gray-800 text-gray-500 border-gray-700 hover:text-pink-400 hover:border-pink-500/30'
+                  ? 'bg-pink-500/15 text-pink-600 border-pink-500/30'
+                  : 'bg-gray-50 text-gray-500 border-gray-200 hover:text-pink-600 hover:border-pink-500/30'
               )}
             >
               <Heart className={clsx('w-3 h-3', target.liked && 'fill-pink-400')} />
@@ -157,8 +157,8 @@ export default function TargetCard({
               className={clsx(
                 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',
                 target.following
-                  ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
-                  : 'bg-gray-800 text-gray-500 border-gray-700 hover:text-blue-400 hover:border-blue-500/30'
+                  ? 'bg-blue-500/15 text-blue-600 border-blue-500/30'
+                  : 'bg-gray-50 text-gray-500 border-gray-200 hover:text-blue-600 hover:border-blue-500/30'
               )}
             >
               <UserPlus className="w-3 h-3" />
@@ -172,8 +172,8 @@ export default function TargetCard({
               className={clsx(
                 'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all',
                 target.dm_sent
-                  ? 'bg-violet-500/15 text-violet-400 border-violet-500/30'
-                  : 'bg-gray-800 text-gray-500 border-gray-700 hover:text-violet-400 hover:border-violet-500/30'
+                  ? 'bg-violet-500/15 text-violet-600 border-violet-500/30'
+                  : 'bg-gray-50 text-gray-500 border-gray-200 hover:text-violet-600 hover:border-violet-500/30'
               )}
             >
               <MessageCircle className={clsx('w-3 h-3', target.dm_sent && 'fill-violet-400/30')} />
@@ -183,17 +183,17 @@ export default function TargetCard({
             {/* Reaction badges */}
             <div className="ml-auto flex items-center gap-1">
               {target.liked_back && (
-                <span title="いいね返しあり" className="flex items-center gap-0.5 text-xs text-pink-400">
+                <span title="いいね返しあり" className="flex items-center gap-0.5 text-xs text-pink-600">
                   <ThumbsUp className="w-3 h-3" />
                 </span>
               )}
               {target.followed_back && (
-                <span title="フォロー返しあり" className="flex items-center gap-0.5 text-xs text-blue-400">
+                <span title="フォロー返しあり" className="flex items-center gap-0.5 text-xs text-blue-600">
                   <UserPlus className="w-3 h-3" />
                 </span>
               )}
               {target.dm_replied && (
-                <span title="DM返信あり" className="flex items-center gap-0.5 text-xs text-amber-400">
+                <span title="DM返信あり" className="flex items-center gap-0.5 text-xs text-amber-600">
                   <Reply className="w-3 h-3" />
                 </span>
               )}

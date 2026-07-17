@@ -60,7 +60,7 @@ export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanel
         tab="全て"
         value={stats.total}
         icon={<Send className="w-4 h-4" />}
-        color="text-violet-400"
+        color="text-violet-600"
         bg="bg-violet-500/10"
         border="border-violet-500/20"
         isActive={activeTab === '全て'}
@@ -71,7 +71,7 @@ export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanel
         tab="確認待ち"
         value={stats.reviewing}
         icon={<Eye className="w-4 h-4" />}
-        color="text-amber-400"
+        color="text-amber-600"
         bg="bg-amber-500/10"
         border="border-amber-500/20"
         isActive={activeTab === '確認待ち'}
@@ -94,7 +94,7 @@ export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanel
         tab="送信済み"
         value={stats.sent}
         icon={<CheckCircle2 className="w-4 h-4" />}
-        color="text-emerald-400"
+        color="text-emerald-600"
         bg="bg-emerald-500/10"
         border="border-emerald-500/20"
         isActive={activeTab === '送信済み'}
@@ -105,7 +105,7 @@ export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanel
         tab="失敗"
         value={stats.failed}
         icon={<XCircle className="w-4 h-4" />}
-        color="text-red-400"
+        color="text-red-600"
         bg="bg-red-500/10"
         border="border-red-500/20"
         isActive={activeTab === '失敗'}
@@ -116,7 +116,7 @@ export default function StatsPanel({ stats, activeTab, onTabChange }: StatsPanel
         tab="フォーム未検出"
         value={stats.formNotFound}
         icon={<Globe className="w-4 h-4" />}
-        color="text-orange-400"
+        color="text-orange-600"
         bg="bg-orange-500/10"
         border="border-orange-500/20"
         isActive={activeTab === 'フォーム未検出'}

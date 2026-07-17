@@ -43,17 +43,17 @@ function HistoryItem({ msg, onSelect, onDeleted }: {
 
   return (
     <div className={clsx(
-      'bg-gray-800/60 border border-gray-700/50 rounded-xl overflow-hidden transition-all',
-      'hover:border-gray-600'
+      'bg-gray-50/60 border border-gray-200/50 rounded-xl overflow-hidden transition-all',
+      'hover:border-gray-300'
     )}>
       {/* Header */}
       <div className="flex items-start gap-2.5 p-3">
-        <div className="w-7 h-7 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+        <div className="w-7 h-7 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
           <Building2 className="w-3.5 h-3.5 text-gray-400" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs font-medium text-white truncate">
+            <span className="text-xs font-medium text-gray-900 truncate">
               {msg.lead?.company_name ?? 'リード未選択'}
             </span>
             {toneCfg && (
@@ -63,8 +63,8 @@ function HistoryItem({ msg, onSelect, onDeleted }: {
             )}
           </div>
           <div className="flex items-center gap-1 mt-0.5">
-            <Clock className="w-2.5 h-2.5 text-gray-600" />
-            <span className="text-xs text-gray-600">{timeAgo(msg.created_at)}</span>
+            <Clock className="w-2.5 h-2.5 text-gray-400" />
+            <span className="text-xs text-gray-400">{timeAgo(msg.created_at)}</span>
           </div>
         </div>
       </div>
@@ -79,13 +79,13 @@ function HistoryItem({ msg, onSelect, onDeleted }: {
         <div className="flex items-center gap-1.5 mt-2">
           <button
             onClick={() => onSelect(msg.content)}
-            className="flex-1 text-xs text-violet-400 hover:text-violet-300 font-medium py-1 px-2 rounded-lg bg-violet-500/10 hover:bg-violet-500/15 transition-colors text-center"
+            className="flex-1 text-xs text-violet-600 hover:text-violet-600 font-medium py-1 px-2 rounded-lg bg-violet-500/10 hover:bg-violet-500/15 transition-colors text-center"
           >
             編集に読み込む
           </button>
           <button
             onClick={() => setExpanded(!expanded)}
-            className="p-1 text-gray-600 hover:text-gray-400 transition-colors"
+            className="p-1 text-gray-400 hover:text-gray-400 transition-colors"
           >
             {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
@@ -93,14 +93,14 @@ function HistoryItem({ msg, onSelect, onDeleted }: {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="text-xs text-gray-500 hover:text-gray-300 px-1.5 py-1 rounded transition-colors"
+                className="text-xs text-gray-500 hover:text-gray-700 px-1.5 py-1 rounded transition-colors"
               >
                 戻る
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="text-xs text-red-400 hover:text-red-300 px-1.5 py-1 rounded bg-red-500/10 transition-colors"
+                className="text-xs text-red-600 hover:text-red-600 px-1.5 py-1 rounded bg-red-500/10 transition-colors"
               >
                 {deleting ? '...' : '削除'}
               </button>
@@ -108,7 +108,7 @@ function HistoryItem({ msg, onSelect, onDeleted }: {
           ) : (
             <button
               onClick={() => setConfirmDelete(true)}
-              className="p-1 text-gray-600 hover:text-red-400 transition-colors"
+              className="p-1 text-gray-400 hover:text-red-600 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -123,7 +123,7 @@ export default function HistoryPanel({ messages, onSelect, onDeleted }: HistoryP
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-white">生成履歴</h3>
+        <h3 className="text-sm font-semibold text-gray-900">生成履歴</h3>
         {messages.length > 0 && (
           <span className="text-xs text-gray-500">{messages.length} 件</span>
         )}
@@ -133,7 +133,7 @@ export default function HistoryPanel({ messages, onSelect, onDeleted }: HistoryP
         <div className="flex flex-col items-center justify-center flex-1 py-12 text-center">
           <Clock className="w-8 h-8 text-gray-700 mb-3" />
           <p className="text-sm text-gray-500">まだ生成履歴がありません</p>
-          <p className="text-xs text-gray-600 mt-1">保存したメッセージがここに表示されます</p>
+          <p className="text-xs text-gray-400 mt-1">保存したメッセージがここに表示されます</p>
         </div>
       ) : (
         <div className="space-y-2 overflow-y-auto flex-1 pr-0.5">

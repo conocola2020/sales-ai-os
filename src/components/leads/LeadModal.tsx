@@ -36,7 +36,7 @@ function Field({ label, icon, children }: FieldProps) {
   )
 }
 
-const inputCls = 'w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all'
+const inputCls = 'w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all'
 
 export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadModalProps) {
   const [form, setForm] = useState<Lead>({ ...lead })
@@ -80,16 +80,16 @@ export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadM
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl">
+      <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl">
 
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-5 border-b border-gray-800">
+        <div className="flex items-start justify-between px-6 py-5 border-b border-gray-200">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-sm">{form.company_name[0]}</span>
+              <span className="text-gray-900 font-bold text-sm">{form.company_name[0]}</span>
             </div>
             <div className="min-w-0">
-              <h2 className="text-base font-semibold text-white truncate">{lead.company_name}</h2>
+              <h2 className="text-base font-semibold text-gray-900 truncate">{lead.company_name}</h2>
               <div className="flex items-center gap-2 mt-0.5">
                 <StatusBadge status={lead.status} size="sm" />
                 {lead.industry && (
@@ -98,7 +98,7 @@ export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadM
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-300 transition-colors ml-3 flex-shrink-0">
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors ml-3 flex-shrink-0">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -107,8 +107,8 @@ export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadM
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {error && (
             <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-              <p className="text-sm text-red-400">{error}</p>
+              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+              <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
@@ -127,10 +127,10 @@ export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadM
                       'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all',
                       active
                         ? `${cfg.bg} ${cfg.border} ${cfg.color} ring-1 ring-offset-0 ring-offset-transparent`
-                        : 'bg-gray-800/50 border-gray-700/50 text-gray-500 hover:border-gray-600 hover:text-gray-300'
+                        : 'bg-gray-50/50 border-gray-200/50 text-gray-500 hover:border-gray-300 hover:text-gray-700'
                     )}
                   >
-                    <span className={clsx('w-1.5 h-1.5 rounded-full', active ? cfg.dot : 'bg-gray-600')} />
+                    <span className={clsx('w-1.5 h-1.5 rounded-full', active ? cfg.dot : 'bg-gray-300')} />
                     {s}
                   </button>
                 )
@@ -190,7 +190,7 @@ export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadM
                   href={form.website_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-shrink-0 w-10 flex items-center justify-center bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 transition-colors"
+                  className="flex-shrink-0 w-10 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   <ExternalLink className="w-4 h-4 text-gray-400" />
                 </a>
@@ -211,7 +211,7 @@ export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadM
                   href={form.company_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-shrink-0 w-10 flex items-center justify-center bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 transition-colors"
+                  className="flex-shrink-0 w-10 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-200 transition-colors"
                 >
                   <ExternalLink className="w-4 h-4 text-gray-400" />
                 </a>
@@ -243,8 +243,8 @@ export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadM
           </Field>
 
           {/* Metadata */}
-          <div className="pt-2 border-t border-gray-800">
-            <p className="text-xs text-gray-600">
+          <div className="pt-2 border-t border-gray-200">
+            <p className="text-xs text-gray-400">
               登録: {new Date(lead.created_at).toLocaleDateString('ja-JP')} ／
               更新: {new Date(lead.updated_at).toLocaleDateString('ja-JP')}
             </p>
@@ -252,20 +252,20 @@ export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadM
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-gray-800">
+        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-gray-200">
           {showDelete ? (
             <div className="flex items-center gap-2 flex-1">
-              <p className="text-xs text-red-400 flex-1">本当に削除しますか？</p>
+              <p className="text-xs text-red-600 flex-1">本当に削除しますか？</p>
               <button
                 onClick={() => setShowDelete(false)}
-                className="px-3 py-1.5 text-xs text-gray-400 border border-gray-700 rounded-lg hover:border-gray-600 transition-colors"
+                className="px-3 py-1.5 text-xs text-gray-400 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
               >
                 戻る
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg hover:bg-red-500/20 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-600 text-xs rounded-lg hover:bg-red-500/20 transition-colors"
               >
                 {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                 削除する
@@ -274,7 +274,7 @@ export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadM
           ) : (
             <button
               onClick={() => setShowDelete(true)}
-              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-400 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
               削除
@@ -284,7 +284,7 @@ export default function LeadModal({ lead, onClose, onUpdated, onDeleted }: LeadM
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 rounded-xl transition-colors"
+              className="px-4 py-2 text-sm text-gray-400 hover:text-gray-800 border border-gray-200 rounded-xl transition-colors"
             >
               閉じる
             </button>

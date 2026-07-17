@@ -45,14 +45,14 @@ function StatCard({
   color: string
 }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <div className="bg-white border border-gray-200 rounded-xl p-4">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-gray-500">{label}</span>
         <div className={clsx('p-1.5 rounded-lg', color)}>
           <Icon className="w-3.5 h-3.5" />
         </div>
       </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
       {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
     </div>
   )
@@ -188,13 +188,13 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* ── Page header ── */}
-      <div className="px-6 py-5 border-b border-gray-800 shrink-0">
+      <div className="px-6 py-5 border-b border-gray-200 shrink-0">
         <div className="flex items-center justify-between mb-1">
-          <h1 className="text-xl font-semibold text-white">Instagram 半自動化</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Instagram 半自動化</h1>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowCsvImport(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
             >
               <Upload className="w-4 h-4" />
               CSVインポート
@@ -216,7 +216,7 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
                   URL.revokeObjectURL(url)
                 }
               }}
-              className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
             >
               <Download className="w-4 h-4" />
               エクスポート
@@ -242,33 +242,33 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
             label="総ターゲット"
             value={displayStats.total}
             icon={Users}
-            color="bg-gray-800 text-gray-400"
+            color="bg-gray-50 text-gray-400"
           />
           <StatCard
             label="アプローチ済み"
             value={displayStats.approached}
             sub={displayStats.total > 0 ? `${Math.round((displayStats.approached / displayStats.total) * 100)}%` : undefined}
             icon={Heart}
-            color="bg-pink-500/10 text-pink-400"
+            color="bg-pink-500/10 text-pink-600"
           />
           <StatCard
             label="DM送信"
             value={displayStats.dmSent}
             icon={MessageCircle}
-            color="bg-violet-500/10 text-violet-400"
+            color="bg-violet-500/10 text-violet-600"
           />
           <StatCard
             label="返信あり"
             value={displayStats.replied}
             icon={UserCheck}
-            color="bg-amber-500/10 text-amber-400"
+            color="bg-amber-500/10 text-amber-600"
           />
           <StatCard
             label="返信率"
             value={displayStats.replyRate != null ? `${displayStats.replyRate}%` : '—'}
             sub={`成約: ${displayStats.converted}件`}
             icon={TrendingUp}
-            color="bg-emerald-500/10 text-emerald-400"
+            color="bg-emerald-500/10 text-emerald-600"
           />
         </div>
 
@@ -286,10 +286,10 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
 
         {/* ── Approach candidates panel ── */}
         {(likeCandidates.length > 0 || followCandidates.length > 0) && (
-          <div className="bg-gray-900 border border-blue-500/20 rounded-xl overflow-hidden">
+          <div className="bg-white border border-blue-500/20 rounded-xl overflow-hidden">
             <button
               onClick={() => setShowCandidates(v => !v)}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-blue-400 hover:bg-blue-500/5 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-blue-600 hover:bg-blue-500/5 transition-colors"
             >
               <span className="flex items-center gap-2">
                 <Filter className="w-4 h-4" />
@@ -313,7 +313,7 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
                         <button
                           key={t.id}
                           onClick={() => handleToggleLiked(t)}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 text-pink-400 rounded-lg text-xs font-medium transition-all"
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 text-pink-600 rounded-lg text-xs font-medium transition-all"
                         >
                           <Heart className="w-3 h-3" />
                           @{t.username}
@@ -332,7 +332,7 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
                         <button
                           key={t.id}
                           onClick={() => handleToggleFollowing(t)}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-all"
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-600 rounded-lg text-xs font-medium transition-all"
                         >
                           <Users className="w-3 h-3" />
                           @{t.username}
@@ -357,8 +357,8 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
                 className={clsx(
                   'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all',
                   statusFilter === tab.value
-                    ? 'bg-violet-600/20 text-violet-400 border-violet-500/30'
-                    : 'bg-gray-900 text-gray-400 border-gray-800 hover:border-gray-700'
+                    ? 'bg-violet-600/20 text-violet-600 border-violet-500/30'
+                    : 'bg-white text-gray-400 border-gray-200 hover:border-gray-200'
                 )}
               >
                 {tab.label}
@@ -377,7 +377,7 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="ユーザー名・業種・プロフィールで検索..."
-              className="w-full bg-gray-900 border border-gray-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
             />
           </div>
         </div>
@@ -385,18 +385,18 @@ export default function InstagramPage({ initialTargets, initialStats }: Instagra
         {/* ── Target list ── */}
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center mb-4">
-              <Users className="w-7 h-7 text-gray-600" />
+            <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center mb-4">
+              <Users className="w-7 h-7 text-gray-400" />
             </div>
             {search || statusFilter !== 'all' ? (
               <>
                 <p className="text-gray-400 font-medium">条件に一致するターゲットがありません</p>
-                <p className="text-sm text-gray-600 mt-1">フィルターや検索条件を変更してください</p>
+                <p className="text-sm text-gray-400 mt-1">フィルターや検索条件を変更してください</p>
               </>
             ) : (
               <>
                 <p className="text-gray-400 font-medium">ターゲットがまだいません</p>
-                <p className="text-sm text-gray-600 mt-1 mb-4">
+                <p className="text-sm text-gray-400 mt-1 mb-4">
                   「ターゲット追加」からInstagramアカウントを登録してください
                 </p>
                 <button

@@ -60,7 +60,7 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-4 transition-all duration-150 hover:bg-gray-800/50 group"
+      className="w-full text-left bg-white border border-gray-200 hover:border-gray-200 rounded-xl p-4 transition-all duration-150 hover:bg-gray-100/50 group"
     >
       <div className="flex items-start justify-between gap-3">
         {/* Left: info */}
@@ -70,7 +70,7 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
 
           <div className="min-w-0 flex-1">
             {/* Company + Contact */}
-            <p className="text-sm font-semibold text-white truncate">{deal.company_name}</p>
+            <p className="text-sm font-semibold text-gray-900 truncate">{deal.company_name}</p>
             {deal.contact_name && (
               <p className="text-xs text-gray-400 mt-0.5 truncate">{deal.contact_name}</p>
             )}
@@ -102,8 +102,8 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
             {deal.next_action_date && (
               <div
                 className={clsx('mt-2 flex items-center gap-1 text-xs', {
-                  'text-red-400': dateStatus === 'overdue',
-                  'text-amber-400': dateStatus === 'today',
+                  'text-red-600': dateStatus === 'overdue',
+                  'text-amber-600': dateStatus === 'today',
                   'text-gray-500': dateStatus === 'upcoming',
                 })}
               >
@@ -121,7 +121,7 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
 
             {/* Meeting date */}
             {deal.meeting_date && (
-              <div className="mt-2 flex items-center gap-1 text-xs text-blue-400">
+              <div className="mt-2 flex items-center gap-1 text-xs text-blue-600">
                 <Video className="w-3 h-3" />
                 <span>{formatMeetingDate(deal.meeting_date)}</span>
                 {deal.meeting_url && (
@@ -130,7 +130,7 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={e => e.stopPropagation()}
-                    className="inline-flex items-center gap-0.5 text-violet-400 hover:text-violet-300 transition-colors ml-1"
+                    className="inline-flex items-center gap-0.5 text-violet-600 hover:text-violet-600 transition-colors ml-1"
                   >
                     <ExternalLink className="w-3 h-3" />
                     <span>リンク</span>
@@ -141,7 +141,7 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
 
             {/* Activity timeline (last 3) */}
             {Array.isArray(deal.activity_log) && deal.activity_log.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-gray-800">
+              <div className="mt-2 pt-2 border-t border-gray-200">
                 <ActivityTimeline
                   activities={deal.activity_log}
                   maxItems={3}
@@ -155,9 +155,9 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
         {/* Right: amount + chevron */}
         <div className="flex flex-col items-end gap-1 shrink-0">
           {deal.amount != null && (
-            <span className="text-sm font-semibold text-white">{formatAmount(deal.amount)}</span>
+            <span className="text-sm font-semibold text-gray-900">{formatAmount(deal.amount)}</span>
           )}
-          <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors mt-auto" />
+          <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-400 transition-colors mt-auto" />
         </div>
       </div>
     </button>

@@ -18,10 +18,10 @@ const ACTIVITY_ICONS: Record<DealActivity['type'], React.ReactNode> = {
 }
 
 const ACTIVITY_COLORS: Record<DealActivity['type'], { dot: string; icon: string }> = {
-  stage_change: { dot: 'bg-violet-500', icon: 'text-violet-400' },
-  meeting: { dot: 'bg-blue-500', icon: 'text-blue-400' },
-  note: { dot: 'bg-amber-500', icon: 'text-amber-400' },
-  email: { dot: 'bg-emerald-500', icon: 'text-emerald-400' },
+  stage_change: { dot: 'bg-violet-500', icon: 'text-violet-600' },
+  meeting: { dot: 'bg-blue-500', icon: 'text-blue-600' },
+  note: { dot: 'bg-amber-500', icon: 'text-amber-600' },
+  email: { dot: 'bg-emerald-500', icon: 'text-emerald-600' },
 }
 
 function formatActivityDate(dateStr: string): string {
@@ -54,7 +54,7 @@ export default function ActivityTimeline({
 
   if (displayed.length === 0) {
     return (
-      <p className="text-xs text-gray-600 py-2">アクティビティなし</p>
+      <p className="text-xs text-gray-400 py-2">アクティビティなし</p>
     )
   }
 
@@ -78,7 +78,7 @@ export default function ActivityTimeline({
                   <span className={colors.icon}>{ACTIVITY_ICONS[activity.type]}</span>
                 </div>
                 {!isLast && (
-                  <div className="w-px flex-1 bg-gray-800 my-0.5" />
+                  <div className="w-px flex-1 bg-gray-50 my-0.5" />
                 )}
               </div>
 
@@ -89,16 +89,16 @@ export default function ActivityTimeline({
                     {formatActivityDate(activity.date)}
                   </span>
                 </div>
-                <p className={clsx('text-gray-300 mt-0.5', compact ? 'text-[11px]' : 'text-xs')}>
+                <p className={clsx('text-gray-700 mt-0.5', compact ? 'text-[11px]' : 'text-xs')}>
                   {activity.description}
                 </p>
                 {activity.type === 'stage_change' && activity.from && activity.to && (
                   <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-50 text-gray-400">
                       {activity.from}
                     </span>
-                    <ArrowRight className="w-2.5 h-2.5 text-gray-600" />
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">
+                    <ArrowRight className="w-2.5 h-2.5 text-gray-400" />
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-600">
                       {activity.to}
                     </span>
                   </div>
@@ -110,7 +110,7 @@ export default function ActivityTimeline({
       </div>
 
       {maxItems && sorted.length > maxItems && (
-        <p className="text-[10px] text-gray-600 mt-1 text-center">
+        <p className="text-[10px] text-gray-400 mt-1 text-center">
           他 {sorted.length - maxItems}件
         </p>
       )}

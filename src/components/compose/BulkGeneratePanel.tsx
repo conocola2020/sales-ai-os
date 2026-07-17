@@ -26,12 +26,12 @@ import clsx from 'clsx'
 // Memoized lead row — only re-renders when its own isSelected changes
 // チェックアイコン（軽量インラインSVG）
 const CheckIcon = () => (
-  <svg className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg className="w-3.5 h-3.5 text-violet-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="3" y="3" width="18" height="18" rx="2" /><path d="m9 12 2 2 4-4" />
   </svg>
 )
 const UncheckIcon = () => (
-  <svg className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="3" y="3" width="18" height="18" rx="2" />
   </svg>
 )
@@ -55,19 +55,19 @@ const LeadRow = memo(function LeadRow({
         'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-xs cursor-pointer',
         isSelected
           ? 'bg-violet-500/10 border border-violet-500/30'
-          : 'bg-gray-800/50 border border-transparent',
+          : 'bg-gray-50/50 border border-transparent',
         queueStatus === 'sent' && 'opacity-50'
       )}
     >
       {isSelected ? <CheckIcon /> : <UncheckIcon />}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="text-white truncate">{lead.company_name}</span>
+          <span className="text-gray-900 truncate">{lead.company_name}</span>
           {queueStatus === 'sent' && (
-            <span className="flex-shrink-0 px-1.5 py-0.5 text-[10px] font-medium bg-emerald-500/15 text-emerald-400 rounded">送信済み</span>
+            <span className="flex-shrink-0 px-1.5 py-0.5 text-[10px] font-medium bg-emerald-500/15 text-emerald-600 rounded">送信済み</span>
           )}
           {queueStatus === 'pending' && (
-            <span className="flex-shrink-0 px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/15 text-amber-400 rounded">確認待ち</span>
+            <span className="flex-shrink-0 px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/15 text-amber-600 rounded">確認待ち</span>
           )}
         </div>
         {lead.industry && <span className="text-gray-500 text-[10px]">{lead.industry}</span>}
@@ -256,7 +256,7 @@ export default function BulkGeneratePanel({
   return (
     <div className="flex-1 min-h-0 flex overflow-hidden">
       {/* Left: Selection & Controls */}
-      <div className="w-[360px] flex-shrink-0 border-r border-gray-800 flex flex-col overflow-hidden">
+      <div className="w-[360px] flex-shrink-0 border-r border-gray-200 flex flex-col overflow-hidden">
         <div className="p-4 space-y-4 overflow-y-auto flex-1">
           {/* Search */}
           <input
@@ -264,14 +264,14 @@ export default function BulkGeneratePanel({
             value={searchQuery}
             onChange={e => { setSearchQuery(e.target.value); setVisibleCount(VISIBLE_BATCH) }}
             placeholder="リードを検索..."
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
           />
 
           {/* Contact method filter */}
           <select
             value={contactMethodFilter}
             onChange={e => { setContactMethodFilter(e.target.value); setPrefectureFilter('all'); setVisibleCount(VISIBLE_BATCH) }}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
             <option value="all">連絡方法: すべて ({leads.length})</option>
             <option value="viable">送信可能のみ ({leads.filter(l => l.contact_method === 'form' || l.contact_method === 'email').length})</option>
@@ -285,7 +285,7 @@ export default function BulkGeneratePanel({
           <select
             value={industryFilter}
             onChange={e => { setIndustryFilter(e.target.value); setVisibleCount(VISIBLE_BATCH) }}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
             <option value="all">業種: すべて</option>
             {[...new Set(leads.map(l => l.industry).filter(Boolean))].sort().map(ind => (
@@ -299,7 +299,7 @@ export default function BulkGeneratePanel({
           <select
             value={prefectureFilter}
             onChange={e => { setPrefectureFilter(e.target.value); setVisibleCount(VISIBLE_BATCH) }}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
             <option value="all">都道府県: すべて</option>
             {(() => {
@@ -317,17 +317,17 @@ export default function BulkGeneratePanel({
 
           {/* Quick select buttons */}
           <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={selectAll} className="px-2.5 py-1 text-xs font-medium bg-gray-800 border border-gray-700 rounded-lg text-gray-300 hover:text-white transition-colors">
+            <button onClick={selectAll} className="px-2.5 py-1 text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg text-gray-700 hover:text-gray-900 transition-colors">
               全選択
             </button>
-            <button onClick={selectNone} className="px-2.5 py-1 text-xs font-medium bg-gray-800 border border-gray-700 rounded-lg text-gray-300 hover:text-white transition-colors">
+            <button onClick={selectNone} className="px-2.5 py-1 text-xs font-medium bg-gray-50 border border-gray-200 rounded-lg text-gray-700 hover:text-gray-900 transition-colors">
               全解除
             </button>
-            <button onClick={selectWithHp} className="px-2.5 py-1 text-xs font-medium bg-cyan-500/10 border border-cyan-500/20 rounded-lg text-cyan-400 hover:bg-cyan-500/20 transition-colors">
+            <button onClick={selectWithHp} className="px-2.5 py-1 text-xs font-medium bg-cyan-500/10 border border-cyan-500/20 rounded-lg text-cyan-600 hover:bg-cyan-500/20 transition-colors">
               <Globe className="w-3 h-3 inline mr-1" />
               HP有り
             </button>
-            <button onClick={selectViable} className="px-2.5 py-1 text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 hover:bg-emerald-500/20 transition-colors">
+            <button onClick={selectViable} className="px-2.5 py-1 text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-600 hover:bg-emerald-500/20 transition-colors">
               <Send className="w-3 h-3 inline mr-1" />
               送信可能のみ
             </button>
@@ -357,7 +357,7 @@ export default function BulkGeneratePanel({
             ))}
             {visibleCount < filteredLeads.length && (
               <div className="text-center py-2">
-                <span className="text-[10px] text-gray-600">
+                <span className="text-[10px] text-gray-400">
                   {visibleCount}/{filteredLeads.length}件表示中 — スクロールで続きを読み込み
                 </span>
               </div>
@@ -375,7 +375,7 @@ export default function BulkGeneratePanel({
               onChange={e => setCustomInstructions(e.target.value)}
               rows={2}
               placeholder="全リードに共通の追加指示..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
             />
           </div>
 
@@ -387,7 +387,7 @@ export default function BulkGeneratePanel({
               'flex items-center justify-center gap-2.5 w-full py-3 rounded-xl text-sm font-semibold transition-all',
               selectedLeadIds.size > 0 && !isGenerating
                 ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/30'
-                : 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed'
+                : 'bg-gray-50 text-gray-500 border border-gray-200 cursor-not-allowed'
             )}
           >
             {isGenerating ? (
@@ -407,7 +407,7 @@ export default function BulkGeneratePanel({
           </button>
           <p className={clsx(
             'text-[11px] leading-relaxed',
-            generationMode === 'free' ? 'text-emerald-400' : 'text-violet-400'
+            generationMode === 'free' ? 'text-emerald-600' : 'text-violet-600'
           )}>
             {generationMode === 'free'
               ? '無料生成モード: Claude APIを使わず、HP分析とテンプレートで生成します。'
@@ -423,8 +423,8 @@ export default function BulkGeneratePanel({
           <div className="px-5 pt-4 flex-shrink-0">
             <div className="flex items-center justify-between p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
               <div className="flex items-center gap-2">
-                <RefreshCw className="w-4 h-4 text-amber-400" />
-                <span className="text-sm text-amber-300">
+                <RefreshCw className="w-4 h-4 text-amber-600" />
+                <span className="text-sm text-amber-600">
                   前回の生成が中断されました。残り{getPendingCount()}件が未処理です。
                 </span>
               </div>
@@ -437,7 +437,7 @@ export default function BulkGeneratePanel({
                 </button>
                 <button
                   onClick={() => clearResults()}
-                  className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded-lg transition-colors"
+                  className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs rounded-lg transition-colors"
                 >
                   破棄
                 </button>
@@ -460,7 +460,7 @@ export default function BulkGeneratePanel({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => clearResults()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-700 hover:bg-gray-600 text-gray-300 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors"
                   >
                     <X className="w-3 h-3" />
                     クリア
@@ -476,7 +476,7 @@ export default function BulkGeneratePanel({
                 </div>
               )}
             </div>
-            <div className="w-full bg-gray-800 rounded-full h-1.5">
+            <div className="w-full bg-gray-50 rounded-full h-1.5">
               <div
                 className="bg-violet-500 h-1.5 rounded-full transition-all duration-300"
                 style={{ width: progress.total > 0 ? `${(progress.completed / progress.total) * 100}%` : '0%' }}
@@ -488,7 +488,7 @@ export default function BulkGeneratePanel({
         {/* Results list */}
         <div className="flex-1 overflow-y-auto p-5 space-y-3">
           {results.length === 0 && !isGenerating && (
-            <div className="flex items-center justify-center h-full text-gray-600 text-sm">
+            <div className="flex items-center justify-center h-full text-gray-400 text-sm">
               左側でリードを選択し、「一括生成」をクリックしてください
             </div>
           )}
@@ -503,32 +503,32 @@ export default function BulkGeneratePanel({
                   ? 'bg-emerald-500/5 border-emerald-500/20'
                   : result.saved
                   ? 'bg-violet-500/5 border-violet-500/20'
-                  : 'bg-gray-900 border-gray-800'
+                  : 'bg-white border-gray-200'
               )}
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center text-xs font-semibold text-gray-300 border border-gray-700">
+                <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-xs font-semibold text-gray-700 border border-gray-200">
                   {result.companyName?.charAt(0) ?? '?'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-semibold text-white">{result.companyName}</span>
+                  <span className="text-sm font-semibold text-gray-900">{result.companyName}</span>
                   {result.subject && (
                     <p className="text-xs text-gray-400 mt-0.5 truncate">件名: {result.subject}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   {result.error ? (
-                    <span className="flex items-center gap-1 text-xs text-red-400"><X className="w-3 h-3" />エラー</span>
+                    <span className="flex items-center gap-1 text-xs text-red-600"><X className="w-3 h-3" />エラー</span>
                   ) : result.queued ? (
-                    <span className="flex items-center gap-1 text-xs text-emerald-400"><Check className="w-3 h-3" />キュー済み</span>
+                    <span className="flex items-center gap-1 text-xs text-emerald-600"><Check className="w-3 h-3" />キュー済み</span>
                   ) : result.saved ? (
-                    <span className="flex items-center gap-1 text-xs text-violet-400"><Check className="w-3 h-3" />保存済み</span>
+                    <span className="flex items-center gap-1 text-xs text-violet-600"><Check className="w-3 h-3" />保存済み</span>
                   ) : (
                     <span className="flex items-center gap-1 text-xs text-gray-400"><Check className="w-3 h-3" />生成完了</span>
                   )}
                   <button
                     onClick={() => setExpandedId(expandedId === result.leadId ? null : result.leadId)}
-                    className="p-1 text-gray-600 hover:text-gray-400 transition-colors"
+                    className="p-1 text-gray-400 hover:text-gray-400 transition-colors"
                   >
                     {expandedId === result.leadId ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
@@ -537,20 +537,20 @@ export default function BulkGeneratePanel({
 
               {/* Expanded content */}
               {expandedId === result.leadId && (
-                <div className="mt-3 pt-3 border-t border-gray-800 space-y-2">
+                <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
                   {result.error ? (
-                    <p className="text-xs text-red-400">{result.error}</p>
+                    <p className="text-xs text-red-600">{result.error}</p>
                   ) : (
                     <>
                       {result.subject && (
-                        <div className="bg-gray-800/60 rounded-lg px-3 py-2">
+                        <div className="bg-gray-50/60 rounded-lg px-3 py-2">
                           <p className="text-xs text-gray-500 mb-0.5">件名</p>
-                          <p className="text-sm text-white font-medium">{result.subject}</p>
+                          <p className="text-sm text-gray-900 font-medium">{result.subject}</p>
                         </div>
                       )}
-                      <div className="bg-gray-800/60 rounded-lg px-3 py-2">
+                      <div className="bg-gray-50/60 rounded-lg px-3 py-2">
                         <p className="text-xs text-gray-500 mb-0.5">本文 ({result.body.length}字)</p>
-                        <pre className="text-xs text-gray-300 whitespace-pre-wrap break-words leading-relaxed font-sans max-h-[200px] overflow-y-auto">
+                        <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words leading-relaxed font-sans max-h-[200px] overflow-y-auto">
                           {result.body}
                         </pre>
                       </div>
@@ -563,14 +563,14 @@ export default function BulkGeneratePanel({
 
           {/* Generating placeholder */}
           {isGenerating && progress.completed < progress.total && (
-            <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 animate-pulse">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 animate-pulse">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gray-800 rounded-lg" />
+                <div className="w-8 h-8 bg-gray-50 rounded-lg" />
                 <div className="flex-1">
-                  <div className="h-4 bg-gray-800 rounded w-1/3 mb-1.5" />
-                  <div className="h-3 bg-gray-800 rounded w-1/2" />
+                  <div className="h-4 bg-gray-50 rounded w-1/3 mb-1.5" />
+                  <div className="h-3 bg-gray-50 rounded w-1/2" />
                 </div>
-                <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
+                <Loader2 className="w-4 h-4 text-violet-600 animate-spin" />
               </div>
             </div>
           )}

@@ -32,15 +32,15 @@ export default function ReplyCard({ reply, onClick }: ReplyCardProps) {
       className={clsx(
         'w-full text-left rounded-xl border transition-all group',
         reply.is_read
-          ? 'bg-gray-900 border-gray-800 hover:border-gray-700'
-          : 'bg-gray-900/80 border-gray-700 hover:border-violet-500/50 shadow-sm shadow-violet-500/5'
+          ? 'bg-white border-gray-200 hover:border-gray-200'
+          : 'bg-white/80 border-gray-200 hover:border-violet-500/50 shadow-sm shadow-violet-500/5'
       )}
     >
       <div className="flex items-start gap-3 p-4">
         {/* Unread dot */}
         <div className="flex-shrink-0 mt-1.5">
           {!reply.is_read ? (
-            <Circle className="w-2 h-2 text-violet-400 fill-violet-400" />
+            <Circle className="w-2 h-2 text-violet-600 fill-violet-400" />
           ) : (
             <div className="w-2 h-2" />
           )}
@@ -51,8 +51,8 @@ export default function ReplyCard({ reply, onClick }: ReplyCardProps) {
           className={clsx(
             'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-bold border',
             reply.is_read
-              ? 'bg-gray-800 border-gray-700 text-gray-400'
-              : 'bg-gray-700 border-gray-600 text-white'
+              ? 'bg-gray-50 border-gray-200 text-gray-400'
+              : 'bg-gray-200 border-gray-300 text-gray-900'
           )}
         >
           {lead?.company_name?.charAt(0) ?? '?'}
@@ -66,7 +66,7 @@ export default function ReplyCard({ reply, onClick }: ReplyCardProps) {
               <span
                 className={clsx(
                   'text-sm font-semibold truncate',
-                  reply.is_read ? 'text-gray-300' : 'text-white'
+                  reply.is_read ? 'text-gray-700' : 'text-gray-900'
                 )}
               >
                 {lead?.company_name ?? '不明な会社'}
@@ -77,7 +77,7 @@ export default function ReplyCard({ reply, onClick }: ReplyCardProps) {
                 </span>
               )}
             </div>
-            <span className="text-xs text-gray-600 flex-shrink-0">
+            <span className="text-xs text-gray-400 flex-shrink-0">
               {timeAgo(reply.created_at)}
             </span>
           </div>
@@ -100,7 +100,7 @@ export default function ReplyCard({ reply, onClick }: ReplyCardProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
-                className="text-gray-600 hover:text-gray-400 transition-colors"
+                className="text-gray-400 hover:text-gray-400 transition-colors"
               >
                 <ExternalLink className="w-3 h-3" />
               </a>
@@ -119,7 +119,7 @@ export default function ReplyCard({ reply, onClick }: ReplyCardProps) {
 
           {/* AI response indicator */}
           {reply.ai_response && (
-            <div className="flex items-center gap-1.5 text-[11px] text-violet-400/70">
+            <div className="flex items-center gap-1.5 text-[11px] text-violet-600/70">
               <Building2 className="w-3 h-3" />
               <span>返信文案あり</span>
             </div>

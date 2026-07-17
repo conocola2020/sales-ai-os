@@ -92,37 +92,37 @@ export default function AddToQueueModal({
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             {step === 'message' && (
               <button
                 onClick={handleBack}
-                className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
               >
                 ← 戻る
               </button>
             )}
-            <h2 className="text-sm font-semibold text-white">
+            <h2 className="text-sm font-semibold text-gray-900">
               {step === 'lead' ? 'リードを選択' : '文面を選択'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+            className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Step indicator */}
-        <div className="flex border-b border-gray-800">
+        <div className="flex border-b border-gray-200">
           <div
             className={clsx(
               'flex-1 py-2 text-center text-xs font-medium border-b-2 transition-colors',
               step === 'lead'
-                ? 'text-violet-400 border-violet-500'
+                ? 'text-violet-600 border-violet-500'
                 : 'text-gray-500 border-transparent'
             )}
           >
@@ -132,7 +132,7 @@ export default function AddToQueueModal({
             className={clsx(
               'flex-1 py-2 text-center text-xs font-medium border-b-2 transition-colors',
               step === 'message'
-                ? 'text-violet-400 border-violet-500'
+                ? 'text-violet-600 border-violet-500'
                 : 'text-gray-500 border-transparent'
             )}
           >
@@ -143,7 +143,7 @@ export default function AddToQueueModal({
         {/* Content */}
         <div className="p-5 max-h-[60vh] overflow-y-auto space-y-3">
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-600">
               {error}
             </div>
           )}
@@ -158,7 +158,7 @@ export default function AddToQueueModal({
                   value={leadSearch}
                   onChange={e => setLeadSearch(e.target.value)}
                   placeholder="会社名・担当者名で検索..."
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
               </div>
               <div className="space-y-1.5 max-h-64 overflow-y-auto">
@@ -171,20 +171,20 @@ export default function AddToQueueModal({
                     <button
                       key={lead.id}
                       onClick={() => handleSelectLead(lead)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 bg-gray-800/60 border border-gray-700/50 hover:border-violet-500/40 hover:bg-gray-800 rounded-xl text-left transition-all"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 bg-gray-50/60 border border-gray-200/50 hover:border-violet-500/40 hover:bg-gray-100 rounded-xl text-left transition-all"
                     >
-                      <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-semibold text-gray-300 border border-gray-600">
+                      <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-semibold text-gray-700 border border-gray-300">
                         {lead.company_name.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white truncate">
+                        <p className="text-sm font-medium text-gray-900 truncate">
                           {lead.company_name}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
                           {lead.contact_name ?? lead.industry ?? '担当者未登録'}
                         </p>
                       </div>
-                      <span className="text-xs text-gray-600">選択</span>
+                      <span className="text-xs text-gray-400">選択</span>
                     </button>
                   ))
                 )}
@@ -197,9 +197,9 @@ export default function AddToQueueModal({
             <>
               {/* Selected lead summary */}
               <div className="flex items-center gap-3 px-3 py-2 bg-violet-500/10 border border-violet-500/20 rounded-xl">
-                <Building2 className="w-4 h-4 text-violet-400 flex-shrink-0" />
+                <Building2 className="w-4 h-4 text-violet-600 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-white">{selectedLead.company_name}</p>
+                  <p className="text-sm font-semibold text-gray-900">{selectedLead.company_name}</p>
                   {selectedLead.contact_name && (
                     <p className="text-xs text-gray-500">{selectedLead.contact_name}</p>
                   )}
@@ -214,7 +214,7 @@ export default function AddToQueueModal({
                     'flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors',
                     !useCustom
                       ? 'bg-violet-600 text-white'
-                      : 'bg-gray-800 text-gray-500 hover:text-gray-300'
+                      : 'bg-gray-50 text-gray-500 hover:text-gray-700'
                   )}
                 >
                   保存済み文面
@@ -225,7 +225,7 @@ export default function AddToQueueModal({
                     'flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors',
                     useCustom
                       ? 'bg-violet-600 text-white'
-                      : 'bg-gray-800 text-gray-500 hover:text-gray-300'
+                      : 'bg-gray-50 text-gray-500 hover:text-gray-700'
                   )}
                 >
                   直接入力
@@ -240,7 +240,7 @@ export default function AddToQueueModal({
                       <p className="text-sm text-gray-500">保存済み文面がありません</p>
                       <button
                         onClick={() => setUseCustom(true)}
-                        className="text-xs text-violet-400 hover:text-violet-300 mt-1 transition-colors"
+                        className="text-xs text-violet-600 hover:text-violet-600 mt-1 transition-colors"
                       >
                         直接入力に切り替え
                       </button>
@@ -254,17 +254,17 @@ export default function AddToQueueModal({
                           'w-full text-left px-3 py-2.5 rounded-xl border transition-all',
                           selectedMessage?.id === msg.id
                             ? 'bg-violet-600/20 border-violet-500/40 text-white'
-                            : 'bg-gray-800/60 border-gray-700/50 hover:border-violet-500/30 hover:bg-gray-800'
+                            : 'bg-gray-50/60 border-gray-200/50 hover:border-violet-500/30 hover:bg-gray-100'
                         )}
                       >
-                        <p className="text-xs text-gray-300 line-clamp-2">
+                        <p className="text-xs text-gray-700 line-clamp-2">
                           {msg.content.slice(0, 120)}...
                         </p>
                         <div className="flex items-center justify-between mt-1.5">
-                          <span className="text-[10px] text-gray-600">
+                          <span className="text-[10px] text-gray-400">
                             {msg.lead?.company_name ?? 'リードなし'}
                           </span>
-                          <span className="text-[10px] text-gray-600">
+                          <span className="text-[10px] text-gray-400">
                             {msg.tone}
                           </span>
                         </div>
@@ -278,7 +278,7 @@ export default function AddToQueueModal({
                   onChange={e => setCustomMessage(e.target.value)}
                   rows={6}
                   placeholder="送信したい文面を直接入力してください..."
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
               )}
             </>
@@ -287,7 +287,7 @@ export default function AddToQueueModal({
 
         {/* Footer */}
         {step === 'message' && (
-          <div className="px-5 py-4 border-t border-gray-800">
+          <div className="px-5 py-4 border-t border-gray-200">
             <button
               onClick={handleSubmit}
               disabled={

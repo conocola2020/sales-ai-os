@@ -154,33 +154,33 @@ export default function CSVImport({ onClose, onSuccess }: CSVImportProps) {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+      <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-violet-500/10 border border-violet-500/20 rounded-xl flex items-center justify-center">
-              <Upload className="w-4 h-4 text-violet-400" />
+              <Upload className="w-4 h-4 text-violet-600" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">CSVインポート</h2>
+              <h2 className="text-base font-semibold text-gray-900">CSVインポート</h2>
               <p className="text-xs text-gray-500">CSV形式でリードを一括登録</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-300 transition-colors">
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Sample download */}
-          <div className="flex items-center justify-between bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-3">
+          <div className="flex items-center justify-between bg-gray-50/50 border border-gray-200/50 rounded-xl px-4 py-3">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-300">サンプルCSVをダウンロード</span>
+              <span className="text-sm text-gray-700">サンプルCSVをダウンロード</span>
             </div>
             <button
               onClick={downloadSample}
-              className="flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 font-medium transition-colors"
+              className="flex items-center gap-1.5 text-xs text-violet-600 hover:text-violet-600 font-medium transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               ダウンロード
@@ -194,7 +194,7 @@ export default function CSVImport({ onClose, onSuccess }: CSVImportProps) {
             onDrop={handleDrop}
             onClick={() => fileRef.current?.click()}
             className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all
-              ${dragOver ? 'border-violet-500 bg-violet-500/5' : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/30'}`}
+              ${dragOver ? 'border-violet-500 bg-violet-500/5' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-100/30'}`}
           >
             <input
               ref={fileRef}
@@ -206,12 +206,12 @@ export default function CSVImport({ onClose, onSuccess }: CSVImportProps) {
             <Upload className="w-8 h-8 text-gray-500 mx-auto mb-3" />
             {fileName ? (
               <>
-                <p className="text-sm font-medium text-violet-400">{fileName}</p>
+                <p className="text-sm font-medium text-violet-600">{fileName}</p>
                 <p className="text-xs text-gray-500 mt-1">クリックして変更</p>
               </>
             ) : (
               <>
-                <p className="text-sm text-gray-300">CSVファイルをドロップ、またはクリックして選択</p>
+                <p className="text-sm text-gray-700">CSVファイルをドロップ、またはクリックして選択</p>
                 <p className="text-xs text-gray-500 mt-1">UTF-8 / Shift-JIS 対応</p>
               </>
             )}
@@ -220,8 +220,8 @@ export default function CSVImport({ onClose, onSuccess }: CSVImportProps) {
           {/* Error */}
           {error && (
             <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-400">{error}</p>
+              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
@@ -230,15 +230,15 @@ export default function CSVImport({ onClose, onSuccess }: CSVImportProps) {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span className="text-sm font-medium text-white">{preview.length}件 検出</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span className="text-sm font-medium text-gray-900">{preview.length}件 検出</span>
                 </div>
                 <span className="text-xs text-gray-500">プレビュー（最大5件表示）</span>
               </div>
-              <div className="border border-gray-800 rounded-xl overflow-hidden">
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="bg-gray-800/60">
+                    <tr className="bg-gray-50/60">
                       {['会社名', '担当者', 'メール', '業種', 'ステータス'].map((h) => (
                         <th key={h} className="px-3 py-2.5 text-left text-gray-400 font-medium">{h}</th>
                       ))}
@@ -246,20 +246,20 @@ export default function CSVImport({ onClose, onSuccess }: CSVImportProps) {
                   </thead>
                   <tbody>
                     {preview.slice(0, 5).map((row, i) => (
-                      <tr key={i} className="border-t border-gray-800/60 hover:bg-gray-800/30">
-                        <td className="px-3 py-2 text-gray-200 font-medium truncate max-w-[120px]">{row.company_name}</td>
+                      <tr key={i} className="border-t border-gray-200/60 hover:bg-gray-100/30">
+                        <td className="px-3 py-2 text-gray-800 font-medium truncate max-w-[120px]">{row.company_name}</td>
                         <td className="px-3 py-2 text-gray-400 truncate max-w-[80px]">{row.contact_name || '—'}</td>
                         <td className="px-3 py-2 text-gray-400 truncate max-w-[120px]">{row.email || '—'}</td>
                         <td className="px-3 py-2 text-gray-400 truncate max-w-[80px]">{row.industry || '—'}</td>
                         <td className="px-3 py-2">
-                          <span className="px-1.5 py-0.5 bg-gray-700/50 text-gray-300 rounded text-xs">{row.status}</span>
+                          <span className="px-1.5 py-0.5 bg-gray-200/50 text-gray-700 rounded text-xs">{row.status}</span>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {preview.length > 5 && (
-                  <div className="px-3 py-2 text-xs text-gray-500 border-t border-gray-800/60 text-center">
+                  <div className="px-3 py-2 text-xs text-gray-500 border-t border-gray-200/60 text-center">
                     + {preview.length - 5}件 (非表示)
                   </div>
                 )}
@@ -269,14 +269,14 @@ export default function CSVImport({ onClose, onSuccess }: CSVImportProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-gray-800">
+        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-gray-200">
           <p className="text-xs text-gray-500">
             必須: 会社名列。対応列: 担当者名/メール/電話/URL/業種/ステータス/メモ
           </p>
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 border border-gray-700 rounded-xl transition-colors"
+              className="px-4 py-2 text-sm text-gray-400 hover:text-gray-800 border border-gray-200 rounded-xl transition-colors"
             >
               キャンセル
             </button>

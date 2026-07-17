@@ -24,14 +24,14 @@ export default function ToneSelector({ value, onChange }: ToneSelectorProps) {
                 'flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border text-center transition-all',
                 active
                   ? `${cfg.bg} ${cfg.border} ring-1 ring-offset-0`
-                  : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600 hover:bg-gray-800'
+                  : 'bg-gray-50/50 border-gray-200/50 hover:border-gray-300 hover:bg-gray-100'
               )}
             >
               <span className="text-xl leading-none">{cfg.emoji}</span>
-              <span className={clsx('text-xs font-semibold', active ? cfg.color : 'text-gray-300')}>
+              <span className={clsx('text-xs font-semibold', active ? cfg.color : 'text-gray-700')}>
                 {cfg.label}
               </span>
-              <span className={clsx('text-xs leading-tight', active ? 'text-gray-400' : 'text-gray-600')}>
+              <span className={clsx('text-xs leading-tight', active ? 'text-gray-400' : 'text-gray-400')}>
                 {cfg.description}
               </span>
             </button>

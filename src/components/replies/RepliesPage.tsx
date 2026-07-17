@@ -97,7 +97,7 @@ export default function RepliesPage({ initialReplies, leads, sentLeadIds = [] }:
       {/* Page header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-white">返信管理</h1>
+          <h1 className="text-xl font-bold text-gray-900">返信管理</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {stats.total}件の返信 · 未読 {stats.unread}件
           </p>
@@ -107,7 +107,7 @@ export default function RepliesPage({ initialReplies, leads, sentLeadIds = [] }:
             <button
               onClick={handleMarkAllRead}
               disabled={isMarkingAllRead}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs text-gray-400 hover:text-gray-200 bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs text-gray-400 hover:text-gray-800 bg-gray-50 hover:bg-gray-750 border border-gray-200 rounded-lg transition-colors"
             >
               {isMarkingAllRead ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -129,10 +129,10 @@ export default function RepliesPage({ initialReplies, leads, sentLeadIds = [] }:
 
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-3 mb-5">
-        <StatCard label="合計" value={stats.total} color="text-gray-300" bg="bg-gray-800/60" />
-        <StatCard label="未読" value={stats.unread} color="text-violet-400" bg="bg-violet-500/10 border border-violet-500/20" />
-        <StatCard label="興味あり" value={stats.interested} color="text-emerald-400" bg="bg-emerald-500/10 border border-emerald-500/20" />
-        <StatCard label="お断り" value={stats.declined} color="text-red-400" bg="bg-red-500/10 border border-red-500/20" />
+        <StatCard label="合計" value={stats.total} color="text-gray-700" bg="bg-gray-50/60" />
+        <StatCard label="未読" value={stats.unread} color="text-violet-600" bg="bg-violet-500/10 border border-violet-500/20" />
+        <StatCard label="興味あり" value={stats.interested} color="text-emerald-600" bg="bg-emerald-500/10 border border-emerald-500/20" />
+        <StatCard label="お断り" value={stats.declined} color="text-red-600" bg="bg-red-500/10 border border-red-500/20" />
       </div>
 
       {/* Tabs */}
@@ -151,7 +151,7 @@ export default function RepliesPage({ initialReplies, leads, sentLeadIds = [] }:
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex-shrink-0',
                 isActive
                   ? 'bg-violet-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-750'
+                  : 'bg-gray-50 text-gray-400 hover:text-gray-800 hover:bg-gray-750'
               )}
             >
               {cfg && <span>{cfg.emoji}</span>}
@@ -160,7 +160,7 @@ export default function RepliesPage({ initialReplies, leads, sentLeadIds = [] }:
                 <span
                   className={clsx(
                     'px-1.5 py-0.5 rounded-full text-[10px] font-semibold',
-                    isActive ? 'bg-white/20 text-white' : 'bg-gray-700 text-gray-400'
+                    isActive ? 'bg-white/20 text-gray-900' : 'bg-gray-200 text-gray-400'
                   )}
                 >
                   {count}
@@ -175,14 +175,14 @@ export default function RepliesPage({ initialReplies, leads, sentLeadIds = [] }:
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {filteredReplies.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 bg-gray-800 rounded-2xl flex items-center justify-center mb-4">
-              <MailOpen className="w-8 h-8 text-gray-600" />
+            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+              <MailOpen className="w-8 h-8 text-gray-400" />
             </div>
             <p className="text-sm font-medium text-gray-400">
               {activeTab === '全て' ? '返信がありません' : `${activeTab}の返信はありません`}
             </p>
             {activeTab === '全て' && (
-              <p className="mt-3 text-xs text-gray-600">
+              <p className="mt-3 text-xs text-gray-400">
                 Gmailから自動で取り込まれます
               </p>
             )}

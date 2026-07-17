@@ -142,20 +142,20 @@ export default function QueueItem({
         'rounded-xl border transition-all',
         item.status === '失敗'
           ? 'bg-red-500/5 border-red-500/20'
-          : 'bg-gray-900 border-gray-800 hover:border-gray-700'
+          : 'bg-white border-gray-200 hover:border-gray-200'
       )}
     >
       {/* Main row */}
       <div className="flex items-center gap-3 p-4">
         {/* Company avatar */}
-        <div className="w-9 h-9 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-semibold text-gray-300 border border-gray-700">
+        <div className="w-9 h-9 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-semibold text-gray-700 border border-gray-200">
           {lead?.company_name?.charAt(0) ?? '?'}
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-white truncate">
+            <span className="text-sm font-semibold text-gray-900 truncate">
               {lead?.company_name ?? '不明な会社'}
             </span>
             {lead?.contact_name && (
@@ -166,7 +166,7 @@ export default function QueueItem({
                 href={lead.website_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-600 hover:text-gray-400 transition-colors"
+                className="text-gray-400 hover:text-gray-400 transition-colors"
               >
                 <ExternalLink className="w-3 h-3" />
               </a>
@@ -174,9 +174,9 @@ export default function QueueItem({
           </div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             {lead?.industry && (
-              <span className="text-xs text-gray-600">{lead.industry}</span>
+              <span className="text-xs text-gray-400">{lead.industry}</span>
             )}
-            <span className="text-xs text-gray-600">{timeAgo(item.created_at)}</span>
+            <span className="text-xs text-gray-400">{timeAgo(item.created_at)}</span>
             {item.send_method && (
               <span className={clsx(
                 'text-[10px] px-1.5 py-0.5 rounded-md font-medium border',
@@ -201,8 +201,8 @@ export default function QueueItem({
           {/* レビューサイトURL警告 */}
           {hasReviewSiteUrl && item.status === '確認待ち' && (
             <div className="flex items-center gap-1 mt-1">
-              <TriangleAlert className="w-3 h-3 text-amber-400 flex-shrink-0" />
-              <span className="text-[10px] text-amber-400">
+              <TriangleAlert className="w-3 h-3 text-amber-600 flex-shrink-0" />
+              <span className="text-[10px] text-amber-600">
                 レビューサイトURL設定中。リード編集で企業公式URLに変更してください
               </span>
             </div>
@@ -217,7 +217,7 @@ export default function QueueItem({
               className={clsx(
                 'text-[10px] px-2 py-0.5 rounded-full font-medium border transition-colors',
                 item.screenshot_url
-                  ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20 cursor-pointer'
+                  ? 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20 cursor-pointer'
                   : 'text-gray-500 bg-gray-500/10 border-gray-500/20 cursor-default'
               )}
             >
@@ -251,7 +251,7 @@ export default function QueueItem({
             </button>
             <button
               onClick={() => setConfirmDelete(false)}
-              className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-[10px] font-semibold rounded-lg transition-colors"
+              className="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-[10px] font-semibold rounded-lg transition-colors"
             >
               ✕
             </button>
@@ -260,7 +260,7 @@ export default function QueueItem({
           <button
             onClick={(e) => { e.stopPropagation(); setConfirmDelete(true) }}
             title="削除"
-            className="flex-shrink-0 p-1.5 text-gray-700 hover:text-red-400 hover:bg-red-500/10 transition-colors rounded-lg"
+            className="flex-shrink-0 p-1.5 text-gray-700 hover:text-red-600 hover:bg-red-500/10 transition-colors rounded-lg"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -269,7 +269,7 @@ export default function QueueItem({
         {/* Expand toggle */}
         <button
           onClick={() => setExpanded(v => !v)}
-          className="flex-shrink-0 p-1.5 text-gray-600 hover:text-gray-400 transition-colors rounded-lg hover:bg-gray-800"
+          className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-400 transition-colors rounded-lg hover:bg-gray-100"
         >
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
@@ -277,7 +277,7 @@ export default function QueueItem({
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="border-t border-gray-800 p-4 space-y-4">
+        <div className="border-t border-gray-200 p-4 space-y-4">
           {/* Error message */}
           {(item.status === '失敗' || item.status === 'form_not_found') && item.error_message && (
             <div className={clsx(
@@ -288,18 +288,18 @@ export default function QueueItem({
             )}>
               <AlertCircle className={clsx(
                 'w-4 h-4 flex-shrink-0 mt-0.5',
-                item.status === 'form_not_found' ? 'text-amber-400' : 'text-red-400'
+                item.status === 'form_not_found' ? 'text-amber-600' : 'text-red-600'
               )} />
               <div className="flex-1">
                 <p className={clsx(
                   'text-xs font-medium mb-0.5',
-                  item.status === 'form_not_found' ? 'text-amber-400' : 'text-red-400'
+                  item.status === 'form_not_found' ? 'text-amber-600' : 'text-red-600'
                 )}>
                   {item.status === 'form_not_found' ? 'フォーム未検出' : 'エラー詳細'}
                 </p>
                 <p className={clsx(
                   'text-xs',
-                  item.status === 'form_not_found' ? 'text-amber-300/80' : 'text-red-300/80'
+                  item.status === 'form_not_found' ? 'text-amber-600/80' : 'text-red-600/80'
                 )}>
                   {item.error_message}
                 </p>
@@ -317,16 +317,16 @@ export default function QueueItem({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5 text-orange-400" />
-                  <span className="text-xs font-medium text-orange-400">メール送信用テキスト</span>
+                  <Mail className="w-3.5 h-3.5 text-orange-600" />
+                  <span className="text-xs font-medium text-orange-600">メール送信用テキスト</span>
                 </div>
                 <button
                   onClick={handleCopyEmailText}
                   className={clsx(
                     'flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-all',
                     copied
-                      ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-                      : 'bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 hover:text-white'
+                      ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600'
+                      : 'bg-gray-50 hover:bg-gray-200 border border-gray-200 text-gray-700 hover:text-gray-900'
                   )}
                 >
                   {copied ? (
@@ -343,7 +343,7 @@ export default function QueueItem({
                 </button>
               </div>
               <div className="bg-orange-500/5 border border-orange-500/20 rounded-lg p-3">
-                <pre className="text-xs text-gray-300 whitespace-pre-wrap break-words leading-relaxed font-sans select-all">
+                <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words leading-relaxed font-sans select-all">
                   {`${lead?.company_name ?? ''} 御中\n\n${item.message_content}`}
                 </pre>
               </div>
@@ -352,7 +352,7 @@ export default function QueueItem({
                   <span className="text-gray-500">送信先:</span>
                   <button
                     onClick={() => { navigator.clipboard.writeText(lead.email!); }}
-                    className="text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                    className="text-blue-600 hover:text-blue-600 flex items-center gap-1 transition-colors"
                   >
                     {lead.email}
                     <Copy className="w-3 h-3" />
@@ -364,10 +364,10 @@ export default function QueueItem({
 
           {/* Lead info */}
           {lead && (
-            <div className="flex items-start gap-2 p-3 bg-gray-800/50 rounded-lg">
+            <div className="flex items-start gap-2 p-3 bg-gray-50/50 rounded-lg">
               <Building2 className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
               <div className="space-y-0.5">
-                <p className="text-xs font-medium text-gray-300">{lead.company_name}</p>
+                <p className="text-xs font-medium text-gray-700">{lead.company_name}</p>
                 {lead.contact_name && (
                   <p className="text-xs text-gray-500">担当: {lead.contact_name}</p>
                 )}
@@ -379,7 +379,7 @@ export default function QueueItem({
                     href={lead.website_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1"
+                    className="text-xs text-violet-600 hover:text-violet-600 flex items-center gap-1"
                   >
                     {lead.website_url}
                     <ExternalLink className="w-3 h-3" />
@@ -389,8 +389,8 @@ export default function QueueItem({
                   <div className="flex items-center gap-1">
                     {isReviewSiteUrl(lead.company_url) && item.send_method === 'form' ? (
                       <>
-                        <TriangleAlert className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                        <span className="text-[10px] text-amber-400">フォーム送信URL (レビューサイト):</span>
+                        <TriangleAlert className="w-3 h-3 text-amber-600 flex-shrink-0" />
+                        <span className="text-[10px] text-amber-600">フォーム送信URL (レビューサイト):</span>
                       </>
                     ) : (
                       <span className="text-xs text-gray-500">企業HP:</span>
@@ -402,8 +402,8 @@ export default function QueueItem({
                       className={clsx(
                         'text-xs flex items-center gap-1 truncate max-w-[200px]',
                         isReviewSiteUrl(lead.company_url) && item.send_method === 'form'
-                          ? 'text-amber-400 hover:text-amber-300'
-                          : 'text-violet-400 hover:text-violet-300'
+                          ? 'text-amber-600 hover:text-amber-600'
+                          : 'text-violet-600 hover:text-violet-600'
                       )}
                     >
                       {lead.company_url}
@@ -418,8 +418,8 @@ export default function QueueItem({
           {/* Form URL & Screenshot */}
           {item.form_url && (
             <div className="flex items-center gap-2 p-2 bg-cyan-500/5 border border-cyan-500/20 rounded-lg">
-              <Globe className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-              <a href={item.form_url} target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-400 hover:text-cyan-300 truncate">
+              <Globe className="w-3.5 h-3.5 text-cyan-600 flex-shrink-0" />
+              <a href={item.form_url} target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-600 hover:text-cyan-600 truncate">
                 {item.form_url}
               </a>
             </div>
@@ -429,18 +429,18 @@ export default function QueueItem({
               <p className="text-xs font-medium text-gray-500 mb-1">送信証拠</p>
               {item.screenshot_url.startsWith('api_response:') ? (
                 <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3">
-                  <p className="text-[10px] text-emerald-400 font-medium mb-1">📋 CF7 REST APIレスポンス</p>
-                  <pre className="text-xs text-emerald-300/80 whitespace-pre-wrap font-mono">
+                  <p className="text-[10px] text-emerald-600 font-medium mb-1">📋 CF7 REST APIレスポンス</p>
+                  <pre className="text-xs text-emerald-600/80 whitespace-pre-wrap font-mono">
                     {item.screenshot_url.replace('api_response:', '')}
                   </pre>
                 </div>
               ) : item.screenshot_url.startsWith('chrome_screenshot:') ? (
                 <div className="bg-violet-500/5 border border-violet-500/20 rounded-lg p-3">
-                  <p className="text-xs text-violet-400">📸 スクリーンショット確認済み（ID: {item.screenshot_url.replace('chrome_screenshot:', '')}）</p>
+                  <p className="text-xs text-violet-600">📸 スクリーンショット確認済み（ID: {item.screenshot_url.replace('chrome_screenshot:', '')}）</p>
                 </div>
               ) : item.screenshot_url.startsWith('http') ? (
                 <a href={item.screenshot_url} target="_blank" rel="noopener noreferrer">
-                  <img src={item.screenshot_url} alt="送信結果" className="rounded-lg border border-gray-700 max-h-48 object-contain" />
+                  <img src={item.screenshot_url} alt="送信結果" className="rounded-lg border border-gray-200 max-h-48 object-contain" />
                 </a>
               ) : (
                 <p className="text-xs text-gray-400">{item.screenshot_url}</p>
@@ -451,8 +451,8 @@ export default function QueueItem({
           {/* Message content */}
           <div>
             <p className="text-xs font-medium text-gray-500 mb-2">送信文面</p>
-            <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg p-3">
-              <pre className="text-xs text-gray-300 whitespace-pre-wrap break-words leading-relaxed font-sans">
+            <div className="bg-gray-50/60 border border-gray-200/50 rounded-lg p-3">
+              <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words leading-relaxed font-sans">
                 {item.message_content}
               </pre>
             </div>
@@ -477,7 +477,7 @@ export default function QueueItem({
               <button
                 onClick={handleMarkAsSent}
                 disabled={loading}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 text-xs font-semibold rounded-lg transition-colors"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 送信済みにする
@@ -489,7 +489,7 @@ export default function QueueItem({
               <button
                 onClick={handleResetToReview}
                 disabled={loading}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-xs font-semibold rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-600 text-xs font-semibold rounded-lg transition-colors"
               >
                 <Undo2 className="w-3.5 h-3.5" />
                 確認待ちに戻す
@@ -514,7 +514,7 @@ export default function QueueItem({
                 <button
                   onClick={handleConfirmFormNotFound}
                   disabled={loading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 text-orange-400 text-xs font-semibold rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 text-orange-600 text-xs font-semibold rounded-lg transition-colors"
                 >
                   <XCircle className="w-3.5 h-3.5" />
                   フォーム未検出確定
@@ -522,7 +522,7 @@ export default function QueueItem({
                 <button
                   onClick={handleMarkAsSent}
                   disabled={loading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 text-xs font-semibold rounded-lg transition-colors"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   手動送信済み
@@ -530,7 +530,7 @@ export default function QueueItem({
                 <button
                   onClick={handleSwitchToEmail}
                   disabled={loading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 text-xs font-semibold rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-600 text-xs font-semibold rounded-lg transition-colors"
                 >
                   <Mail className="w-3.5 h-3.5" />
                   メール送信に切替
@@ -538,7 +538,7 @@ export default function QueueItem({
                 <button
                   onClick={handleRetry}
                   disabled={loading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 text-violet-400 text-xs font-semibold rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 text-violet-600 text-xs font-semibold rounded-lg transition-colors"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   リトライ
@@ -550,7 +550,7 @@ export default function QueueItem({
             <div className="ml-auto">
               {confirmDelete ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-red-400">本当に削除しますか？</span>
+                  <span className="text-xs text-red-600">本当に削除しますか？</span>
                   <button
                     onClick={handleDelete}
                     disabled={loading}
@@ -560,7 +560,7 @@ export default function QueueItem({
                   </button>
                   <button
                     onClick={() => setConfirmDelete(false)}
-                    className="px-2.5 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-semibold rounded-lg transition-colors"
+                    className="px-2.5 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition-colors"
                   >
                     キャンセル
                   </button>
@@ -568,7 +568,7 @@ export default function QueueItem({
               ) : (
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-600 hover:text-red-400 hover:bg-red-500/10 text-xs rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-gray-400 hover:text-red-600 hover:bg-red-500/10 text-xs rounded-lg transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   削除
@@ -584,14 +584,14 @@ export default function QueueItem({
     {showEvidence && item.screenshot_url && (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowEvidence(false)}>
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-        <div className="relative w-full max-w-lg bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+        <div className="relative w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
             <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-sm font-semibold text-white">送信証拠</h3>
+              <Eye className="w-4 h-4 text-emerald-600" />
+              <h3 className="text-sm font-semibold text-gray-900">送信証拠</h3>
               <span className="text-xs text-gray-500">{item.lead?.company_name}</span>
             </div>
-            <button onClick={() => setShowEvidence(false)} className="p-1 text-gray-500 hover:text-gray-300 transition-colors">
+            <button onClick={() => setShowEvidence(false)} className="p-1 text-gray-500 hover:text-gray-700 transition-colors">
               <span className="text-lg leading-none">&times;</span>
             </button>
           </div>
@@ -599,45 +599,45 @@ export default function QueueItem({
             {item.screenshot_url.startsWith('api_response:') ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">CF7 REST API</span>
+                  <span className="text-xs font-medium text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">CF7 REST API</span>
                   <span className="text-xs text-gray-500">フォーム送信APIレスポンス</span>
                 </div>
-                <pre className="text-xs text-emerald-300/80 bg-gray-800/60 border border-gray-700/50 rounded-lg p-4 whitespace-pre-wrap font-mono overflow-x-auto">
+                <pre className="text-xs text-emerald-600/80 bg-gray-50/60 border border-gray-200/50 rounded-lg p-4 whitespace-pre-wrap font-mono overflow-x-auto">
                   {(() => { try { return JSON.stringify(JSON.parse(item.screenshot_url.replace('api_response:', '')), null, 2) } catch { return item.screenshot_url.replace('api_response:', '') } })()}
                 </pre>
               </div>
             ) : item.screenshot_url.startsWith('agent_result:') ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full">AI Agent</span>
+                  <span className="text-xs font-medium text-violet-600 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full">AI Agent</span>
                   <span className="text-xs text-gray-500">Managed Agent 実行結果</span>
                 </div>
-                <pre className="text-xs text-violet-300/80 bg-gray-800/60 border border-gray-700/50 rounded-lg p-4 whitespace-pre-wrap font-mono overflow-x-auto">
+                <pre className="text-xs text-violet-600/80 bg-gray-50/60 border border-gray-200/50 rounded-lg p-4 whitespace-pre-wrap font-mono overflow-x-auto">
                   {(() => { try { return JSON.stringify(JSON.parse(item.screenshot_url.replace('agent_result:', '')), null, 2) } catch { return item.screenshot_url.replace('agent_result:', '') } })()}
                 </pre>
               </div>
             ) : item.screenshot_url.startsWith('chrome_screenshot:') ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full">Chrome MCP</span>
+                  <span className="text-xs font-medium text-cyan-600 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full">Chrome MCP</span>
                   <span className="text-xs text-gray-500">ブラウザスクリーンショット</span>
                 </div>
-                <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg p-4 text-center">
-                  <p className="text-sm text-cyan-400">Screenshot ID: {item.screenshot_url.replace('chrome_screenshot:', '')}</p>
+                <div className="bg-gray-50/60 border border-gray-200/50 rounded-lg p-4 text-center">
+                  <p className="text-sm text-cyan-600">Screenshot ID: {item.screenshot_url.replace('chrome_screenshot:', '')}</p>
                   <p className="text-xs text-gray-500 mt-1">Chrome MCPで撮影された送信完了画面のスクリーンショット</p>
                 </div>
               </div>
             ) : item.screenshot_url.startsWith('complete_page:') || item.screenshot_url.startsWith('thanks_page:') ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">完了ページ</span>
+                  <span className="text-xs font-medium text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">完了ページ</span>
                   <span className="text-xs text-gray-500">送信完了後のリダイレクト先</span>
                 </div>
                 <a
                   href={item.screenshot_url.replace(/^(complete_page|thanks_page):/, '')}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 bg-gray-800/60 border border-gray-700/50 rounded-lg p-4 text-emerald-400 hover:text-emerald-300 transition-colors"
+                  className="flex items-center gap-2 bg-gray-50/60 border border-gray-200/50 rounded-lg p-4 text-emerald-600 hover:text-emerald-600 transition-colors"
                 >
                   <ExternalLink className="w-4 h-4 flex-shrink-0" />
                   <span className="text-sm truncate">{item.screenshot_url.replace(/^(complete_page|thanks_page):/, '')}</span>
@@ -646,19 +646,19 @@ export default function QueueItem({
             ) : item.screenshot_url.startsWith('http') ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">スクリーンショット</span>
+                  <span className="text-xs font-medium text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">スクリーンショット</span>
                 </div>
                 <a href={item.screenshot_url} target="_blank" rel="noopener noreferrer">
-                  <img src={item.screenshot_url} alt="送信結果" className="rounded-lg border border-gray-700 w-full object-contain" />
+                  <img src={item.screenshot_url} alt="送信結果" className="rounded-lg border border-gray-200 w-full object-contain" />
                 </a>
               </div>
             ) : (
-              <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg p-4">
-                <p className="text-sm text-gray-300">{item.screenshot_url}</p>
+              <div className="bg-gray-50/60 border border-gray-200/50 rounded-lg p-4">
+                <p className="text-sm text-gray-700">{item.screenshot_url}</p>
               </div>
             )}
             {item.sent_at && (
-              <p className="text-xs text-gray-600 mt-4">送信日時: {new Date(item.sent_at).toLocaleString('ja-JP')}</p>
+              <p className="text-xs text-gray-400 mt-4">送信日時: {new Date(item.sent_at).toLocaleString('ja-JP')}</p>
             )}
           </div>
         </div>

@@ -16,11 +16,11 @@ import { LEAD_STATUSES, INDUSTRIES, STATUS_CONFIG, PREFECTURES } from '@/types/l
 import clsx from 'clsx'
 
 const CONTACT_METHOD_BADGE: Record<string, { icon: string; label: string; color: string }> = {
-  form: { icon: '\u{1F4DD}', label: '\u30D5\u30A9\u30FC\u30E0', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  email: { icon: '\u{1F4E7}', label: '\u30E1\u30FC\u30EB', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-  instagram: { icon: '\u{1F4F8}', label: 'Instagram', color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' },
+  form: { icon: '\u{1F4DD}', label: '\u30D5\u30A9\u30FC\u30E0', color: 'text-blue-600 bg-blue-500/10 border-blue-500/20' },
+  email: { icon: '\u{1F4E7}', label: '\u30E1\u30FC\u30EB', color: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20' },
+  instagram: { icon: '\u{1F4F8}', label: 'Instagram', color: 'text-pink-600 bg-pink-500/10 border-pink-500/20' },
   manual: { icon: '\u270B', label: '\u624B\u52D5', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' },
-  none: { icon: '\u274C', label: '\u672A\u691C\u51FA', color: 'text-red-400 bg-red-500/10 border-red-500/20' },
+  none: { icon: '\u274C', label: '\u672A\u691C\u51FA', color: 'text-red-600 bg-red-500/10 border-red-500/20' },
   unscanned: { icon: '\u{1F50D}', label: '\u672A\u30B9\u30AD\u30E3\u30F3', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
 }
 
@@ -34,12 +34,12 @@ interface LeadsTableProps {
 
 // 送信キューステータスバッジの設定
 const QUEUE_STATUS_BADGE: Record<string, { label: string; color: string }> = {
-  '確認待ち': { label: '確認待ち', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-  '失敗':     { label: '送信失敗', color: 'text-red-400 bg-red-500/10 border-red-500/20' },
-  'form_not_found': { label: 'フォーム未検出', color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
+  '確認待ち': { label: '確認待ち', color: 'text-amber-600 bg-amber-500/10 border-amber-500/20' },
+  '失敗':     { label: '送信失敗', color: 'text-red-600 bg-red-500/10 border-red-500/20' },
+  'form_not_found': { label: 'フォーム未検出', color: 'text-orange-600 bg-orange-500/10 border-orange-500/20' },
 }
 
-const inputCls = 'bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all'
+const inputCls = 'bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all'
 
 export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsTableProps) {
   const router = useRouter()
@@ -137,10 +137,10 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
   }
 
   const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <ChevronsUpDown className="w-3 h-3 text-gray-600" />
+    if (sortField !== field) return <ChevronsUpDown className="w-3 h-3 text-gray-400" />
     return sortDir === 'asc'
-      ? <ChevronUp className="w-3 h-3 text-violet-400" />
-      : <ChevronDown className="w-3 h-3 text-violet-400" />
+      ? <ChevronUp className="w-3 h-3 text-violet-600" />
+      : <ChevronDown className="w-3 h-3 text-violet-600" />
   }
 
   // ── Selection ──────────────────────────────────────────────
@@ -228,8 +228,8 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
         <div className={clsx(
           'fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-xl text-sm font-medium',
           toast.type === 'success'
-            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-            : 'bg-red-500/10 border-red-500/30 text-red-400'
+            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
+            : 'bg-red-500/10 border-red-500/30 text-red-600'
         )}>
           {toast.msg}
         </div>
@@ -266,7 +266,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
       <div className="px-4 md:px-8 pt-6 md:pt-8 pb-4">
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-white">リード管理</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">リード管理</h1>
             <p className="text-gray-400 text-xs md:text-sm mt-1">
               {leads.length.toLocaleString()}件のリード
             </p>
@@ -274,7 +274,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
           <div className="flex items-center gap-2 md:gap-3">
             <button
               onClick={() => setShowCSV(true)}
-              className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2 md:py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 text-xs md:text-sm font-medium rounded-xl transition-all"
+              className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2 md:py-2.5 bg-gray-50 hover:bg-gray-200 border border-gray-200 hover:border-gray-300 text-gray-700 text-xs md:text-sm font-medium rounded-xl transition-all"
             >
               <Upload className="w-3.5 md:w-4 h-3.5 md:h-4" />
               <span className="hidden sm:inline">CSVインポート</span>
@@ -300,7 +300,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                   setToast({ msg: 'エクスポートに失敗しました', type: 'error' })
                 }
               }}
-              className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2 md:py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 text-gray-300 text-xs md:text-sm font-medium rounded-xl transition-all"
+              className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2 md:py-2.5 bg-gray-50 hover:bg-gray-200 border border-gray-200 hover:border-gray-300 text-gray-700 text-xs md:text-sm font-medium rounded-xl transition-all"
             >
               <Download className="w-3.5 md:w-4 h-3.5 md:h-4" />
               <span className="hidden sm:inline">エクスポート</span>
@@ -319,7 +319,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
 
         {/* Quick add form */}
         {showAdd && (
-          <div className="flex items-center gap-3 mb-4 p-4 bg-gray-900 border border-gray-800 rounded-2xl">
+          <div className="flex items-center gap-3 mb-4 p-4 bg-white border border-gray-200 rounded-2xl">
             <Building2 className="w-4 h-4 text-gray-500 flex-shrink-0" />
             <input
               autoFocus
@@ -332,7 +332,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
             <button onClick={handleQuickAdd} className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-colors">
               追加
             </button>
-            <button onClick={() => setShowAdd(false)} className="text-gray-500 hover:text-gray-300 transition-colors text-sm">
+            <button onClick={() => setShowAdd(false)} className="text-gray-500 hover:text-gray-700 transition-colors text-sm">
               キャンセル
             </button>
           </div>
@@ -351,18 +351,18 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border',
                   active
                     ? s === 'all'
-                      ? 'bg-violet-600/20 border-violet-500/30 text-violet-300'
+                      ? 'bg-violet-600/20 border-violet-500/30 text-violet-600'
                       : `${cfg!.bg} ${cfg!.border} ${cfg!.color}`
-                    : 'bg-gray-800/50 border-gray-700/50 text-gray-500 hover:border-gray-600 hover:text-gray-300'
+                    : 'bg-gray-50/50 border-gray-200/50 text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 )}
               >
                 {s !== 'all' && cfg && (
-                  <span className={clsx('w-1.5 h-1.5 rounded-full', active ? cfg.dot : 'bg-gray-600')} />
+                  <span className={clsx('w-1.5 h-1.5 rounded-full', active ? cfg.dot : 'bg-gray-300')} />
                 )}
                 {s === 'all' ? 'すべて' : s}
                 <span className={clsx(
                   'px-1.5 py-0.5 rounded text-xs',
-                  active ? 'bg-white/10' : 'bg-gray-700/50 text-gray-500'
+                  active ? 'bg-white/10' : 'bg-gray-200/50 text-gray-500'
                 )}>
                   {counts[s] ?? 0}
                 </span>
@@ -370,11 +370,11 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
             )
           })}
           {/* Queue status filters */}
-          <span className="w-px h-5 bg-gray-700 mx-1" />
+          <span className="w-px h-5 bg-gray-200 mx-1" />
           {([
-            { key: 'queue_確認待ち' as const, label: '確認待ち', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30', dot: 'bg-amber-400' },
-            { key: 'queue_失敗' as const, label: '送信失敗', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30', dot: 'bg-red-400' },
-            { key: 'queue_form_not_found' as const, label: 'フォーム未検出', color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/30', dot: 'bg-orange-400' },
+            { key: 'queue_確認待ち' as const, label: '確認待ち', color: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-amber-500/30', dot: 'bg-amber-400' },
+            { key: 'queue_失敗' as const, label: '送信失敗', color: 'text-red-600', bg: 'bg-red-500/10', border: 'border-red-500/30', dot: 'bg-red-400' },
+            { key: 'queue_form_not_found' as const, label: 'フォーム未検出', color: 'text-orange-600', bg: 'bg-orange-500/10', border: 'border-orange-500/30', dot: 'bg-orange-400' },
           ]).map(({ key, label, color, bg, border, dot }) => {
             const active = statusFilter === key
             return (
@@ -385,15 +385,15 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border',
                   active
                     ? `${bg} ${border} ${color}`
-                    : 'bg-gray-800/50 border-gray-700/50 text-gray-500 hover:border-gray-600 hover:text-gray-300'
+                    : 'bg-gray-50/50 border-gray-200/50 text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 )}
               >
-                <span className={clsx('w-1.5 h-1.5 rounded-full', active ? dot : 'bg-gray-600')} />
+                <span className={clsx('w-1.5 h-1.5 rounded-full', active ? dot : 'bg-gray-300')} />
                 {label}
                 {(counts[key] ?? 0) > 0 && (
                   <span className={clsx(
                     'px-1.5 py-0.5 rounded text-xs',
-                    active ? 'bg-white/10' : 'bg-gray-700/50 text-gray-500'
+                    active ? 'bg-white/10' : 'bg-gray-200/50 text-gray-500'
                   )}>
                     {counts[key]}
                   </span>
@@ -450,8 +450,8 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
             className={clsx(
               'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all',
               excludeQueued
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
-                : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-600'
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-600'
+                : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'
             )}
           >
             {excludeQueued ? '確認待ち除外中' : '確認待ち含む'}
@@ -467,7 +467,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                 localStorage.setItem('bulk_selected_leads', JSON.stringify(ids))
                 router.push(`/dashboard/compose?mode=bulk&leads=${ids.join(',')}`)
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-violet-500/10 border border-violet-500/20 text-violet-400 text-sm rounded-xl hover:bg-violet-500/20 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-violet-500/10 border border-violet-500/20 text-violet-600 text-sm rounded-xl hover:bg-violet-500/20 transition-colors"
             >
               <Sparkles className="w-4 h-4" />
               {selected.size}件 一括文面生成
@@ -475,7 +475,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
             <button
               onClick={handleBulkDelete}
               disabled={isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl hover:bg-red-500/20 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-600 text-sm rounded-xl hover:bg-red-500/20 transition-colors"
             >
               {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
               {selected.size}件削除
@@ -510,18 +510,18 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                 <div
                   key={lead.id}
                   className={clsx(
-                    'border border-gray-800 rounded-xl p-4 transition-colors',
-                    selected.has(lead.id) ? 'bg-violet-500/5 border-violet-500/20' : 'bg-gray-900/50'
+                    'border border-gray-200 rounded-xl p-4 transition-colors',
+                    selected.has(lead.id) ? 'bg-violet-500/5 border-violet-500/20' : 'bg-white/50'
                   )}
                 >
                   {/* Top: checkbox + company + status */}
                   <div className="flex items-start gap-3">
                     <button
                       onClick={() => toggleOne(lead.id)}
-                      className="text-gray-500 hover:text-gray-300 transition-colors mt-0.5 flex-shrink-0"
+                      className="text-gray-500 hover:text-gray-700 transition-colors mt-0.5 flex-shrink-0"
                     >
                       {selected.has(lead.id)
-                        ? <CheckSquare className="w-4 h-4 text-violet-400" />
+                        ? <CheckSquare className="w-4 h-4 text-violet-600" />
                         : <Square className="w-4 h-4" />}
                     </button>
                     <button
@@ -529,10 +529,10 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                       className="flex-1 text-left min-w-0"
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="w-7 h-7 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold text-gray-300">
+                        <div className="w-7 h-7 bg-gradient-to-br from-gray-700 to-gray-50 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold text-gray-700">
                           {lead.company_name[0]}
                         </div>
-                        <span className="text-sm font-medium text-gray-200 truncate">
+                        <span className="text-sm font-medium text-gray-800 truncate">
                           {lead.company_name}
                         </span>
                       </div>
@@ -560,7 +560,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                         style={{ backgroundColor: 'transparent' }}
                       >
                         {LEAD_STATUSES.map((s) => (
-                          <option key={s} value={s} className="bg-gray-900 text-gray-200">{s}</option>
+                          <option key={s} value={s} className="bg-white text-gray-800">{s}</option>
                         ))}
                       </select>
                       {queueStatusMap[lead.id] && QUEUE_STATUS_BADGE[queueStatusMap[lead.id]] && (
@@ -578,33 +578,33 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                   <div className="ml-7 mt-2 space-y-0.5">
                     {lead.contact_name && (
                       <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                        <User className="w-3 h-3 text-gray-600 flex-shrink-0" />
+                        <User className="w-3 h-3 text-gray-400 flex-shrink-0" />
                         {lead.contact_name}
                       </div>
                     )}
                     {lead.email && (
                       <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <Mail className="w-3 h-3 text-gray-600 flex-shrink-0" />
+                        <Mail className="w-3 h-3 text-gray-400 flex-shrink-0" />
                         <span className="truncate">{lead.email}</span>
                       </div>
                     )}
                     {lead.phone && (
                       <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                        <Phone className="w-3 h-3 text-gray-600 flex-shrink-0" />
+                        <Phone className="w-3 h-3 text-gray-400 flex-shrink-0" />
                         {lead.phone}
                       </div>
                     )}
                   </div>
 
                   {/* Bottom: date + actions */}
-                  <div className="flex items-center justify-between ml-7 mt-2 pt-2 border-t border-gray-800/60">
-                    <span className="text-[10px] text-gray-600">
+                  <div className="flex items-center justify-between ml-7 mt-2 pt-2 border-t border-gray-200/60">
+                    <span className="text-[10px] text-gray-400">
                       {new Date(lead.created_at).toLocaleDateString('ja-JP')}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => router.push(`/dashboard/compose?leadId=${lead.id}`)}
-                        className="p-1.5 rounded-lg text-violet-500/60 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                        className="p-1.5 rounded-lg text-violet-500/60 hover:text-violet-600 hover:bg-violet-500/10 transition-all"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                       </button>
@@ -613,14 +613,14 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                           href={lead.website_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-gray-800 transition-all"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
                         >
                           <Globe className="w-3.5 h-3.5" />
                         </a>
                       )}
                       <button
                         onClick={() => setActiveLead(lead)}
-                        className="p-1.5 rounded-lg text-gray-600 hover:text-violet-400 hover:bg-gray-800 transition-all"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-violet-600 hover:bg-gray-100 transition-all"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                       </button>
@@ -633,14 +633,14 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
         </div>
 
         {/* ── Desktop table view ────────────────────────────── */}
-        <div className="hidden md:block border border-gray-800 rounded-2xl overflow-hidden">
+        <div className="hidden md:block border border-gray-200 rounded-2xl overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-900 border-b border-gray-800">
+              <tr className="bg-white border-b border-gray-200">
                 <th className="w-10 px-4 py-3">
-                  <button onClick={toggleAll} className="text-gray-500 hover:text-gray-300 transition-colors">
+                  <button onClick={toggleAll} className="text-gray-500 hover:text-gray-700 transition-colors">
                     {allSelected
-                      ? <CheckSquare className="w-4 h-4 text-violet-400" />
+                      ? <CheckSquare className="w-4 h-4 text-violet-600" />
                       : <Square className="w-4 h-4" />}
                   </button>
                 </th>
@@ -656,7 +656,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                     {field ? (
                       <button
                         onClick={() => toggleSort(field)}
-                        className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-200 transition-colors"
+                        className="flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-800 transition-colors"
                       >
                         {label}
                         <SortIcon field={field} />
@@ -685,7 +685,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                   <tr
                     key={lead.id}
                     className={clsx(
-                      'border-t border-gray-800/60 hover:bg-gray-800/30 transition-colors',
+                      'border-t border-gray-200/60 hover:bg-gray-100/30 transition-colors',
                       selected.has(lead.id) && 'bg-violet-500/5'
                     )}
                   >
@@ -693,10 +693,10 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                     <td className="px-4 py-3">
                       <button
                         onClick={() => toggleOne(lead.id)}
-                        className="text-gray-500 hover:text-gray-300 transition-colors"
+                        className="text-gray-500 hover:text-gray-700 transition-colors"
                       >
                         {selected.has(lead.id)
-                          ? <CheckSquare className="w-4 h-4 text-violet-400" />
+                          ? <CheckSquare className="w-4 h-4 text-violet-600" />
                           : <Square className="w-4 h-4" />}
                       </button>
                     </td>
@@ -707,11 +707,11 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                         onClick={() => setActiveLead(lead)}
                         className="flex items-center gap-3 group text-left"
                       >
-                        <div className="w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold text-gray-300 group-hover:from-violet-600/30 group-hover:to-indigo-600/30 transition-all">
+                        <div className="w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-50 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold text-gray-700 group-hover:from-violet-600/30 group-hover:to-indigo-600/30 transition-all">
                           {lead.company_name[0]}
                         </div>
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors">
+                          <span className="text-sm font-medium text-gray-800 group-hover:text-gray-900 transition-colors">
                             {lead.company_name}
                           </span>
                           {(() => {
@@ -732,24 +732,24 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                       <div className="space-y-0.5">
                         {lead.contact_name && (
                           <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                            <User className="w-3 h-3 text-gray-600" />
+                            <User className="w-3 h-3 text-gray-400" />
                             {lead.contact_name}
                           </div>
                         )}
                         {lead.email && (
                           <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                            <Mail className="w-3 h-3 text-gray-600" />
+                            <Mail className="w-3 h-3 text-gray-400" />
                             <span className="truncate max-w-[160px]">{lead.email}</span>
                           </div>
                         )}
                         {lead.phone && (
                           <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                            <Phone className="w-3 h-3 text-gray-600" />
+                            <Phone className="w-3 h-3 text-gray-400" />
                             {lead.phone}
                           </div>
                         )}
                         {!lead.contact_name && !lead.email && !lead.phone && (
-                          <span className="text-xs text-gray-600">—</span>
+                          <span className="text-xs text-gray-400">—</span>
                         )}
                       </div>
                     </td>
@@ -776,7 +776,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                           style={{ backgroundColor: 'transparent' }}
                         >
                           {LEAD_STATUSES.map((s) => (
-                            <option key={s} value={s} className="bg-gray-900 text-gray-200">{s}</option>
+                            <option key={s} value={s} className="bg-white text-gray-800">{s}</option>
                           ))}
                         </select>
                         {queueStatusMap[lead.id] && QUEUE_STATUS_BADGE[queueStatusMap[lead.id]] && (
@@ -806,7 +806,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                             router.push(`/dashboard/compose?leadId=${lead.id}`)
                           }}
                           title="文面生成"
-                          className="p-1.5 rounded-lg text-violet-500/60 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                          className="p-1.5 rounded-lg text-violet-500/60 hover:text-violet-600 hover:bg-violet-500/10 transition-all"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
                         </button>
@@ -817,7 +817,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
                             title="Webサイト"
-                            className="p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-gray-800 transition-all"
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
                           >
                             <Globe className="w-3.5 h-3.5" />
                           </a>
@@ -825,7 +825,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                         <button
                           onClick={() => setActiveLead(lead)}
                           title="詳細"
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-violet-400 hover:bg-gray-800 transition-all"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-violet-600 hover:bg-gray-100 transition-all"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </button>
@@ -840,7 +840,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
 
         {/* Pagination */}
         {filtered.length > PAGE_SIZE && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-800">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
             <span className="text-xs text-gray-500">
               {((page - 1) * PAGE_SIZE + 1).toLocaleString()}〜{Math.min(page * PAGE_SIZE, filtered.length).toLocaleString()} / {filtered.length.toLocaleString()}件
             </span>
@@ -848,14 +848,14 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
               <button
                 onClick={() => setPage(1)}
                 disabled={page === 1}
-                className="px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 最初
               </button>
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 ← 前
               </button>
@@ -873,7 +873,7 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
                       'w-7 h-7 text-xs rounded-lg',
                       p === page
                         ? 'bg-violet-600 text-white font-bold'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                        : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'
                     )}
                   >
                     {p}
@@ -883,14 +883,14 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
               <button
                 onClick={() => setPage(p => Math.min(Math.ceil(filtered.length / PAGE_SIZE), p + 1))}
                 disabled={page >= Math.ceil(filtered.length / PAGE_SIZE)}
-                className="px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 次 →
               </button>
               <button
                 onClick={() => setPage(Math.ceil(filtered.length / PAGE_SIZE))}
                 disabled={page >= Math.ceil(filtered.length / PAGE_SIZE)}
-                className="px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="px-2 py-1 text-xs rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 最後
               </button>

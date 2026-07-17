@@ -297,9 +297,9 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Page header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
         <div>
-          <h1 className="text-lg font-bold text-white">送信管理</h1>
+          <h1 className="text-lg font-bold text-gray-900">送信管理</h1>
           <p className="text-xs text-gray-500 mt-0.5">問い合わせフォームへの半自動送信を管理します</p>
         </div>
         <button
@@ -325,7 +325,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="施設名・文面で検索..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
             />
           </div>
         </div>
@@ -355,7 +355,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
               {manualItems.slice(0, 3).map(item => (
                 <div key={item.id} className="flex items-center justify-between px-3 py-2 bg-yellow-500/5 border border-yellow-500/20 rounded-xl">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xs font-medium text-white truncate">{item.lead?.company_name ?? '不明'}</span>
+                    <span className="text-xs font-medium text-gray-900 truncate">{item.lead?.company_name ?? '不明'}</span>
                     {item.error_message && (
                       <span className="text-xs text-yellow-400/70 truncate hidden sm:block">— {item.error_message}</span>
                     )}
@@ -366,7 +366,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                         href={item.lead.contact_url || item.lead.company_url || item.lead.website_url || undefined}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 bg-gray-50 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-colors"
                       >
                         <ExternalLink className="w-3 h-3" />
                         フォームを開く
@@ -381,7 +381,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                           ))
                         }
                       }}
-                      className="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs rounded-lg transition-colors"
+                      className="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 text-xs rounded-lg transition-colors"
                     >
                       送信済みにする
                     </button>
@@ -392,7 +392,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                           q.id === item.id ? { ...q, status: '確認待ち' as const, error_message: null } : q
                         ))
                       }}
-                      className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded-lg transition-colors"
+                      className="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs rounded-lg transition-colors"
                     >
                       再試行
                     </button>
@@ -426,10 +426,10 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
               </div>
             ) : (
               manualItems.map(item => (
-                <div key={item.id} className="bg-gray-900 border border-yellow-500/20 rounded-2xl p-4 space-y-3">
+                <div key={item.id} className="bg-white border border-yellow-500/20 rounded-2xl p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-white">{item.lead?.company_name ?? '不明'}</p>
+                      <p className="text-sm font-semibold text-gray-900">{item.lead?.company_name ?? '不明'}</p>
                       {item.error_message && (
                         <p className="text-xs text-yellow-400/80 mt-0.5">⚠️ {item.error_message}</p>
                       )}
@@ -438,16 +438,16 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                   </div>
 
                   {/* コピー可能なフィールド一覧 */}
-                  <div className="bg-gray-950 border border-gray-800 rounded-xl p-3 space-y-2">
+                  <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-2">
                     {item.subject && (
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
                           <span className="text-[10px] text-gray-500">件名</span>
-                          <p className="text-xs text-gray-300 truncate">{item.subject}</p>
+                          <p className="text-xs text-gray-700 truncate">{item.subject}</p>
                         </div>
                         <button
                           onClick={() => { navigator.clipboard.writeText(item.subject || ''); }}
-                          className="flex-shrink-0 px-2 py-1 text-[10px] bg-gray-800 hover:bg-gray-700 text-gray-400 rounded transition-colors"
+                          className="flex-shrink-0 px-2 py-1 text-[10px] bg-gray-50 hover:bg-gray-200 text-gray-400 rounded transition-colors"
                         >コピー</button>
                       </div>
                     )}
@@ -458,7 +458,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                       </div>
                       <button
                         onClick={() => { navigator.clipboard.writeText(item.message_content || ''); }}
-                        className="flex-shrink-0 px-2 py-1 text-[10px] bg-gray-800 hover:bg-gray-700 text-gray-400 rounded transition-colors"
+                        className="flex-shrink-0 px-2 py-1 text-[10px] bg-gray-50 hover:bg-gray-200 text-gray-400 rounded transition-colors"
                       >コピー</button>
                     </div>
                   </div>
@@ -484,7 +484,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                           ))
                         }
                       }}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-xl transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-600 text-xs font-semibold rounded-xl transition-colors"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       送信済みにする
@@ -496,7 +496,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                           q.id === item.id ? { ...q, status: '確認待ち' as const, error_message: null } : q
                         ))
                       }}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-xl transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-200 text-gray-700 text-xs rounded-xl transition-colors"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                       再試行
@@ -512,7 +512,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                           q.id === item.id ? { ...q, status: '送信不可' as const, error_message: '手動確認の結果、送信不可' } : q
                         ))
                       }}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 text-xs rounded-xl transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-200 border border-gray-200 text-gray-400 text-xs rounded-xl transition-colors"
                     >
                       <Ban className="w-3.5 h-3.5" />
                       送信不可
@@ -522,7 +522,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                         await deleteQueueItem(item.id)
                         setQueue(prev => prev.filter(q => q.id !== item.id))
                       }}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs rounded-xl transition-colors ml-auto"
+                      className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-600 text-xs rounded-xl transition-colors ml-auto"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       削除
@@ -537,7 +537,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
         {/* Queue list (手動対応タブでは非表示) */}
         {activeTab !== '手動対応' && (filteredQueue.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
-            <div className="w-16 h-16 bg-gray-900 border border-gray-800 rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 bg-white border border-gray-200 rounded-2xl flex items-center justify-center">
               <InboxIcon className="w-8 h-8 text-gray-700" />
             </div>
             <div className="text-center">
@@ -547,7 +547,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                   : `「${activeTab}」のアイテムはありません`}
               </p>
               {activeTab === '全て' && (
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-xs text-gray-400 mt-1">
                   「キューに追加」ボタンからリードと文面を選択して追加してください
                 </p>
               )}
@@ -563,21 +563,21 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
             )}
             {activeTab === '失敗' && stats.failed === 0 && (
               <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs text-emerald-400">失敗はありません</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs text-emerald-600">失敗はありません</span>
               </div>
             )}
           </div>
         ) : (
           <div className="space-y-2">
             {/* Bulk action bar */}
-            <div className="flex items-center gap-2 px-2 py-2 bg-gray-900/50 border border-gray-800 rounded-xl">
+            <div className="flex items-center gap-2 px-2 py-2 bg-white/50 border border-gray-200 rounded-xl">
               <button
                 onClick={toggleSelectAll}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-400 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 {selected.size === filteredQueue.length && filteredQueue.length > 0
-                  ? <CheckSquare className="w-3.5 h-3.5 text-violet-400" />
+                  ? <CheckSquare className="w-3.5 h-3.5 text-violet-600" />
                   : <Square className="w-3.5 h-3.5" />}
                 全選択
               </button>
@@ -608,7 +608,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                         onClick={handleBulkResetToReview}
                         disabled={isBulkProcessing}
                         title="誤って送信済みになったアイテムを確認待ちに戻して再送信できます"
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-medium rounded-lg hover:bg-violet-500/20 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 text-violet-600 text-xs font-medium rounded-lg hover:bg-violet-500/20 transition-colors disabled:opacity-50"
                       >
                         確認待ちに戻す
                       </button>
@@ -617,14 +617,14 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                       onClick={() => handleBulkChangeSendMethod('manual')}
                       disabled={isBulkProcessing}
                       title="フォーム自動送信が失敗する場合、手動モードに切り替えて自分でフォームを送信できます"
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium rounded-lg hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-600 text-xs font-medium rounded-lg hover:bg-amber-500/20 transition-colors disabled:opacity-50"
                     >
                       手動に切り替え
                     </button>
                     <button
                       onClick={handleBulkDelete}
                       disabled={isBulkProcessing}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-600 text-xs font-medium rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       一括削除
@@ -637,7 +637,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
             {/* Bulk actions for 失敗 tab */}
             {activeTab === '失敗' && filteredQueue.length > 0 && (
               <div className="flex items-center justify-between px-4 py-3 bg-red-500/5 border border-red-500/20 rounded-xl">
-                <p className="text-xs text-red-400">{filteredQueue.length}件の失敗があります</p>
+                <p className="text-xs text-red-600">{filteredQueue.length}件の失敗があります</p>
                 <div className="flex gap-2">
                   <button
                     onClick={async () => {
@@ -650,7 +650,7 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                       setIsBulkProcessing(false)
                     }}
                     disabled={isBulkProcessing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-900 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
                   >
                     <RefreshCw className="w-3 h-3" />
                     確認待ちに戻す
@@ -676,10 +676,10 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
               <div key={item.id} className="flex items-start gap-2">
                 <button
                   onClick={() => toggleSelect(item.id)}
-                  className="mt-4 flex-shrink-0 text-gray-500 hover:text-gray-300 transition-colors"
+                  className="mt-4 flex-shrink-0 text-gray-500 hover:text-gray-700 transition-colors"
                 >
                   {selected.has(item.id)
-                    ? <CheckSquare className="w-4 h-4 text-violet-400" />
+                    ? <CheckSquare className="w-4 h-4 text-violet-600" />
                     : <Square className="w-4 h-4" />}
                 </button>
                 <div className="flex-1 min-w-0">
@@ -730,13 +730,13 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
       {autoProgress && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          <div className="relative w-full max-w-sm bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-6 space-y-5">
+          <div className="relative w-full max-w-sm bg-white border border-gray-200 rounded-2xl shadow-2xl p-6 space-y-5">
             {/* Header */}
             <div className="flex items-center gap-2">
               {autoProgress.done
-                ? <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                : <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />}
-              <h2 className="text-sm font-bold text-white">
+                ? <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                : <Loader2 className="w-5 h-5 text-violet-600 animate-spin" />}
+              <h2 className="text-sm font-bold text-gray-900">
                 {autoProgress.done ? '自動送信完了' : '自動送信中...'}
               </h2>
             </div>
@@ -751,9 +751,9 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
                       ? `処理中: ${autoProgress.current}`
                       : '準備中...'}
                 </span>
-                <span className="font-semibold text-white">{autoProgress.completed}/{autoProgress.total}</span>
+                <span className="font-semibold text-gray-900">{autoProgress.completed}/{autoProgress.total}</span>
               </div>
-              <div className="w-full bg-gray-800 rounded-full h-2">
+              <div className="w-full bg-gray-50 rounded-full h-2">
                 <div
                   className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${(autoProgress.completed / autoProgress.total) * 100}%` }}
@@ -764,9 +764,9 @@ export default function SendingPage({ initialQueue, leads, messages }: SendingPa
             {/* Errors */}
             {autoProgress.errors.length > 0 && (
               <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3 space-y-1 max-h-32 overflow-y-auto">
-                <p className="text-xs font-medium text-red-400">{autoProgress.errors.length}件でエラー:</p>
+                <p className="text-xs font-medium text-red-600">{autoProgress.errors.length}件でエラー:</p>
                 {autoProgress.errors.map((e, i) => (
-                  <p key={i} className="text-xs text-red-300/80">{e}</p>
+                  <p key={i} className="text-xs text-red-600/80">{e}</p>
                 ))}
               </div>
             )}

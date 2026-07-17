@@ -236,16 +236,16 @@ export default function ComposePage({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
         <div>
-          <h1 className="text-lg font-semibold text-white">文面生成</h1>
+          <h1 className="text-lg font-semibold text-gray-900">文面生成</h1>
           <p className="text-xs text-gray-500 mt-0.5">
             HP分析 + 弊社情報をもとに、パーソナライズされた営業メッセージを生成
           </p>
         </div>
         <div className="flex items-center gap-2">
           {/* Engine toggle */}
-          <div className="flex items-center bg-gray-800 rounded-lg border border-gray-700 p-0.5">
+          <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 p-0.5">
             <button
               onClick={() => setGenerationMode('free')}
               className={clsx(
@@ -270,7 +270,7 @@ export default function ComposePage({
             )}
           </div>
           {/* Mode toggle */}
-          <div className="flex items-center bg-gray-800 rounded-lg border border-gray-700 p-0.5">
+          <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 p-0.5">
             <button
               onClick={() => setMode('single')}
               className={clsx(
@@ -295,8 +295,8 @@ export default function ComposePage({
           <span className={clsx(
             'flex items-center gap-1.5 px-2.5 py-1 border rounded-lg text-xs font-medium',
             generationMode === 'free'
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-              : 'bg-violet-500/10 border-violet-500/20 text-violet-400'
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600'
+              : 'bg-violet-500/10 border-violet-500/20 text-violet-600'
           )}>
             {generationMode === 'free' ? <Zap className="w-3 h-3" /> : <Sparkles className="w-3 h-3" />}
             {generationMode === 'free' ? 'API課金なし' : 'claude-sonnet-4-6'}
@@ -307,25 +307,25 @@ export default function ComposePage({
       {/* Banners */}
       {generationMode === 'free' && (
         <div className="mx-6 mt-4 flex items-start gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
-          <Info className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-emerald-300">
+          <Info className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-emerald-600">
             <span className="font-semibold">無料生成:</span> Claude APIは使わず、HP取得・キーワード分析・テンプレート差し込みで生成します。
           </p>
         </div>
       )}
       {isDemo && (
         <div className="mx-6 mt-4 flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
-          <Info className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-400">
+          <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-600">
             <span className="font-semibold">デモモード:</span> ANTHROPIC_API_KEY が未設定です。
           </p>
         </div>
       )}
       {error && (
         <div className="mx-6 mt-4 flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-          <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-          <p className="text-xs text-red-400">{error}</p>
-          <button onClick={() => setError('')} className="ml-auto text-red-500 hover:text-red-300 text-xs">✕</button>
+          <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+          <p className="text-xs text-red-600">{error}</p>
+          <button onClick={() => setError('')} className="ml-auto text-red-500 hover:text-red-600 text-xs">✕</button>
         </div>
       )}
 
@@ -344,21 +344,21 @@ export default function ComposePage({
         />
       ) : (
         <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_300px] gap-0 overflow-hidden">
-          <div className="flex flex-col overflow-y-auto p-4 md:p-6 space-y-5 border-b border-gray-800 md:border-b-0 md:border-r">
+          <div className="flex flex-col overflow-y-auto p-4 md:p-6 space-y-5 border-b border-gray-200 md:border-b-0 md:border-r">
             <LeadSelector leads={leads} selectedLeadId={selectedLeadId} onSelect={setSelectedLeadId} />
             <TemplateSelector templates={templates} selectedId={selectedTemplateId} onChange={setSelectedTemplateId} />
             <ToneSelector value={tone} onChange={setTone} />
 
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1.5">
-                追加指示 <span className="text-gray-600 font-normal">(任意)</span>
+                追加指示 <span className="text-gray-400 font-normal">(任意)</span>
               </label>
               <textarea
                 value={customInstructions}
                 onChange={e => setCustomInstructions(e.target.value)}
                 rows={2}
                 placeholder="例: 製品の無料トライアルを強調して、決裁者向けの内容にしてください"
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
               />
             </div>
 
@@ -369,13 +369,13 @@ export default function ComposePage({
                 'flex items-center justify-between px-4 py-3 rounded-xl border cursor-pointer transition-all select-none',
                 autoQueue
                   ? 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/15'
-                  : 'bg-gray-800/60 border-gray-700 hover:border-gray-600'
+                  : 'bg-gray-50/60 border-gray-200 hover:border-gray-300'
               )}
             >
               <div className="flex items-center gap-2.5">
-                <Zap className={clsx('w-4 h-4', autoQueue ? 'text-emerald-400' : 'text-gray-500')} />
+                <Zap className={clsx('w-4 h-4', autoQueue ? 'text-emerald-600' : 'text-gray-500')} />
                 <div>
-                  <p className={clsx('text-xs font-medium', autoQueue ? 'text-emerald-300' : 'text-gray-300')}>
+                  <p className={clsx('text-xs font-medium', autoQueue ? 'text-emerald-600' : 'text-gray-700')}>
                     生成後に自動で送信キューへ追加
                   </p>
                   <p className="text-[11px] text-gray-500 mt-0.5">
@@ -385,7 +385,7 @@ export default function ComposePage({
               </div>
               <div className={clsx(
                 'relative w-10 h-5 rounded-full transition-colors flex-shrink-0',
-                autoQueue ? 'bg-emerald-500' : 'bg-gray-600'
+                autoQueue ? 'bg-emerald-500' : 'bg-gray-300'
               )}>
                 <div className={clsx(
                   'absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform',
@@ -403,7 +403,7 @@ export default function ComposePage({
                   ? autoQueue
                     ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30'
                     : 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/30'
-                  : 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed'
+                  : 'bg-gray-50 text-gray-500 border border-gray-200 cursor-not-allowed'
               )}
             >
               {isStreaming ? (
@@ -421,7 +421,7 @@ export default function ComposePage({
             {/* 自動キュー追加結果 */}
             {autoQueueStatus === 'queued' && (
               <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                <span className="text-emerald-400 text-xs">✅ 送信キューに自動追加しました</span>
+                <span className="text-emerald-600 text-xs">✅ 送信キューに自動追加しました</span>
               </div>
             )}
 

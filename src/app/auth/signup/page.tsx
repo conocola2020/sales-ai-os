@@ -48,13 +48,13 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-gray-100 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl text-center">
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-2xl text-center">
             <div className="w-16 h-16 bg-green-500/10 border border-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-green-400" />
+              <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">確認メールを送信しました</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">確認メールを送信しました</h2>
             <p className="text-gray-400 text-sm mb-6">
               {email} に確認メールを送信しました。<br />
               メール内のリンクをクリックして登録を完了してください。
@@ -72,34 +72,34 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
           <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
-            <Zap className="w-5 h-5 text-white" />
+            <Zap className="w-5 h-5 text-gray-900" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white leading-none">Sales AI OS</h1>
+            <h1 className="text-xl font-bold text-gray-900 leading-none">Sales AI OS</h1>
             <p className="text-xs text-gray-400 mt-0.5">営業自動化プラットフォーム</p>
           </div>
         </div>
 
         {/* Card */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl">
-          <h2 className="text-2xl font-bold text-white mb-2">新規登録</h2>
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-2xl">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">新規登録</h2>
           <p className="text-gray-400 text-sm mb-8">アカウントを作成してください</p>
 
           <form onSubmit={handleSignup} className="space-y-5">
             {error && (
               <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
-                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                <p className="text-red-400 text-sm">{error}</p>
+                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">お名前</label>
+              <label className="text-sm font-medium text-gray-700">お名前</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
@@ -108,13 +108,13 @@ export default function SignupPage() {
                   onChange={(e) => setName(e.target.value)}
                   required
                   placeholder="山田 太郎"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">メールアドレス</label>
+              <label className="text-sm font-medium text-gray-700">メールアドレス</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
@@ -123,13 +123,13 @@ export default function SignupPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="you@example.com"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">パスワード</label>
+              <label className="text-sm font-medium text-gray-700">パスワード</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
@@ -138,7 +138,7 @@ export default function SignupPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="8文字以上"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                 />
               </div>
             </div>
@@ -162,7 +162,7 @@ export default function SignupPage() {
           <div className="mt-6 text-center">
             <p className="text-gray-400 text-sm">
               既にアカウントをお持ちの方は{' '}
-              <Link href="/auth/login" className="text-violet-400 hover:text-violet-300 font-medium transition-colors">
+              <Link href="/auth/login" className="text-violet-600 hover:text-violet-600 font-medium transition-colors">
                 ログイン
               </Link>
             </p>
