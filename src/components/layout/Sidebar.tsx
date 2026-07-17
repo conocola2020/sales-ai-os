@@ -91,23 +91,23 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
   }
 
   const sidebarContent = (
-    <aside className="flex h-full w-72 flex-col border-r border-white/[0.08] bg-[#0d0f12] md:w-[268px]">
+    <aside className="flex h-full w-72 flex-col border-r border-black/[0.08] bg-white md:w-[268px]">
       {/* Logo */}
-      <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-5">
+      <div className="flex items-center justify-between border-b border-black/[0.08] px-5 py-5">
         <Link href="/dashboard" className="flex items-center gap-3 group" onClick={handleNavClick}>
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-400 text-neutral-950 shadow-[0_12px_36px_rgba(20,184,166,0.2)] transition-transform group-hover:scale-[1.03]">
             <Zap className="h-4 w-4" />
           </div>
           <div>
             <span className="block text-sm font-bold leading-none text-gray-900">Sales AI OS</span>
-            <span className="mt-1 block text-xs text-stone-500">営業オペレーション基盤</span>
+            <span className="mt-1 block text-xs text-gray-500">営業オペレーション基盤</span>
           </div>
         </Link>
         {/* Close button (mobile only) */}
         {onClose && (
           <button
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-400 transition-colors hover:bg-white/[0.07] hover:text-gray-900 md:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-black/[0.05] hover:text-gray-900 md:hidden"
             aria-label="メニューを閉じる"
           >
             <X className="w-5 h-5" />
@@ -119,7 +119,7 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
         {navItems.map((group) => (
           <div key={group.section}>
-            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-600">
+            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
               {group.section}
             </p>
             <ul className="space-y-1">
@@ -137,8 +137,8 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
                       className={clsx(
                         'group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all md:py-2.5',
                         isActive
-                          ? 'border border-white/[0.10] bg-white/[0.07] text-gray-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-                          : 'text-stone-400 hover:bg-white/[0.05] hover:text-stone-100'
+                          ? 'border border-black/[0.10] bg-black/[0.05] text-gray-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+                          : 'text-gray-500 hover:bg-black/[0.04] hover:text-gray-900'
                       )}
                     >
                       {isActive && (
@@ -147,7 +147,7 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
                       <Icon
                         className={clsx(
                           'h-5 w-5 flex-shrink-0 transition-colors md:h-4 md:w-4',
-                          isActive ? 'text-teal-600' : 'text-stone-500 group-hover:text-stone-300'
+                          isActive ? 'text-teal-600' : 'text-gray-500 group-hover:text-gray-700'
                         )}
                       />
                       <span className="flex-1">{item.label}</span>
@@ -176,35 +176,35 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
       </nav>
 
       {/* Bottom section */}
-      <div className="space-y-2 border-t border-white/[0.08] px-3 py-4">
+      <div className="space-y-2 border-t border-black/[0.08] px-3 py-4">
         <Link
           href="/dashboard/settings"
           onClick={handleNavClick}
           className={clsx(
             'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all md:py-2.5',
             pathname === '/dashboard/settings'
-              ? 'border border-white/[0.10] bg-white/[0.07] text-gray-900'
-              : 'text-stone-400 hover:bg-white/[0.05] hover:text-stone-100'
+              ? 'border border-black/[0.10] bg-black/[0.05] text-gray-900'
+              : 'text-gray-500 hover:bg-black/[0.04] hover:text-gray-900'
           )}
         >
-          <Settings className="h-5 w-5 text-stone-500 md:h-4 md:w-4" />
+          <Settings className="h-5 w-5 text-gray-500 md:h-4 md:w-4" />
           <span>設定</span>
         </Link>
 
         {/* User info */}
-        <div className="mt-2 rounded-xl border border-white/[0.08] bg-white/[0.04] p-3">
+        <div className="mt-2 rounded-xl border border-black/[0.08] bg-white/[0.04] p-3">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-stone-200 text-sm font-bold text-neutral-950">
               {userInitial}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-stone-100">{userName || 'ユーザー'}</p>
-              <p className="mt-0.5 truncate text-xs text-stone-500">{userEmail || ''}</p>
+              <p className="truncate text-sm font-medium text-gray-900">{userName || 'ユーザー'}</p>
+              <p className="mt-0.5 truncate text-xs text-gray-500">{userEmail || ''}</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="mt-3 flex items-center gap-2 rounded-lg py-1 text-xs text-stone-500 transition-colors hover:text-red-600"
+            className="mt-3 flex items-center gap-2 rounded-lg py-1 text-xs text-gray-500 transition-colors hover:text-red-600"
           >
             <LogOut className="w-3 h-3" />
             ログアウト
