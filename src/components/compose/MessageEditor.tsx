@@ -41,13 +41,13 @@ export default function MessageEditor({
         <label className="text-xs font-medium text-gray-400">
           生成メッセージ
           {isStreaming && (
-            <span className="ml-2 text-violet-400 text-xs font-normal animate-pulse">
+            <span className="ml-2 text-violet-600 text-xs font-normal animate-pulse">
               ✨ HP分析＆生成中...
             </span>
           )}
         </label>
         {!isEmpty && (
-          <span className="text-xs text-gray-600">
+          <span className="text-xs text-gray-400">
             {subject ? `件名 ${subject.length}字 / ` : ''}本文 {charCount.toLocaleString()}字
           </span>
         )}
@@ -64,9 +64,9 @@ export default function MessageEditor({
             placeholder="件名"
             className={clsx(
               'w-full rounded-lg border px-3 py-2 text-sm font-medium transition-all',
-              'bg-gray-800/80 text-white placeholder-gray-600',
+              'bg-gray-50/80 text-gray-900 placeholder-gray-400',
               'focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent',
-              isStreaming ? 'border-violet-500/50' : 'border-gray-700 hover:border-gray-600'
+              isStreaming ? 'border-violet-500/50' : 'border-gray-200 hover:border-gray-300'
             )}
           />
         </div>
@@ -82,13 +82,13 @@ export default function MessageEditor({
           style={{ minHeight: '300px', maxHeight: '50vh', overflowY: 'auto' }}
           className={clsx(
             'w-full resize-none rounded-xl border px-4 py-3.5 text-sm leading-relaxed transition-all',
-            'bg-gray-800 text-white placeholder-gray-600',
+            'bg-gray-50 text-gray-900 placeholder-gray-400',
             'focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent',
             isStreaming
-              ? 'border-violet-500/50 bg-gray-800/80'
+              ? 'border-violet-500/50 bg-gray-50/80'
               : value
-              ? 'border-gray-700 hover:border-gray-600'
-              : 'border-gray-700/50'
+              ? 'border-gray-200 hover:border-gray-300'
+              : 'border-gray-200/50'
           )}
         />
         {isStreaming && (
@@ -98,15 +98,15 @@ export default function MessageEditor({
 
       {/* Toolbar */}
       {(value || isStreaming) && (
-        <div className="flex-shrink-0 flex items-center gap-2 mt-2.5 pt-2.5 border-t border-gray-800">
+        <div className="flex-shrink-0 flex items-center gap-2 mt-2.5 pt-2.5 border-t border-gray-200">
           <button
             onClick={onCopy}
             disabled={isStreaming || !value}
             className={clsx(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all',
               copied
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
+                : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300 hover:text-gray-900 disabled:opacity-40 disabled:cursor-not-allowed'
             )}
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -116,7 +116,7 @@ export default function MessageEditor({
           <button
             onClick={onRegenerate}
             disabled={isStreaming || !canRegenerate}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300 hover:text-gray-900 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <RefreshCw className={clsx('w-3.5 h-3.5', isStreaming && 'animate-spin')} />
             再生成

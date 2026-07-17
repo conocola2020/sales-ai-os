@@ -100,7 +100,7 @@ export default function AioPage({ location, checks: initialChecks, isDemo }: Pro
       <DemoBanner isDemo={isDemo} />
 
       <div>
-        <h1 className="text-xl font-bold text-white">AIO可視性チェック</h1>
+        <h1 className="text-xl font-bold text-gray-900">AIO可視性チェック</h1>
         <p className="text-sm text-gray-500 mt-1">
           AI検索で「{location.name}」がおすすめとして言及されるかを計測します
         </p>
@@ -127,7 +127,7 @@ export default function AioPage({ location, checks: initialChecks, isDemo }: Pro
       </div>
 
       {/* 実行フォーム */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           {ENGINES.map((e) => (
             <button
@@ -137,10 +137,10 @@ export default function AioPage({ location, checks: initialChecks, isDemo }: Pro
               className={clsx(
                 'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
                 engine === e.key && e.available
-                  ? 'bg-violet-500/20 border-violet-500/50 text-violet-300'
+                  ? 'bg-violet-500/20 border-violet-500/50 text-violet-600'
                   : e.available
-                    ? 'bg-gray-950 border-gray-800 text-gray-400 hover:text-gray-200'
-                    : 'bg-gray-950 border-gray-800/50 text-gray-700 cursor-not-allowed'
+                    ? 'bg-white border-gray-200 text-gray-400 hover:text-gray-800'
+                    : 'bg-white border-gray-200/50 text-gray-700 cursor-not-allowed'
               )}
             >
               {e.label}
@@ -155,7 +155,7 @@ export default function AioPage({ location, checks: initialChecks, isDemo }: Pro
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !running && handleRun()}
             placeholder="例: 名古屋 スパイスカレー おすすめ"
-            className="flex-1 bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-violet-500/50"
+            className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-violet-500/50"
           />
           <button
             onClick={() => handleRun()}
@@ -176,7 +176,7 @@ export default function AioPage({ location, checks: initialChecks, isDemo }: Pro
             <button
               key={q}
               onClick={() => !running && handleRun(q)}
-              className="px-3 py-1.5 rounded-lg bg-gray-950 border border-gray-800 text-xs text-gray-400 hover:text-white hover:border-gray-700 transition-colors"
+              className="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs text-gray-400 hover:text-gray-900 hover:border-gray-200 transition-colors"
             >
               {q}
             </button>
@@ -184,16 +184,16 @@ export default function AioPage({ location, checks: initialChecks, isDemo }: Pro
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-300">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-600">
             {error}
           </div>
         )}
 
         {lastAnswer && (
-          <div className="bg-gray-950 border border-gray-800 rounded-xl">
+          <div className="bg-white border border-gray-200 rounded-xl">
             <button
               onClick={() => setShowAnswer((v) => !v)}
-              className="w-full px-4 py-3 flex items-center justify-between text-sm text-gray-300"
+              className="w-full px-4 py-3 flex items-center justify-between text-sm text-gray-700"
             >
               <span>AIの回答全文を表示</span>
               {showAnswer ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -206,14 +206,14 @@ export default function AioPage({ location, checks: initialChecks, isDemo }: Pro
       </div>
 
       {/* 履歴 */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-800">
-          <h2 className="text-sm font-bold text-white">チェック履歴</h2>
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-200">
+          <h2 className="text-sm font-bold text-gray-900">チェック履歴</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-gray-500 border-b border-gray-800/70 bg-gray-950/50">
+              <tr className="text-left text-xs text-gray-500 border-b border-gray-200/70 bg-white/50">
                 <th className="px-5 py-3 font-medium whitespace-nowrap">日時</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap">エンジン</th>
                 <th className="px-5 py-3 font-medium min-w-[200px]">クエリ</th>
@@ -225,34 +225,34 @@ export default function AioPage({ location, checks: initialChecks, isDemo }: Pro
             <tbody>
               {checks.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-gray-600">
+                  <td colSpan={6} className="px-5 py-10 text-center text-gray-400">
                     まだチェックがありません
                   </td>
                 </tr>
               )}
               {checks.map((c) => (
-                <tr key={c.id} className="border-b border-gray-800/50 last:border-0">
+                <tr key={c.id} className="border-b border-gray-200/50 last:border-0">
                   <td className="px-5 py-3.5 text-gray-400 whitespace-nowrap">
                     {formatDateTime(c.checked_at)}
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className="px-2 py-0.5 rounded bg-gray-800 text-xs text-gray-300 capitalize">
+                    <span className="px-2 py-0.5 rounded bg-gray-50 text-xs text-gray-700 capitalize">
                       {c.engine}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-gray-300">{c.query}</td>
+                  <td className="px-5 py-3.5 text-gray-700">{c.query}</td>
                   <td className="px-5 py-3.5">
                     {c.mentioned ? (
-                      <span className="inline-flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
+                      <span className="inline-flex items-center gap-1.5 text-emerald-600 text-xs font-medium">
                         <CheckCircle2 className="w-4 h-4" /> あり
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 text-gray-600 text-xs">
+                      <span className="inline-flex items-center gap-1.5 text-gray-400 text-xs">
                         <XCircle className="w-4 h-4" /> なし
                       </span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5 text-gray-300">
+                  <td className="px-5 py-3.5 text-gray-700">
                     {c.rank !== null ? `${c.rank}位` : '—'}
                   </td>
                   <td className="px-5 py-3.5 text-gray-500 text-xs">

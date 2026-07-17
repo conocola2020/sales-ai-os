@@ -124,7 +124,7 @@ export default function ReviewsPage({ location, reviews: initialReviews, isDemo 
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white">口コミ管理</h1>
+          <h1 className="text-xl font-bold text-gray-900">口コミ管理</h1>
           <p className="text-sm text-gray-500 mt-1">
             {location.name} の口コミ一覧とAI返信生成
           </p>
@@ -135,13 +135,13 @@ export default function ReviewsPage({ location, reviews: initialReviews, isDemo 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="検索"
-            className="bg-gray-900 border border-gray-800 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-violet-500/50 w-full sm:w-64"
+            className="bg-white border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-violet-500/50 w-full sm:w-64"
           />
         </div>
       </div>
 
       {/* タブ */}
-      <div className="flex items-center gap-2 border-b border-gray-800">
+      <div className="flex items-center gap-2 border-b border-gray-200">
         {(
           [
             { key: 'all', label: `一覧 (${reviews.length})` },
@@ -154,8 +154,8 @@ export default function ReviewsPage({ location, reviews: initialReviews, isDemo 
             className={clsx(
               'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-2',
               tab === t.key
-                ? 'border-violet-500 text-white'
-                : 'border-transparent text-gray-500 hover:text-gray-300'
+                ? 'border-violet-500 text-gray-900'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
             )}
           >
             {t.label}
@@ -165,22 +165,22 @@ export default function ReviewsPage({ location, reviews: initialReviews, isDemo 
       </div>
 
       {notice && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 text-sm text-emerald-300 flex items-center gap-2">
+        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 text-sm text-emerald-600 flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4" /> {notice}
         </div>
       )}
       {error && !selected && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-300">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-600">
           {error}
         </div>
       )}
 
       {/* テーブル */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-gray-500 border-b border-gray-800/70 bg-gray-950/50">
+              <tr className="text-left text-xs text-gray-500 border-b border-gray-200/70 bg-white/50">
                 <th className="px-5 py-3 font-medium whitespace-nowrap">投稿日時</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap">評価</th>
                 <th className="px-5 py-3 font-medium min-w-[260px]">口コミ</th>
@@ -191,7 +191,7 @@ export default function ReviewsPage({ location, reviews: initialReviews, isDemo 
             <tbody>
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-5 py-10 text-center text-gray-600">
+                  <td colSpan={5} className="px-5 py-10 text-center text-gray-400">
                     該当する口コミがありません
                   </td>
                 </tr>
@@ -200,7 +200,7 @@ export default function ReviewsPage({ location, reviews: initialReviews, isDemo 
                 <tr
                   key={r.id}
                   onClick={() => openReview(r)}
-                  className="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/30 cursor-pointer transition-colors"
+                  className="border-b border-gray-200/50 last:border-0 hover:bg-gray-100/30 cursor-pointer transition-colors"
                 >
                   <td className="px-5 py-4 text-gray-400 whitespace-nowrap">
                     {formatDate(r.review_date)}
@@ -209,7 +209,7 @@ export default function ReviewsPage({ location, reviews: initialReviews, isDemo 
                     <Stars rating={r.rating} />
                   </td>
                   <td className="px-5 py-4">
-                    <p className="text-gray-300 line-clamp-2 max-w-md">
+                    <p className="text-gray-700 line-clamp-2 max-w-md">
                       <span className="text-gray-500">{r.author}</span>
                       {r.author && ' — '}
                       {r.body}
@@ -237,14 +237,14 @@ export default function ReviewsPage({ location, reviews: initialReviews, isDemo 
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            className="bg-white border border-gray-200 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between sticky top-0 bg-gray-900">
-              <h3 className="text-sm font-bold text-white">口コミへの返信</h3>
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
+              <h3 className="text-sm font-bold text-gray-900">口コミへの返信</h3>
               <button
                 onClick={() => setSelected(null)}
-                className="text-gray-500 hover:text-white transition-colors"
+                className="text-gray-500 hover:text-gray-900 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -252,13 +252,13 @@ export default function ReviewsPage({ location, reviews: initialReviews, isDemo 
 
             <div className="p-6 space-y-5">
               {/* 口コミ本体 */}
-              <div className="bg-gray-950 border border-gray-800 rounded-xl p-4">
+              <div className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-white">{selected.author}</p>
+                  <p className="text-sm font-medium text-gray-900">{selected.author}</p>
                   <span className="text-xs text-gray-500">{formatDate(selected.review_date)}</span>
                 </div>
                 <Stars rating={selected.rating} />
-                <p className="text-sm text-gray-300 mt-3 whitespace-pre-wrap">{selected.body}</p>
+                <p className="text-sm text-gray-700 mt-3 whitespace-pre-wrap">{selected.body}</p>
               </div>
 
               {/* トーン選択 + AI生成 */}
@@ -270,8 +270,8 @@ export default function ReviewsPage({ location, reviews: initialReviews, isDemo 
                     className={clsx(
                       'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
                       tone === t
-                        ? 'bg-violet-500/20 border-violet-500/50 text-violet-300'
-                        : 'bg-gray-950 border-gray-800 text-gray-500 hover:text-gray-300'
+                        ? 'bg-violet-500/20 border-violet-500/50 text-violet-600'
+                        : 'bg-white border-gray-200 text-gray-500 hover:text-gray-700'
                     )}
                   >
                     {t}
@@ -297,17 +297,17 @@ export default function ReviewsPage({ location, reviews: initialReviews, isDemo 
                 onChange={(e) => setDraft(e.target.value)}
                 rows={7}
                 placeholder="返信文（AI生成または手入力）"
-                className="w-full bg-gray-950 border border-gray-800 rounded-xl p-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-violet-500/50 resize-y"
+                className="w-full bg-white border border-gray-200 rounded-xl p-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-violet-500/50 resize-y"
               />
 
-              {notice && <p className="text-xs text-amber-300">{notice}</p>}
-              {error && <p className="text-xs text-red-400">{error}</p>}
+              {notice && <p className="text-xs text-amber-600">{notice}</p>}
+              {error && <p className="text-xs text-red-600">{error}</p>}
 
               <div className="flex items-center justify-end gap-3">
                 <button
                   onClick={() => handleSave('下書き')}
                   disabled={saving || !draft.trim()}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-200 text-sm font-medium transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-50 hover:bg-gray-200 disabled:opacity-50 text-gray-800 text-sm font-medium transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   下書き保存

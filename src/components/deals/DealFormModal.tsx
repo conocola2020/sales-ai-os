@@ -141,15 +141,15 @@ export default function DealFormModal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-lg bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="relative z-10 w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 shrink-0">
-          <h2 className="text-lg font-semibold text-white">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+          <h2 className="text-lg font-semibold text-gray-900">
             {isEdit ? '商談を編集' : '商談を追加'}
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -159,7 +159,7 @@ export default function DealFormModal({
         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-sm text-red-400">
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-sm text-red-600">
               <AlertCircle className="w-4 h-4 shrink-0" />
               {error}
             </div>
@@ -180,7 +180,7 @@ export default function DealFormModal({
                       'flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all',
                       isSelected
                         ? [c.bg, c.color, c.border, 'ring-1', c.border.replace('border-', 'ring-')]
-                        : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-600'
+                        : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300'
                     )}
                   >
                     <span>{c.emoji}</span>
@@ -194,14 +194,14 @@ export default function DealFormModal({
           {/* Company name */}
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-1.5">
-              会社名 <span className="text-red-400">*</span>
+              会社名 <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
               value={companyName}
               onChange={e => setCompanyName(e.target.value)}
               placeholder="株式会社〇〇"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
             />
           </div>
 
@@ -213,7 +213,7 @@ export default function DealFormModal({
               value={contactName}
               onChange={e => setContactName(e.target.value)}
               placeholder="山田 太郎"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
             />
           </div>
 
@@ -223,9 +223,9 @@ export default function DealFormModal({
               リンクするリード（任意）
             </label>
             {selectedLead ? (
-              <div className="flex items-center justify-between bg-gray-800 border border-violet-500/40 rounded-lg px-3 py-2">
+              <div className="flex items-center justify-between bg-gray-50 border border-violet-500/40 rounded-lg px-3 py-2">
                 <div>
-                  <p className="text-sm text-white">{selectedLead.company_name}</p>
+                  <p className="text-sm text-gray-900">{selectedLead.company_name}</p>
                   {selectedLead.contact_name && (
                     <p className="text-xs text-gray-400">{selectedLead.contact_name}</p>
                   )}
@@ -235,7 +235,7 @@ export default function DealFormModal({
                     setLeadId(null)
                     setLeadSearch('')
                   }}
-                  className="text-gray-500 hover:text-white transition-colors text-xs"
+                  className="text-gray-500 hover:text-gray-900 transition-colors text-xs"
                 >
                   解除
                 </button>
@@ -247,10 +247,10 @@ export default function DealFormModal({
                   value={leadSearch}
                   onChange={e => setLeadSearch(e.target.value)}
                   placeholder="会社名・担当者名で検索"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
                 />
                 {filteredLeads.length > 0 && (
-                  <div className="absolute top-full mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 overflow-hidden">
+                  <div className="absolute top-full mt-1 w-full bg-gray-50 border border-gray-200 rounded-lg shadow-xl z-20 overflow-hidden">
                     {filteredLeads.map(l => (
                       <button
                         key={l.id}
@@ -258,9 +258,9 @@ export default function DealFormModal({
                           setLeadId(l.id)
                           setLeadSearch('')
                         }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-700 transition-colors"
+                        className="w-full text-left px-3 py-2 hover:bg-gray-200 transition-colors"
                       >
-                        <p className="text-sm text-white">{l.company_name}</p>
+                        <p className="text-sm text-gray-900">{l.company_name}</p>
                         {l.contact_name && (
                           <p className="text-xs text-gray-400">{l.contact_name}</p>
                         )}
@@ -290,12 +290,12 @@ export default function DealFormModal({
                   if (!isNaN(n)) setAmountStr(formatAmountDisplay(raw))
                 }}
                 placeholder="1,000,000"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1.5">
-                確度: <span className="text-white font-semibold">{probability}%</span>
+                確度: <span className="text-gray-900 font-semibold">{probability}%</span>
               </label>
               <input
                 type="range"
@@ -317,7 +317,7 @@ export default function DealFormModal({
               value={nextAction}
               onChange={e => setNextAction(e.target.value)}
               placeholder="提案資料を送付する"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
             />
           </div>
 
@@ -330,7 +330,7 @@ export default function DealFormModal({
               type="date"
               value={nextActionDate}
               onChange={e => setNextActionDate(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors [color-scheme:dark]"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-violet-500 transition-colors [color-scheme:dark]"
             />
           </div>
 
@@ -343,7 +343,7 @@ export default function DealFormModal({
               type="datetime-local"
               value={meetingDate}
               onChange={e => setMeetingDate(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors [color-scheme:dark]"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-violet-500 transition-colors [color-scheme:dark]"
             />
           </div>
 
@@ -357,7 +357,7 @@ export default function DealFormModal({
               value={meetingUrl}
               onChange={e => setMeetingUrl(e.target.value)}
               placeholder="https://timerex.net/..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
             />
           </div>
 
@@ -369,29 +369,29 @@ export default function DealFormModal({
               value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="商談の詳細メモ..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors resize-none"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors resize-none"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-800 shrink-0 flex items-center gap-3">
+        <div className="px-6 py-4 border-t border-gray-200 shrink-0 flex items-center gap-3">
           {/* Delete (edit only) */}
           {isEdit && onDeleted && (
             <>
               {confirmDelete ? (
                 <>
-                  <span className="text-xs text-red-400 mr-auto">本当に削除しますか？</span>
+                  <span className="text-xs text-red-600 mr-auto">本当に削除しますか？</span>
                   <button
                     onClick={() => setConfirmDelete(false)}
-                    className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-white transition-colors"
+                    className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-900 transition-colors"
                   >
                     キャンセル
                   </button>
                   <button
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="px-3 py-1.5 rounded-lg text-xs bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-lg text-xs bg-red-500/10 text-red-600 border border-red-500/20 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                   >
                     {deleting ? '削除中...' : '削除する'}
                   </button>
@@ -399,7 +399,7 @@ export default function DealFormModal({
               ) : (
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="mr-auto p-2 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="mr-auto p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-500/10 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -411,7 +411,7 @@ export default function DealFormModal({
             <>
               <button
                 onClick={onClose}
-                className="ml-auto px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                className="ml-auto px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
               >
                 キャンセル
               </button>

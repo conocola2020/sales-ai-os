@@ -55,14 +55,14 @@ function PinGate({ onAuth }: { onAuth: () => void }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <form
         onSubmit={handleSubmit}
-        className="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-sm space-y-6"
+        className="bg-white border border-gray-200 rounded-2xl p-8 w-full max-w-sm space-y-6"
       >
         <div className="text-center">
           <div className="text-4xl mb-3">📦</div>
-          <h1 className="text-xl font-bold text-white">在庫管理</h1>
+          <h1 className="text-xl font-bold text-gray-900">在庫管理</h1>
           <p className="text-gray-400 text-sm mt-1">PINを入力してください</p>
         </div>
         <input
@@ -73,9 +73,9 @@ function PinGate({ onAuth }: { onAuth: () => void }) {
           onChange={(e) => setPin(e.target.value)}
           placeholder="PIN"
           autoFocus
-          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-center text-white text-2xl tracking-[0.5em] placeholder:text-gray-500 placeholder:tracking-normal placeholder:text-base focus:outline-none focus:border-violet-500"
+          className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-gray-900 text-2xl tracking-[0.5em] placeholder:text-gray-500 placeholder:tracking-normal placeholder:text-base focus:outline-none focus:border-violet-500"
         />
-        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+        {error && <p className="text-red-600 text-sm text-center">{error}</p>}
         <button
           type="submit"
           disabled={loading || !pin}
@@ -142,9 +142,9 @@ function ItemFormModal({
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <form
         onSubmit={handleSubmit}
-        className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md space-y-4"
+        className="bg-white border border-gray-200 rounded-2xl p-6 w-full max-w-md space-y-4"
       >
-        <h2 className="text-lg font-bold text-white">
+        <h2 className="text-lg font-bold text-gray-900">
           {item ? '商品を編集' : '新しい商品を追加'}
         </h2>
 
@@ -155,7 +155,7 @@ function ItemFormModal({
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
               required
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white mt-1 focus:outline-none focus:border-violet-500"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 mt-1 focus:outline-none focus:border-violet-500"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -164,7 +164,7 @@ function ItemFormModal({
               <input
                 value={form.category}
                 onChange={(e) => set('category', e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white mt-1 focus:outline-none focus:border-violet-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 mt-1 focus:outline-none focus:border-violet-500"
               />
             </div>
             <div>
@@ -172,7 +172,7 @@ function ItemFormModal({
               <input
                 value={form.unit}
                 onChange={(e) => set('unit', e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white mt-1 focus:outline-none focus:border-violet-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 mt-1 focus:outline-none focus:border-violet-500"
               />
             </div>
           </div>
@@ -181,7 +181,7 @@ function ItemFormModal({
             <input
               value={form.note}
               onChange={(e) => set('note', e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white mt-1 focus:outline-none focus:border-violet-500"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 mt-1 focus:outline-none focus:border-violet-500"
             />
           </div>
           <div className="grid grid-cols-3 gap-3">
@@ -192,7 +192,7 @@ function ItemFormModal({
                 min={0}
                 value={form.shop}
                 onChange={(e) => set('shop', parseInt(e.target.value) || 0)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white mt-1 focus:outline-none focus:border-violet-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 mt-1 focus:outline-none focus:border-violet-500"
               />
             </div>
             <div>
@@ -202,7 +202,7 @@ function ItemFormModal({
                 min={0}
                 value={form.workshop}
                 onChange={(e) => set('workshop', parseInt(e.target.value) || 0)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white mt-1 focus:outline-none focus:border-violet-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 mt-1 focus:outline-none focus:border-violet-500"
               />
             </div>
             <div>
@@ -212,7 +212,7 @@ function ItemFormModal({
                 min={0}
                 value={form.min_stock}
                 onChange={(e) => set('min_stock', parseInt(e.target.value) || 0)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white mt-1 focus:outline-none focus:border-violet-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 mt-1 focus:outline-none focus:border-violet-500"
               />
             </div>
           </div>
@@ -222,7 +222,7 @@ function ItemFormModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-xl transition-colors"
+            className="flex-1 bg-gray-50 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl transition-colors"
           >
             キャンセル
           </button>
@@ -276,8 +276,8 @@ function SortableItemCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-gray-900 border rounded-xl p-4 transition-colors ${
-        isLow ? 'border-red-500/50 bg-red-500/5' : 'border-gray-800'
+      className={`bg-white border rounded-xl p-4 transition-colors ${
+        isLow ? 'border-red-500/50 bg-red-500/5' : 'border-gray-200'
       } ${isDragging ? 'shadow-2xl shadow-violet-500/20' : ''}`}
     >
       <div className="flex items-start justify-between mb-3">
@@ -287,7 +287,7 @@ function SortableItemCard({
             <button
               {...attributes}
               {...listeners}
-              className="mt-0.5 text-gray-600 hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none p-1 -ml-1"
+              className="mt-0.5 text-gray-400 hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none p-1 -ml-1"
               aria-label="並び替え"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -302,14 +302,14 @@ function SortableItemCard({
           )}
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-medium text-white">{item.name}</span>
+              <span className="font-medium text-gray-900">{item.name}</span>
               {item.category && (
-                <span className="bg-gray-800 text-gray-400 text-xs px-2 py-0.5 rounded">
+                <span className="bg-gray-50 text-gray-400 text-xs px-2 py-0.5 rounded">
                   {item.category}
                 </span>
               )}
               {isLow && (
-                <span className="text-red-400 text-xs font-medium">在庫不足</span>
+                <span className="text-red-600 text-xs font-medium">在庫不足</span>
               )}
             </div>
             {item.note && (
@@ -320,13 +320,13 @@ function SortableItemCard({
         <div className="flex gap-1">
           <button
             onClick={() => onEdit(item)}
-            className="text-gray-500 hover:text-white text-sm px-2 py-1 rounded transition-colors"
+            className="text-gray-500 hover:text-gray-900 text-sm px-2 py-1 rounded transition-colors"
           >
             編集
           </button>
           <button
             onClick={() => onDelete(item.id)}
-            className="text-gray-500 hover:text-red-400 text-sm px-2 py-1 rounded transition-colors"
+            className="text-gray-500 hover:text-red-600 text-sm px-2 py-1 rounded transition-colors"
           >
             削除
           </button>
@@ -338,13 +338,13 @@ function SortableItemCard({
         {(['shop', 'workshop'] as const).map((loc) => (
           <div
             key={loc}
-            className="bg-gray-800/50 rounded-lg p-3 flex items-center justify-between"
+            className="bg-gray-50/50 rounded-lg p-3 flex items-center justify-between"
           >
             <div>
               <div className="text-xs text-gray-400">
                 {loc === 'shop' ? '店舗' : '工房'}
               </div>
-              <div className="text-lg font-bold text-white">
+              <div className="text-lg font-bold text-gray-900">
                 {item[loc]}
                 <span className="text-xs text-gray-500 ml-1">{item.unit}</span>
               </div>
@@ -353,13 +353,13 @@ function SortableItemCard({
               <button
                 disabled={item[loc] <= 0}
                 onClick={() => onStockChange(item.id, loc, -1)}
-                className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 active:bg-gray-500 disabled:opacity-30 text-white text-lg flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg bg-gray-200 hover:bg-gray-300 active:bg-gray-500 disabled:opacity-30 text-gray-900 text-lg flex items-center justify-center transition-colors"
               >
                 -
               </button>
               <button
                 onClick={() => onStockChange(item.id, loc, 1)}
-                className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-white text-lg flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg bg-gray-200 hover:bg-gray-300 active:bg-gray-500 text-gray-900 text-lg flex items-center justify-center transition-colors"
               >
                 +
               </button>
@@ -527,16 +527,16 @@ export default function InventoryPage() {
   const displayItems = isFiltering ? filtered : items
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       {/* Header */}
-      <div className="sticky top-0 bg-gray-950/95 backdrop-blur border-b border-gray-800 z-40">
+      <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-gray-200 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <span className="text-2xl">📦</span>
               <h1 className="text-xl font-bold">在庫管理</h1>
               {alertCount > 0 && (
-                <span className="bg-red-500/20 text-red-400 text-xs font-medium px-2 py-0.5 rounded-full">
+                <span className="bg-red-500/20 text-red-600 text-xs font-medium px-2 py-0.5 rounded-full">
                   {alertCount}件 在庫不足
                 </span>
               )}
@@ -559,12 +559,12 @@ export default function InventoryPage() {
               placeholder="検索..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-violet-500"
+              className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-violet-500"
             />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500"
+              className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-violet-500"
             >
               {categories.map((c) => (
                 <option key={c} value={c}>

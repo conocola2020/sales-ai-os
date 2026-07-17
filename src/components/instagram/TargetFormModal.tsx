@@ -29,16 +29,16 @@ function CheckboxRow({ label, checked, onChange }: CheckboxRowProps) {
           'w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0',
           checked
             ? 'bg-violet-600 border-violet-600'
-            : 'bg-gray-800 border-gray-700 group-hover:border-gray-600'
+            : 'bg-gray-50 border-gray-200 group-hover:border-gray-300'
         )}
       >
         {checked && (
-          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12">
+          <svg className="w-3 h-3 text-gray-900" fill="none" viewBox="0 0 12 12">
             <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
       </div>
-      <span className="text-sm text-gray-300 select-none">{label}</span>
+      <span className="text-sm text-gray-700 select-none">{label}</span>
     </label>
   )
 }
@@ -125,13 +125,13 @@ export default function TargetFormModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative z-10 w-full max-w-lg bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="relative z-10 w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 shrink-0">
-          <h2 className="text-lg font-semibold text-white">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+          <h2 className="text-lg font-semibold text-gray-900">
             {isEdit ? 'ターゲットを編集' : 'ターゲットを追加'}
           </h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -139,7 +139,7 @@ export default function TargetFormModal({
         {/* Body */}
         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
           {error && (
-            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-sm text-red-400">
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-sm text-red-600">
               <AlertCircle className="w-4 h-4 shrink-0" />
               {error}
             </div>
@@ -148,7 +148,7 @@ export default function TargetFormModal({
           {/* Username */}
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-1.5">
-              ユーザー名 <span className="text-red-400">*</span>
+              ユーザー名 <span className="text-red-600">*</span>
             </label>
             <div className="relative">
               <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -157,7 +157,7 @@ export default function TargetFormModal({
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 placeholder="username"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
               />
             </div>
           </div>
@@ -170,7 +170,7 @@ export default function TargetFormModal({
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
               placeholder="田中 花子"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
             />
           </div>
 
@@ -182,7 +182,7 @@ export default function TargetFormModal({
               value={bio}
               onChange={e => setBio(e.target.value)}
               placeholder="カフェオーナー | 毎日の珈琲時間を発信中 ☕"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors resize-none"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors resize-none"
             />
           </div>
 
@@ -192,7 +192,7 @@ export default function TargetFormModal({
             <select
               value={industry}
               onChange={e => setIndustry(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-violet-500 transition-colors"
             >
               <option value="">選択してください</option>
               {INDUSTRIES.map(i => (
@@ -211,7 +211,7 @@ export default function TargetFormModal({
                 value={followerCount}
                 onChange={e => setFollowerCount(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="10000"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
               />
             </div>
             <div>
@@ -224,7 +224,7 @@ export default function TargetFormModal({
                 value={engagementRate}
                 onChange={e => setEngagementRate(e.target.value)}
                 placeholder="3.5"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors"
               />
             </div>
           </div>
@@ -244,7 +244,7 @@ export default function TargetFormModal({
                       'flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium border transition-all',
                       isSelected
                         ? [c.bg, c.color, c.border]
-                        : 'bg-gray-800 text-gray-400 border-gray-700 hover:border-gray-600'
+                        : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300'
                     )}
                   >
                     <span>{c.emoji}</span>
@@ -276,25 +276,25 @@ export default function TargetFormModal({
               value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="特記事項..."
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors resize-none"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors resize-none"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-800 shrink-0 flex items-center gap-3">
+        <div className="px-6 py-4 border-t border-gray-200 shrink-0 flex items-center gap-3">
           {isEdit && onDeleted && (
             <>
               {confirmDelete ? (
                 <>
-                  <span className="text-xs text-red-400 mr-auto">本当に削除しますか？</span>
-                  <button onClick={() => setConfirmDelete(false)} className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-white transition-colors">キャンセル</button>
-                  <button onClick={handleDelete} disabled={deleting} className="px-3 py-1.5 rounded-lg text-xs bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors disabled:opacity-50">
+                  <span className="text-xs text-red-600 mr-auto">本当に削除しますか？</span>
+                  <button onClick={() => setConfirmDelete(false)} className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-900 transition-colors">キャンセル</button>
+                  <button onClick={handleDelete} disabled={deleting} className="px-3 py-1.5 rounded-lg text-xs bg-red-500/10 text-red-600 border border-red-500/20 hover:bg-red-500/20 transition-colors disabled:opacity-50">
                     {deleting ? '削除中...' : '削除する'}
                   </button>
                 </>
               ) : (
-                <button onClick={() => setConfirmDelete(true)} className="mr-auto p-2 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                <button onClick={() => setConfirmDelete(true)} className="mr-auto p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-500/10 transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
               )}
@@ -302,7 +302,7 @@ export default function TargetFormModal({
           )}
           {!confirmDelete && (
             <>
-              <button onClick={onClose} className="ml-auto px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+              <button onClick={onClose} className="ml-auto px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors">
                 キャンセル
               </button>
               <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-50 transition-colors">

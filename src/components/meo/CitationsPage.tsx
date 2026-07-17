@@ -49,30 +49,30 @@ export default function CitationsPage({ location, citations, isDemo }: Props) {
       {/* ヘッダー */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white">サイテーション一覧</h1>
+          <h1 className="text-xl font-bold text-gray-900">サイテーション一覧</h1>
           <p className="text-sm text-gray-500 mt-1">
             AI・音声アシスタント・ローカルプラットフォームへの店舗情報配信状況
           </p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-300">
-          ロケーション: <span className="text-white font-medium">{location.name}</span>
+        <div className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700">
+          ロケーション: <span className="text-gray-900 font-medium">{location.name}</span>
         </div>
       </div>
 
       {/* サイテーション数 */}
       <div className="inline-flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-6 py-4">
-        <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
         <div>
-          <p className="text-xs text-emerald-300/80">サイテーション数（同期済み / 全体）</p>
-          <p className="text-2xl font-bold text-emerald-400">
+          <p className="text-xs text-emerald-600/80">サイテーション数（同期済み / 全体）</p>
+          <p className="text-2xl font-bold text-emerald-600">
             {syncedCount}
-            <span className="text-sm font-normal text-emerald-300/60"> / {items.length}</span>
+            <span className="text-sm font-normal text-emerald-600/60"> / {items.length}</span>
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-300">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-600">
           {error}
         </div>
       )}
@@ -82,16 +82,16 @@ export default function CitationsPage({ location, citations, isDemo }: Props) {
         const rows = items.filter((c) => c.kind === kind)
         if (rows.length === 0) return null
         return (
-          <section key={kind} className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-800 flex items-center gap-3">
-              <Icon className="w-4 h-4 text-violet-400" />
-              <h2 className="text-sm font-bold text-white">{title}</h2>
+          <section key={kind} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-200 flex items-center gap-3">
+              <Icon className="w-4 h-4 text-violet-600" />
+              <h2 className="text-sm font-bold text-gray-900">{title}</h2>
               <span className="text-xs text-gray-500 hidden sm:inline">{note}</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs text-gray-500 border-b border-gray-800/70 bg-gray-950/50">
+                  <tr className="text-left text-xs text-gray-500 border-b border-gray-200/70 bg-white/50">
                     <th className="px-5 py-3 font-medium">{kind === 'voice' ? 'アシスタント' : kind === 'ai' ? 'AI' : 'プラットフォーム'}</th>
                     <th className="px-5 py-3 font-medium">連携ステータス</th>
                     {kind !== 'voice' && <th className="px-5 py-3 font-medium">インデックス</th>}
@@ -100,14 +100,14 @@ export default function CitationsPage({ location, citations, isDemo }: Props) {
                 </thead>
                 <tbody>
                   {rows.map((c) => (
-                    <tr key={c.id} className="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/20 transition-colors">
+                    <tr key={c.id} className="border-b border-gray-200/50 last:border-0 hover:bg-gray-100/20 transition-colors">
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-xs font-bold text-violet-300">
+                          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-xs font-bold text-violet-600">
                             {c.name.slice(0, 1)}
                           </div>
                           <div>
-                            <p className="text-white font-medium">{c.name}</p>
+                            <p className="text-gray-900 font-medium">{c.name}</p>
                             {c.domain && <p className="text-xs text-gray-500">{c.domain}</p>}
                           </div>
                         </div>
@@ -117,7 +117,7 @@ export default function CitationsPage({ location, citations, isDemo }: Props) {
                       </td>
                       {kind !== 'voice' && (
                         <td className="px-5 py-3.5">
-                          <span className={c.indexed ? 'text-sky-400 font-medium' : 'text-gray-600'}>
+                          <span className={c.indexed ? 'text-sky-400 font-medium' : 'text-gray-400'}>
                             {c.indexed ? 'Yes' : 'No'}
                           </span>
                         </td>
@@ -147,7 +147,7 @@ export default function CitationsPage({ location, citations, isDemo }: Props) {
                             アクティブ
                           </a>
                         ) : (
-                          <span className="text-xs text-gray-600">—</span>
+                          <span className="text-xs text-gray-400">—</span>
                         )}
                       </td>
                     </tr>

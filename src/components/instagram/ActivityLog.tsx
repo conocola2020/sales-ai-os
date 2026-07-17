@@ -28,31 +28,31 @@ export default function ActivityLog({ refreshKey }: ActivityLogProps) {
   }, [refreshKey])
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-800">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200">
         <Activity className="w-4 h-4 text-gray-500" />
-        <span className="text-sm font-semibold text-gray-300">アクティビティログ</span>
+        <span className="text-sm font-semibold text-gray-700">アクティビティログ</span>
       </div>
 
       {loading ? (
-        <div className="px-4 py-6 text-center text-sm text-gray-600">読み込み中...</div>
+        <div className="px-4 py-6 text-center text-sm text-gray-400">読み込み中...</div>
       ) : logs.length === 0 ? (
-        <div className="px-4 py-6 text-center text-sm text-gray-600">
+        <div className="px-4 py-6 text-center text-sm text-gray-400">
           アクティビティがありません
         </div>
       ) : (
-        <ul className="divide-y divide-gray-800">
+        <ul className="divide-y divide-gray-200">
           {logs.map(log => (
             <li key={log.id} className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
-                <span className="text-xs px-2 py-0.5 bg-gray-800 rounded-md text-gray-400">
+                <span className="text-xs px-2 py-0.5 bg-gray-50 rounded-md text-gray-400">
                   {ACTION_LABEL[log.action_type] ?? log.action_type}
                 </span>
                 {log.target_username && (
-                  <span className="text-sm text-gray-300">@{log.target_username}</span>
+                  <span className="text-sm text-gray-700">@{log.target_username}</span>
                 )}
               </div>
-              <span className="text-xs text-gray-600">
+              <span className="text-xs text-gray-400">
                 {new Date(log.created_at).toLocaleString('ja-JP', {
                   month: 'numeric',
                   day: 'numeric',

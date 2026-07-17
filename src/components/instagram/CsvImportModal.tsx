@@ -128,14 +128,14 @@ export default function CsvImportModal({ onClose, onImported }: CsvImportModalPr
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl">
+      <div className="relative w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div className="flex items-center gap-2">
-            <FileSpreadsheet className="w-4 h-4 text-violet-400" />
-            <h2 className="text-sm font-semibold text-white">CSVインポート</h2>
+            <FileSpreadsheet className="w-4 h-4 text-violet-600" />
+            <h2 className="text-sm font-semibold text-gray-900">CSVインポート</h2>
           </div>
-          <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-300">
+          <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-700">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -148,17 +148,17 @@ export default function CsvImportModal({ onClose, onImported }: CsvImportModalPr
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                  dragOver ? 'border-violet-500 bg-violet-500/5' : 'border-gray-700 hover:border-gray-600'
+                  dragOver ? 'border-violet-500 bg-violet-500/5' : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
                 <Upload className="w-8 h-8 text-gray-500 mx-auto mb-3" />
                 <p className="text-sm text-gray-400 mb-2">CSVファイルをドラッグ&ドロップ</p>
-                <label className="text-xs text-violet-400 hover:text-violet-300 cursor-pointer">
+                <label className="text-xs text-violet-600 hover:text-violet-600 cursor-pointer">
                   またはファイルを選択
                   <input type="file" accept=".csv" className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
                 </label>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-3">
+              <div className="bg-gray-50/50 rounded-lg p-3">
                 <p className="text-xs text-gray-400 font-medium mb-1">CSVフォーマット:</p>
                 <code className="text-xs text-gray-500">username, display_name, bio, industry, follower_count, notes</code>
               </div>
@@ -168,13 +168,13 @@ export default function CsvImportModal({ onClose, onImported }: CsvImportModalPr
           {step === 'preview' && (
             <>
               <div className="flex items-center gap-2 p-3 bg-violet-500/10 border border-violet-500/20 rounded-lg">
-                <CheckCircle2 className="w-4 h-4 text-violet-400" />
-                <span className="text-sm text-violet-300">{rows.length}件のターゲットを検出</span>
+                <CheckCircle2 className="w-4 h-4 text-violet-600" />
+                <span className="text-sm text-violet-600">{rows.length}件のターゲットを検出</span>
               </div>
               <div className="max-h-60 overflow-y-auto space-y-1">
                 {rows.slice(0, 20).map((row, i) => (
-                  <div key={i} className="flex items-center gap-3 p-2 bg-gray-800/50 rounded-lg text-xs">
-                    <span className="text-violet-400 font-medium">@{row.username}</span>
+                  <div key={i} className="flex items-center gap-3 p-2 bg-gray-50/50 rounded-lg text-xs">
+                    <span className="text-violet-600 font-medium">@{row.username}</span>
                     {row.display_name && <span className="text-gray-400">{row.display_name}</span>}
                     {row.industry && <span className="text-gray-500">{row.industry}</span>}
                   </div>
@@ -188,28 +188,28 @@ export default function CsvImportModal({ onClose, onImported }: CsvImportModalPr
 
           {step === 'importing' && (
             <div className="flex flex-col items-center py-8 gap-4">
-              <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+              <Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
               <p className="text-sm text-gray-400">インポート中...</p>
             </div>
           )}
 
           {step === 'done' && (
             <div className="flex flex-col items-center py-6 gap-3">
-              <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-              <p className="text-sm font-semibold text-white">{importedCount}件をインポートしました</p>
+              <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+              <p className="text-sm font-semibold text-gray-900">{importedCount}件をインポートしました</p>
             </div>
           )}
 
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-400" />
-              <span className="text-xs text-red-400">{error}</span>
+              <AlertCircle className="w-4 h-4 text-red-600" />
+              <span className="text-xs text-red-600">{error}</span>
             </div>
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-gray-800 flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-xl transition-colors">
+        <div className="px-5 py-4 border-t border-gray-200 flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 bg-gray-50 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-xl transition-colors">
             {step === 'done' ? '閉じる' : 'キャンセル'}
           </button>
           {step === 'preview' && (

@@ -18,17 +18,17 @@ const TEMPLATE_ICONS: Record<string, React.ElementType> = {
 
 const TEMPLATE_COLORS: Record<string, { color: string; bg: string; border: string }> = {
   '不の解決型': {
-    color: 'text-violet-400',
+    color: 'text-violet-600',
     bg: 'bg-violet-500/10',
     border: 'border-violet-500/30',
   },
   '標準営業型': {
-    color: 'text-blue-400',
+    color: 'text-blue-600',
     bg: 'bg-blue-500/10',
     border: 'border-blue-500/30',
   },
   'コラボ提案型': {
-    color: 'text-emerald-400',
+    color: 'text-emerald-600',
     bg: 'bg-emerald-500/10',
     border: 'border-emerald-500/30',
   },
@@ -36,8 +36,8 @@ const TEMPLATE_COLORS: Record<string, { color: string; bg: string; border: strin
 
 const DEFAULT_STYLE = {
   color: 'text-gray-400',
-  bg: 'bg-gray-700/20',
-  border: 'border-gray-600/30',
+  bg: 'bg-gray-200/20',
+  border: 'border-gray-300/30',
 }
 
 export default function TemplateSelector({
@@ -63,19 +63,19 @@ export default function TemplateSelector({
                 'flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border text-center transition-all',
                 active
                   ? `${style.bg} ${style.border} ring-1 ring-offset-0`
-                  : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600 hover:bg-gray-800'
+                  : 'bg-gray-50/50 border-gray-200/50 hover:border-gray-300 hover:bg-gray-100'
               )}
             >
               <Icon className={clsx('w-5 h-5', active ? style.color : 'text-gray-500')} />
               <span
-                className={clsx('text-xs font-semibold', active ? style.color : 'text-gray-300')}
+                className={clsx('text-xs font-semibold', active ? style.color : 'text-gray-700')}
               >
                 {t.name}
               </span>
               <span
                 className={clsx(
                   'text-[11px] leading-tight',
-                  active ? 'text-gray-400' : 'text-gray-600'
+                  active ? 'text-gray-400' : 'text-gray-400'
                 )}
               >
                 {t.description}

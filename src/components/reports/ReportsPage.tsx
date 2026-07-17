@@ -37,22 +37,22 @@ function StatCard({
   trend?: 'up' | 'down' | 'flat'
 }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-200 transition-colors">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-gray-500 font-medium">{label}</span>
         <div className={clsx('p-1.5 rounded-lg', color)}>
           <Icon className="w-3.5 h-3.5" />
         </div>
       </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
       {sub && (
         <div className="flex items-center gap-1 mt-1">
-          {trend === 'up' && <ArrowUpRight className="w-3 h-3 text-emerald-400" />}
-          {trend === 'down' && <ArrowDownRight className="w-3 h-3 text-red-400" />}
+          {trend === 'up' && <ArrowUpRight className="w-3 h-3 text-emerald-600" />}
+          {trend === 'down' && <ArrowDownRight className="w-3 h-3 text-red-600" />}
           {trend === 'flat' && <Minus className="w-3 h-3 text-gray-500" />}
           <span className={clsx('text-xs', {
-            'text-emerald-400': trend === 'up',
-            'text-red-400': trend === 'down',
+            'text-emerald-600': trend === 'up',
+            'text-red-600': trend === 'down',
             'text-gray-500': !trend || trend === 'flat',
           })}>{sub}</span>
         </div>
@@ -76,13 +76,13 @@ function BarChartSimple({
         {data.map(d => (
           <div key={d.name} className="flex items-center gap-3">
             <span className="text-xs text-gray-400 w-20 truncate">{d.name}</span>
-            <div className="flex-1 bg-gray-800 rounded-full h-5 overflow-hidden">
+            <div className="flex-1 bg-gray-50 rounded-full h-5 overflow-hidden">
               <div
                 className={clsx('h-full rounded-full transition-all duration-500', d.color)}
                 style={{ width: `${(d.value / max) * 100}%` }}
               />
             </div>
-            <span className="text-xs text-gray-300 w-8 text-right font-medium">{d.value}</span>
+            <span className="text-xs text-gray-700 w-8 text-right font-medium">{d.value}</span>
           </div>
         ))}
       </div>
@@ -104,11 +104,11 @@ function PipelineFunnel({
             className={clsx('h-10 rounded-lg flex items-center px-4 justify-between transition-all', stage.color)}
             style={{ width: `${Math.max((stage.value / max) * 100, 30)}%` }}
           >
-            <span className="text-xs font-medium text-white truncate">{stage.name}</span>
-            <span className="text-xs font-bold text-white">{stage.value}</span>
+            <span className="text-xs font-medium text-gray-900 truncate">{stage.name}</span>
+            <span className="text-xs font-bold text-gray-900">{stage.value}</span>
           </div>
           {i < stages.length - 1 && (
-            <div className="absolute -bottom-0.5 left-4 text-gray-600 text-[10px]">|</div>
+            <div className="absolute -bottom-0.5 left-4 text-gray-400 text-[10px]">|</div>
           )}
         </div>
       ))}
@@ -193,11 +193,11 @@ export default function ReportsPage({
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-gray-800 shrink-0">
+      <div className="px-6 py-5 border-b border-gray-200 shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-white flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-violet-400" />
+            <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-violet-600" />
               レポート・分析
             </h1>
             <p className="text-sm text-gray-500 mt-1">営業活動全体のパフォーマンスを可視化</p>
@@ -208,7 +208,7 @@ export default function ReportsPage({
                 key={type}
                 onClick={() => handleExport(type)}
                 disabled={exporting === type}
-                className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-200 border border-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
               >
                 <Download className="w-3 h-3" />
                 {type === 'leads' ? 'リード' : type === 'deals' ? '商談' : 'IG'}
@@ -227,14 +227,14 @@ export default function ReportsPage({
             label="総リード"
             value={leads.length}
             icon={Users}
-            color="bg-blue-500/10 text-blue-400"
+            color="bg-blue-500/10 text-blue-600"
           />
           <StatCard
             label="送信数"
             value={sendStats.sent}
             sub={`失敗: ${sendStats.failed}`}
             icon={Send}
-            color="bg-violet-500/10 text-violet-400"
+            color="bg-violet-500/10 text-violet-600"
             trend={sendStats.sent > 0 ? 'up' : 'flat'}
           />
           <StatCard
@@ -242,7 +242,7 @@ export default function ReportsPage({
             value={`${replyRate}%`}
             sub={`${replyStats.total}件`}
             icon={MessageSquare}
-            color="bg-amber-500/10 text-amber-400"
+            color="bg-amber-500/10 text-amber-600"
             trend={replyRate > 10 ? 'up' : replyRate > 0 ? 'flat' : undefined}
           />
           <StatCard
@@ -250,7 +250,7 @@ export default function ReportsPage({
             value={dealStats.winRate != null ? `${dealStats.winRate}%` : '---'}
             sub={`成約: ${dealStats.won}件`}
             icon={Target}
-            color="bg-emerald-500/10 text-emerald-400"
+            color="bg-emerald-500/10 text-emerald-600"
             trend={dealStats.winRate != null && dealStats.winRate > 20 ? 'up' : 'flat'}
           />
           <StatCard
@@ -258,14 +258,14 @@ export default function ReportsPage({
             value={`${Math.round(dealStats.pipelineAmount / 10000)}万`}
             sub={`加重: ${Math.round(dealStats.weightedAmount / 10000)}万`}
             icon={DollarSign}
-            color="bg-orange-500/10 text-orange-400"
+            color="bg-orange-500/10 text-orange-600"
           />
           <StatCard
             label="IG返信率"
             value={igStats.replyRate != null ? `${igStats.replyRate}%` : '---'}
             sub={`DM: ${igStats.dmSent}件`}
             icon={Instagram}
-            color="bg-pink-500/10 text-pink-400"
+            color="bg-pink-500/10 text-pink-600"
           />
         </div>
 
@@ -273,22 +273,22 @@ export default function ReportsPage({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Pipeline Funnel */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-violet-400" />
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-violet-600" />
               営業パイプライン
             </h3>
             <PipelineFunnel stages={funnelStages} />
-            <div className="mt-4 pt-4 border-t border-gray-800 flex items-center justify-between">
+            <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
               <span className="text-xs text-gray-500">リード → 成約 転換率</span>
-              <span className="text-sm font-bold text-emerald-400">{conversionRate}%</span>
+              <span className="text-sm font-bold text-emerald-600">{conversionRate}%</span>
             </div>
           </div>
 
           {/* Reply Sentiment */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-amber-400" />
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-amber-600" />
               返信分析
             </h3>
             <BarChartSimple
@@ -301,26 +301,26 @@ export default function ReportsPage({
                 { name: 'その他', value: replyStats.other, color: 'bg-gray-500' },
               ]}
             />
-            <div className="mt-4 pt-4 border-t border-gray-800 grid grid-cols-3 gap-4 text-center">
+            <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-3 gap-4 text-center">
               <div>
-                <p className="text-lg font-bold text-white">{replyStats.total}</p>
+                <p className="text-lg font-bold text-gray-900">{replyStats.total}</p>
                 <p className="text-xs text-gray-500">総返信</p>
               </div>
               <div>
-                <p className="text-lg font-bold text-emerald-400">{replyStats.interested}</p>
+                <p className="text-lg font-bold text-emerald-600">{replyStats.interested}</p>
                 <p className="text-xs text-gray-500">興味あり</p>
               </div>
               <div>
-                <p className="text-lg font-bold text-amber-400">{replyStats.unread}</p>
+                <p className="text-lg font-bold text-amber-600">{replyStats.unread}</p>
                 <p className="text-xs text-gray-500">未読</p>
               </div>
             </div>
           </div>
 
           {/* Industry breakdown */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-400" />
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Users className="w-4 h-4 text-blue-600" />
               業界別リード分布
             </h3>
             {industryData.length > 0 ? (
@@ -331,77 +331,77 @@ export default function ReportsPage({
           </div>
 
           {/* Status breakdown */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <Target className="w-4 h-4 text-emerald-400" />
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Target className="w-4 h-4 text-emerald-600" />
               リードステータス分布
             </h3>
             <BarChartSimple label="" data={statusData} />
           </div>
 
           {/* Deal summary */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <Handshake className="w-4 h-4 text-orange-400" />
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Handshake className="w-4 h-4 text-orange-600" />
               商談サマリー
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-white">{dealStats.total}</p>
+              <div className="bg-gray-50/50 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-gray-900">{dealStats.total}</p>
                 <p className="text-xs text-gray-500 mt-1">総商談数</p>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-emerald-400">{dealStats.won}</p>
+              <div className="bg-gray-50/50 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-emerald-600">{dealStats.won}</p>
                 <p className="text-xs text-gray-500 mt-1">成約</p>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-amber-400">{dealStats.active}</p>
+              <div className="bg-gray-50/50 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-amber-600">{dealStats.active}</p>
                 <p className="text-xs text-gray-500 mt-1">進行中</p>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-red-400">{dealStats.lost}</p>
+              <div className="bg-gray-50/50 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-red-600">{dealStats.lost}</p>
                 <p className="text-xs text-gray-500 mt-1">失注</p>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-800">
+            <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">パイプライン合計</span>
-                <span className="text-white font-bold">{dealStats.pipelineAmount.toLocaleString()}円</span>
+                <span className="text-gray-900 font-bold">{dealStats.pipelineAmount.toLocaleString()}円</span>
               </div>
               <div className="flex justify-between text-sm mt-1">
                 <span className="text-gray-500">加重見込み額</span>
-                <span className="text-emerald-400 font-bold">{Math.round(dealStats.weightedAmount).toLocaleString()}円</span>
+                <span className="text-emerald-600 font-bold">{Math.round(dealStats.weightedAmount).toLocaleString()}円</span>
               </div>
             </div>
           </div>
 
           {/* Instagram summary */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <Instagram className="w-4 h-4 text-pink-400" />
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Instagram className="w-4 h-4 text-pink-600" />
               Instagram活動レポート
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-white">{igStats.total}</p>
+              <div className="bg-gray-50/50 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-gray-900">{igStats.total}</p>
                 <p className="text-xs text-gray-500 mt-1">ターゲット</p>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-pink-400">{igStats.approached}</p>
+              <div className="bg-gray-50/50 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-pink-600">{igStats.approached}</p>
                 <p className="text-xs text-gray-500 mt-1">アプローチ済</p>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-violet-400">{igStats.dmSent}</p>
+              <div className="bg-gray-50/50 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-violet-600">{igStats.dmSent}</p>
                 <p className="text-xs text-gray-500 mt-1">DM送信</p>
               </div>
-              <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-                <p className="text-2xl font-bold text-emerald-400">{igStats.converted}</p>
+              <div className="bg-gray-50/50 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-emerald-600">{igStats.converted}</p>
                 <p className="text-xs text-gray-500 mt-1">成約</p>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-800 flex justify-between items-center">
+            <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
               <span className="text-xs text-gray-500">DM返信率</span>
-              <span className="text-lg font-bold text-pink-400">
+              <span className="text-lg font-bold text-pink-600">
                 {igStats.replyRate != null ? `${igStats.replyRate}%` : '---'}
               </span>
             </div>
@@ -409,26 +409,26 @@ export default function ReportsPage({
         </div>
 
         {/* Send performance */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-            <Send className="w-4 h-4 text-violet-400" />
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Send className="w-4 h-4 text-violet-600" />
             送信パフォーマンス
           </h3>
           <div className="grid grid-cols-4 gap-4 text-center">
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-xl font-bold text-white">{sendStats.total}</p>
+            <div className="bg-gray-50/50 rounded-lg p-3">
+              <p className="text-xl font-bold text-gray-900">{sendStats.total}</p>
               <p className="text-xs text-gray-500">総キュー</p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-xl font-bold text-amber-400">{sendStats.reviewing}</p>
+            <div className="bg-gray-50/50 rounded-lg p-3">
+              <p className="text-xl font-bold text-amber-600">{sendStats.reviewing}</p>
               <p className="text-xs text-gray-500">確認待ち</p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-xl font-bold text-emerald-400">{sendStats.sent}</p>
+            <div className="bg-gray-50/50 rounded-lg p-3">
+              <p className="text-xl font-bold text-emerald-600">{sendStats.sent}</p>
               <p className="text-xs text-gray-500">送信済み</p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-xl font-bold text-red-400">{sendStats.failed}</p>
+            <div className="bg-gray-50/50 rounded-lg p-3">
+              <p className="text-xl font-bold text-red-600">{sendStats.failed}</p>
               <p className="text-xs text-gray-500">失敗</p>
             </div>
           </div>

@@ -26,7 +26,7 @@ export default function DashboardShell({ children, userName, userEmail }: Dashbo
         <header className="md:hidden flex items-center justify-between gap-3 border-b border-white/[0.08] bg-[#0d0f12]/95 px-4 py-3 backdrop-blur flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-stone-400 transition-colors hover:bg-white/[0.07] hover:text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-stone-400 transition-colors hover:bg-white/[0.07] hover:text-gray-900"
             aria-label="メニューを開く"
           >
             <Menu className="w-5 h-5" />
@@ -36,7 +36,7 @@ export default function DashboardShell({ children, userName, userEmail }: Dashbo
               S
             </div>
             <div>
-              <span className="block text-sm font-bold leading-none text-white">Sales AI OS</span>
+              <span className="block text-sm font-bold leading-none text-gray-900">Sales AI OS</span>
               <span className="mt-0.5 block text-[11px] text-stone-500">営業オペレーション</span>
             </div>
           </div>

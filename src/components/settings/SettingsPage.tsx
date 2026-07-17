@@ -96,14 +96,14 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
   )
 
   const inputCls =
-    'w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all'
+    'w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all'
 
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-gray-800 shrink-0 flex items-center justify-between">
+      <div className="px-6 py-5 border-b border-gray-200 shrink-0 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-white flex items-center gap-2">
+          <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
             <Settings className="w-5 h-5 text-gray-400" />
             弊社情報・設定
           </h1>
@@ -132,7 +132,7 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
       </div>
 
       {error && (
-        <div className="mx-6 mt-4 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
+        <div className="mx-6 mt-4 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-600">
           {error}
         </div>
       )}
@@ -142,9 +142,9 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
         <div className="max-w-4xl mx-auto p-6 space-y-8">
 
           {/* ========== 会社基本情報 ========== */}
-          <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-white mb-5 flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-violet-400" />
+          <section className="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-5 flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-violet-600" />
               会社基本情報
             </h3>
             <div className="grid grid-cols-2 gap-4">
@@ -199,9 +199,9 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
           </section>
 
           {/* ========== 担当者情報 ========== */}
-          <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-white mb-5 flex items-center gap-2">
-              <User className="w-4 h-4 text-violet-400" />
+          <section className="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-5 flex items-center gap-2">
+              <User className="w-4 h-4 text-violet-600" />
               担当者情報
             </h3>
             <div className="grid grid-cols-3 gap-4">
@@ -236,15 +236,15 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
           </section>
 
           {/* ========== 商品・サービス ========== */}
-          <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+          <section className="bg-white border border-gray-200 rounded-xl p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <Package className="w-4 h-4 text-violet-400" />
+              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <Package className="w-4 h-4 text-violet-600" />
                 商品・サービス
               </h3>
               <button
                 onClick={addProduct}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-300 hover:border-violet-500 hover:text-white transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 hover:border-violet-500 hover:text-gray-900 transition-all"
               >
                 <Plus className="w-3.5 h-3.5" />
                 追加
@@ -252,10 +252,10 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
             </div>
             <div className="space-y-4">
               {products.map((product, idx) => (
-                <div key={idx} className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 space-y-3 relative group">
+                <div key={idx} className="bg-gray-50/50 border border-gray-200/50 rounded-xl p-4 space-y-3 relative group">
                   <button
                     onClick={() => removeProduct(idx)}
-                    className="absolute top-3 right-3 p-1.5 text-gray-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                    className="absolute top-3 right-3 p-1.5 text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -289,7 +289,7 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
                 </div>
               ))}
               {products.length === 0 && (
-                <p className="text-xs text-gray-600 text-center py-4">
+                <p className="text-xs text-gray-400 text-center py-4">
                   「追加」ボタンで商品を登録してください
                 </p>
               )}
@@ -297,15 +297,15 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
           </section>
 
           {/* ========== 営業の強み ========== */}
-          <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+          <section className="bg-white border border-gray-200 rounded-xl p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <FileText className="w-4 h-4 text-violet-400" />
+              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-violet-600" />
                 営業の強み・バリュープロポジション
               </h3>
               <button
                 onClick={addProposition}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-300 hover:border-violet-500 hover:text-white transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 hover:border-violet-500 hover:text-gray-900 transition-all"
               >
                 <Plus className="w-3.5 h-3.5" />
                 追加
@@ -314,7 +314,7 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
             <div className="space-y-2">
               {valuePropositions.map((vp, idx) => (
                 <div key={idx} className="flex items-center gap-2 group">
-                  <span className="text-xs text-gray-600 w-5 text-right shrink-0">{idx + 1}.</span>
+                  <span className="text-xs text-gray-400 w-5 text-right shrink-0">{idx + 1}.</span>
                   <input
                     type="text"
                     value={vp}
@@ -324,7 +324,7 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
                   />
                   <button
                     onClick={() => removeProposition(idx)}
-                    className="p-1.5 text-gray-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                    className="p-1.5 text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -334,9 +334,9 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
           </section>
 
           {/* ========== 実績 & CTA ========== */}
-          <section className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <FileText className="w-4 h-4 text-violet-400" />
+          <section className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-violet-600" />
               実績・CTA
             </h3>
             <Field label="導入実績・社会的証明">
@@ -360,9 +360,9 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
           </section>
 
           {/* ========== テンプレート一覧（読み取りのみ） ========== */}
-          <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-emerald-400" />
+          <section className="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-emerald-600" />
               メッセージテンプレート
             </h3>
             <p className="text-xs text-gray-500 mb-4">文面生成時に使用するテンプレート構成。テンプレートは文面生成画面で選択できます。</p>
@@ -371,13 +371,13 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
                 templates.map(t => (
                   <div
                     key={t.id}
-                    className="flex items-start gap-3 bg-gray-800/50 border border-gray-700/50 rounded-xl p-4"
+                    className="flex items-start gap-3 bg-gray-50/50 border border-gray-200/50 rounded-xl p-4"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-white">{t.name}</span>
+                        <span className="text-sm font-medium text-gray-900">{t.name}</span>
                         {t.is_default && (
-                          <span className="px-2 py-0.5 bg-violet-500/10 border border-violet-500/20 rounded text-[10px] text-violet-400 font-medium">
+                          <span className="px-2 py-0.5 bg-violet-500/10 border border-violet-500/20 rounded text-[10px] text-violet-600 font-medium">
                             デフォルト
                           </span>
                         )}
@@ -387,7 +387,7 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-gray-600 text-center py-4">
+                <p className="text-xs text-gray-400 text-center py-4">
                   テンプレートは初回の文面生成時に自動作成されます
                 </p>
               )}

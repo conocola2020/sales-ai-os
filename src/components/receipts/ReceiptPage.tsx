@@ -200,14 +200,14 @@ export default function ReceiptPage() {
   }
 
   return (
-    <div className="min-h-full bg-gray-950 px-4 py-6 max-w-lg mx-auto">
+    <div className="min-h-full bg-white px-4 py-6 max-w-lg mx-auto">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <ReceiptText className="w-4 h-4 text-white" />
+            <ReceiptText className="w-4 h-4 text-gray-900" />
           </div>
-          <h1 className="text-xl font-bold text-white">レシート読み取り</h1>
+          <h1 className="text-xl font-bold text-gray-900">レシート読み取り</h1>
         </div>
         <p className="text-sm text-gray-500 ml-12">AIがレシートから経費データを自動抽出します</p>
       </div>
@@ -229,8 +229,8 @@ export default function ReceiptPage() {
                     isActive
                       ? 'bg-emerald-500 text-white'
                       : isDone
-                        ? 'bg-emerald-500/30 text-emerald-400'
-                        : 'bg-gray-800 text-gray-600'
+                        ? 'bg-emerald-500/30 text-emerald-600'
+                        : 'bg-gray-50 text-gray-400'
                   )}
                 >
                   {isDone ? '✓' : i + 1}
@@ -238,7 +238,7 @@ export default function ReceiptPage() {
                 <span
                   className={clsx(
                     'text-[10px] mt-1 whitespace-nowrap',
-                    isActive ? 'text-emerald-400' : isDone ? 'text-emerald-600' : 'text-gray-600'
+                    isActive ? 'text-emerald-600' : isDone ? 'text-emerald-600' : 'text-gray-400'
                   )}
                 >
                   {labels[i]}
@@ -248,7 +248,7 @@ export default function ReceiptPage() {
                 <div
                   className={clsx(
                     'w-8 h-px mb-4 mx-1',
-                    isDone ? 'bg-emerald-500/40' : 'bg-gray-800'
+                    isDone ? 'bg-emerald-500/40' : 'bg-gray-50'
                   )}
                 />
               )}
@@ -259,7 +259,7 @@ export default function ReceiptPage() {
 
       {/* Error */}
       {error && (
-        <div className="mb-4 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-sm text-red-400">
+        <div className="mb-4 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-sm text-red-600">
           {error}
         </div>
       )}
@@ -283,7 +283,7 @@ export default function ReceiptPage() {
               <img
                 src={previewUrl}
                 alt="レシートプレビュー"
-                className="w-full max-h-80 object-contain rounded-2xl border border-gray-800 bg-gray-900"
+                className="w-full max-h-80 object-contain rounded-2xl border border-gray-200 bg-white"
               />
               <button
                 onClick={() => {
@@ -291,7 +291,7 @@ export default function ReceiptPage() {
                   setSelectedFile(null)
                   if (fileInputRef.current) fileInputRef.current.value = ''
                 }}
-                className="absolute top-2 right-2 w-7 h-7 bg-gray-900/80 border border-gray-700 rounded-full flex items-center justify-center text-gray-400 hover:text-white"
+                className="absolute top-2 right-2 w-7 h-7 bg-white/80 border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-900"
               >
                 ×
               </button>
@@ -306,15 +306,15 @@ export default function ReceiptPage() {
                 'border-2 border-dashed rounded-2xl p-8 flex flex-col items-center gap-4 cursor-pointer transition-all',
                 isDragOver
                   ? 'border-emerald-500 bg-emerald-500/5'
-                  : 'border-gray-700 hover:border-gray-600 bg-gray-900/40'
+                  : 'border-gray-200 hover:border-gray-300 bg-white/40'
               )}
             >
-              <div className="w-16 h-16 bg-gray-800 rounded-2xl flex items-center justify-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center">
                 <Upload className="w-7 h-7 text-gray-500" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-gray-300">画像をアップロード</p>
-                <p className="text-xs text-gray-600 mt-1">タップしてカメラ・アルバムから選択</p>
+                <p className="text-sm font-medium text-gray-700">画像をアップロード</p>
+                <p className="text-xs text-gray-400 mt-1">タップしてカメラ・アルバムから選択</p>
               </div>
             </div>
           )}
@@ -323,7 +323,7 @@ export default function ReceiptPage() {
           <div className="grid grid-cols-2 gap-3">
             <label
               htmlFor="receipt-upload-camera"
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-sm text-gray-300 hover:bg-gray-800 cursor-pointer transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors"
             >
               <Camera className="w-4 h-4 text-gray-500" />
               カメラで撮影
@@ -338,7 +338,7 @@ export default function ReceiptPage() {
             </label>
             <label
               htmlFor="receipt-upload-library"
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-sm text-gray-300 hover:bg-gray-800 cursor-pointer transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors"
             >
               <Upload className="w-4 h-4 text-gray-500" />
               アルバムから
@@ -359,7 +359,7 @@ export default function ReceiptPage() {
               'w-full py-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all',
               selectedFile
                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                : 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                : 'bg-gray-50 text-gray-400 cursor-not-allowed'
             )}
           >
             AIで読み取り開始
@@ -372,10 +372,10 @@ export default function ReceiptPage() {
       {step === 'processing' && (
         <div className="flex flex-col items-center gap-6 py-12">
           <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center">
-            <Loader2 className="w-9 h-9 text-emerald-400 animate-spin" />
+            <Loader2 className="w-9 h-9 text-emerald-600 animate-spin" />
           </div>
           <div className="text-center">
-            <p className="text-base font-semibold text-gray-200">AIがレシートを読み取っています</p>
+            <p className="text-base font-semibold text-gray-800">AIがレシートを読み取っています</p>
             <p className="text-sm text-gray-500 mt-1">しばらくお待ちください...</p>
           </div>
           {previewUrl && (
@@ -383,7 +383,7 @@ export default function ReceiptPage() {
             <img
               src={previewUrl}
               alt="処理中"
-              className="w-full max-h-48 object-contain rounded-xl border border-gray-800 opacity-40"
+              className="w-full max-h-48 object-contain rounded-xl border border-gray-200 opacity-40"
             />
           )}
         </div>
@@ -393,7 +393,7 @@ export default function ReceiptPage() {
       {step === 'review' && ocrResult && (
         <div className="space-y-5">
           {/* Category type selector */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
+          <div className="bg-white border border-gray-200 rounded-2xl p-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
               振り分け先
             </p>
@@ -411,9 +411,9 @@ export default function ReceiptPage() {
                     'px-3 py-3 rounded-xl text-sm font-medium border transition-all',
                     categoryType === opt.value
                       ? opt.color === 'violet'
-                        ? 'bg-violet-600/20 border-violet-500/40 text-violet-300'
-                        : 'bg-amber-600/20 border-amber-500/40 text-amber-300'
-                      : 'bg-gray-800/50 border-gray-700/50 text-gray-500 hover:text-gray-300'
+                        ? 'bg-violet-600/20 border-violet-500/40 text-violet-600'
+                        : 'bg-amber-600/20 border-amber-500/40 text-amber-600'
+                      : 'bg-gray-50/50 border-gray-200/50 text-gray-500 hover:text-gray-700'
                   )}
                 >
                   {opt.label}
@@ -423,7 +423,7 @@ export default function ReceiptPage() {
           </div>
 
           {/* Store & Date */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 space-y-3">
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-3">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">基本情報</p>
             <div className="space-y-2">
               <div>
@@ -433,9 +433,9 @@ export default function ReceiptPage() {
                     type="text"
                     value={editedStore}
                     onChange={e => setEditedStore(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-gray-200 pr-8 focus:outline-none focus:border-emerald-500/50"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 pr-8 focus:outline-none focus:border-emerald-500/50"
                   />
-                  <Pencil className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-600" />
+                  <Pencil className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
                 </div>
               </div>
               <div>
@@ -445,7 +445,7 @@ export default function ReceiptPage() {
                     type="date"
                     value={editedDate}
                     onChange={e => setEditedDate(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-gray-200 pr-8 focus:outline-none focus:border-emerald-500/50"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 pr-8 focus:outline-none focus:border-emerald-500/50"
                   />
                 </div>
               </div>
@@ -453,12 +453,12 @@ export default function ReceiptPage() {
           </div>
 
           {/* Items */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
+          <div className="bg-white border border-gray-200 rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">品目</p>
               <button
                 onClick={handleAddItem}
-                className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+                className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-600 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 追加
@@ -466,27 +466,27 @@ export default function ReceiptPage() {
             </div>
             <div className="space-y-3">
               {editedItems.map((item, index) => (
-                <div key={index} className="bg-gray-800/50 rounded-xl p-3 space-y-2">
+                <div key={index} className="bg-gray-50/50 rounded-xl p-3 space-y-2">
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={item.item_name}
                       onChange={e => handleItemChange(index, 'item_name', e.target.value)}
                       placeholder="品目名"
-                      className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/50 min-w-0"
+                      className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-emerald-500/50 min-w-0"
                     />
                     <div className="flex items-center gap-1">
                       <input
                         type="number"
                         value={item.amount}
                         onChange={e => handleItemChange(index, 'amount', Number(e.target.value))}
-                        className="w-24 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 text-right focus:outline-none focus:border-emerald-500/50"
+                        className="w-24 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 text-right focus:outline-none focus:border-emerald-500/50"
                       />
                       <span className="text-sm text-gray-500">円</span>
                     </div>
                     <button
                       onClick={() => handleRemoveItem(index)}
-                      className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-red-400 transition-colors flex-shrink-0"
+                      className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600 transition-colors flex-shrink-0"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -494,7 +494,7 @@ export default function ReceiptPage() {
                   <select
                     value={item.expense_category}
                     onChange={e => handleItemChange(index, 'expense_category', e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-400 focus:outline-none focus:border-emerald-500/50"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-400 focus:outline-none focus:border-emerald-500/50"
                   >
                     {EXPENSE_CATEGORIES.map(cat => (
                       <option key={cat} value={cat}>
@@ -505,16 +505,16 @@ export default function ReceiptPage() {
                 </div>
               ))}
               {editedItems.length === 0 && (
-                <p className="text-xs text-gray-600 text-center py-2">
+                <p className="text-xs text-gray-400 text-center py-2">
                   品目がありません。「追加」から入力してください
                 </p>
               )}
             </div>
 
             {/* Total */}
-            <div className="mt-4 pt-3 border-t border-gray-700/50 flex items-center justify-between">
+            <div className="mt-4 pt-3 border-t border-gray-200/50 flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-400">合計</span>
-              <span className="text-lg font-bold text-white">
+              <span className="text-lg font-bold text-gray-900">
                 ¥{totalAmount.toLocaleString()}
               </span>
             </div>
@@ -527,7 +527,7 @@ export default function ReceiptPage() {
             className={clsx(
               'w-full py-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all',
               isSaving
-                ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
                 : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
             )}
           >
@@ -546,7 +546,7 @@ export default function ReceiptPage() {
 
           <button
             onClick={handleReset}
-            className="w-full py-3 text-sm text-gray-600 hover:text-gray-400 transition-colors"
+            className="w-full py-3 text-sm text-gray-400 hover:text-gray-400 transition-colors"
           >
             最初からやり直す
           </button>
@@ -557,16 +557,16 @@ export default function ReceiptPage() {
       {step === 'saved' && (
         <div className="flex flex-col items-center gap-6 py-12 text-center">
           <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center">
-            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+            <CheckCircle2 className="w-10 h-10 text-emerald-600" />
           </div>
           <div>
-            <p className="text-lg font-bold text-white">保存しました！</p>
+            <p className="text-lg font-bold text-gray-900">保存しました！</p>
             <p className="text-sm text-gray-500 mt-1">
               {editedStore} のレシートを
               {categoryType === 'business' ? '事業用（日次入力）' : '個人生活費'}
               として保存しました
             </p>
-            <p className="text-base font-semibold text-emerald-400 mt-3">
+            <p className="text-base font-semibold text-emerald-600 mt-3">
               ¥{totalAmount.toLocaleString()}
             </p>
           </div>

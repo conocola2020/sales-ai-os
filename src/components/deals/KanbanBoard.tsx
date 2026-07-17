@@ -47,16 +47,16 @@ function KanbanCard({ deal, onClick }: KanbanCardProps) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-3 transition-all duration-150 hover:bg-gray-800/50 group"
+      className="w-full text-left bg-white border border-gray-200 hover:border-gray-200 rounded-xl p-3 transition-all duration-150 hover:bg-gray-100/50 group"
     >
-      <p className="text-sm font-semibold text-white truncate">{deal.company_name}</p>
+      <p className="text-sm font-semibold text-gray-900 truncate">{deal.company_name}</p>
       {deal.contact_name && (
         <p className="text-xs text-gray-500 mt-0.5 truncate">{deal.contact_name}</p>
       )}
 
       <div className="mt-2 flex items-center justify-between gap-2">
         {deal.amount != null ? (
-          <span className="text-xs font-semibold text-white">{formatAmount(deal.amount)}円</span>
+          <span className="text-xs font-semibold text-gray-900">{formatAmount(deal.amount)}円</span>
         ) : (
           <span />
         )}
@@ -68,16 +68,16 @@ function KanbanCard({ deal, onClick }: KanbanCardProps) {
       {deal.next_action_date && (
         <div
           className={clsx('mt-1.5 text-xs', {
-            'text-red-400': dateStatus === 'overdue',
-            'text-amber-400': dateStatus === 'today',
-            'text-gray-600': dateStatus === 'upcoming',
+            'text-red-600': dateStatus === 'overdue',
+            'text-amber-600': dateStatus === 'today',
+            'text-gray-400': dateStatus === 'upcoming',
           })}
         >
           {dateStatus === 'overdue' && '⚠ '}
           {dateStatus === 'today' && '📅 '}
           {deal.next_action_date}
           {deal.next_action && (
-            <span className="text-gray-600"> — {deal.next_action}</span>
+            <span className="text-gray-400"> — {deal.next_action}</span>
           )}
         </div>
       )}
@@ -104,21 +104,21 @@ export default function KanbanBoard({ deals, onCardClick, onAddClick }: KanbanBo
         return (
           <div
             key={stage}
-            className="flex flex-col min-w-0 bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden"
+            className="flex flex-col min-w-0 bg-white/50 border border-gray-200 rounded-xl overflow-hidden"
           >
             {/* Column header */}
-            <div className="px-4 py-3 border-b border-gray-800 shrink-0">
+            <div className="px-4 py-3 border-b border-gray-200 shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className={clsx('w-2 h-2 rounded-full', cfg.dot)} />
-                  <span className="text-sm font-medium text-white">{cfg.label}</span>
-                  <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded-full">
+                  <span className="text-sm font-medium text-gray-900">{cfg.label}</span>
+                  <span className="text-xs text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded-full">
                     {stageDeals.length}
                   </span>
                 </div>
                 <button
                   onClick={() => onAddClick(stage)}
-                  className="p-1 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+                  className="p-1 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
                   title="商談を追加"
                 >
                   <Plus className="w-4 h-4" />
@@ -152,7 +152,7 @@ export default function KanbanBoard({ deals, onCardClick, onAddClick }: KanbanBo
               {/* Add button at bottom of column */}
               <button
                 onClick={() => onAddClick(stage)}
-                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs text-gray-600 hover:text-gray-400 hover:bg-gray-800/50 transition-colors border border-dashed border-gray-800 hover:border-gray-700"
+                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs text-gray-400 hover:text-gray-400 hover:bg-gray-100/50 transition-colors border border-dashed border-gray-200 hover:border-gray-200"
               >
                 <Plus className="w-3 h-3" />
                 追加

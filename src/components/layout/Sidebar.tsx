@@ -99,7 +99,7 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
             <Zap className="h-4 w-4" />
           </div>
           <div>
-            <span className="block text-sm font-bold leading-none text-white">Sales AI OS</span>
+            <span className="block text-sm font-bold leading-none text-gray-900">Sales AI OS</span>
             <span className="mt-1 block text-xs text-stone-500">営業オペレーション基盤</span>
           </div>
         </Link>
@@ -107,7 +107,7 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
         {onClose && (
           <button
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-400 transition-colors hover:bg-white/[0.07] hover:text-white md:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-400 transition-colors hover:bg-white/[0.07] hover:text-gray-900 md:hidden"
             aria-label="メニューを閉じる"
           >
             <X className="w-5 h-5" />
@@ -137,7 +137,7 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
                       className={clsx(
                         'group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all md:py-2.5',
                         isActive
-                          ? 'border border-white/[0.10] bg-white/[0.07] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+                          ? 'border border-white/[0.10] bg-white/[0.07] text-gray-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
                           : 'text-stone-400 hover:bg-white/[0.05] hover:text-stone-100'
                       )}
                     >
@@ -147,7 +147,7 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
                       <Icon
                         className={clsx(
                           'h-5 w-5 flex-shrink-0 transition-colors md:h-4 md:w-4',
-                          isActive ? 'text-teal-300' : 'text-stone-500 group-hover:text-stone-300'
+                          isActive ? 'text-teal-600' : 'text-stone-500 group-hover:text-stone-300'
                         )}
                       />
                       <span className="flex-1">{item.label}</span>
@@ -157,14 +157,14 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
                             'rounded-md px-1.5 py-0.5 text-[10px] font-bold tracking-wide',
                             item.badge === 'AI'
                               ? 'border border-teal-400/25 bg-teal-400/10 text-teal-200'
-                              : 'border border-red-500/30 bg-red-500/20 text-red-300'
+                              : 'border border-red-500/30 bg-red-500/20 text-red-600'
                           )}
                         >
                           {item.badge}
                         </span>
                       )}
                       {isActive && (
-                        <ChevronRight className="h-3 w-3 text-teal-300/70" />
+                        <ChevronRight className="h-3 w-3 text-teal-600/70" />
                       )}
                     </Link>
                   </li>
@@ -183,7 +183,7 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
           className={clsx(
             'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all md:py-2.5',
             pathname === '/dashboard/settings'
-              ? 'border border-white/[0.10] bg-white/[0.07] text-white'
+              ? 'border border-white/[0.10] bg-white/[0.07] text-gray-900'
               : 'text-stone-400 hover:bg-white/[0.05] hover:text-stone-100'
           )}
         >
@@ -204,7 +204,7 @@ export default function Sidebar({ userName, userEmail, isOpen, onClose }: Sideba
           </div>
           <button
             onClick={handleLogout}
-            className="mt-3 flex items-center gap-2 rounded-lg py-1 text-xs text-stone-500 transition-colors hover:text-red-300"
+            className="mt-3 flex items-center gap-2 rounded-lg py-1 text-xs text-stone-500 transition-colors hover:text-red-600"
           >
             <LogOut className="w-3 h-3" />
             ログアウト

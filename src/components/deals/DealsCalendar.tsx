@@ -116,10 +116,10 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
       {/* Calendar header */}
       <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-white">{monthLabel}</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{monthLabel}</h2>
           <button
             onClick={goToToday}
-            className="px-2.5 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-white bg-gray-900 border border-gray-800 hover:border-gray-700 transition-colors"
+            className="px-2.5 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-900 bg-white border border-gray-200 hover:border-gray-200 transition-colors"
           >
             今日
           </button>
@@ -127,13 +127,13 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
         <div className="flex items-center gap-1">
           <button
             onClick={goToPrevMonth}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={goToNextMonth}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -150,7 +150,7 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
                 key={day}
                 className={clsx(
                   'text-center text-xs font-medium py-2',
-                  i === 5 ? 'text-blue-400' : i === 6 ? 'text-red-400' : 'text-gray-500'
+                  i === 5 ? 'text-blue-600' : i === 6 ? 'text-red-600' : 'text-gray-500'
                 )}
               >
                 {day}
@@ -162,7 +162,7 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
           <div className="grid grid-cols-7 gap-1 flex-1">
             {calendarDays.map((date, idx) => {
               if (!date) {
-                return <div key={`empty-${idx}`} className="bg-gray-950/30 rounded-lg min-h-[80px]" />
+                return <div key={`empty-${idx}`} className="bg-white/30 rounded-lg min-h-[80px]" />
               }
 
               const dayEvents = getEventsForDate(date)
@@ -179,8 +179,8 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
                     isSelected
                       ? 'bg-violet-600/15 border-2 border-violet-500/50'
                       : dayEvents.length > 0
-                        ? 'bg-gray-900/80 border border-gray-700/50 hover:border-gray-600'
-                        : 'bg-gray-950/30 border border-transparent hover:bg-gray-900/40',
+                        ? 'bg-white/80 border border-gray-200/50 hover:border-gray-300'
+                        : 'bg-white/30 border border-transparent hover:bg-white/40',
                     isToday && !isSelected && 'ring-2 ring-violet-500/40'
                   )}
                 >
@@ -190,7 +190,7 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
                       className={clsx(
                         'w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold',
                         isToday ? 'bg-violet-600 text-white' : '',
-                        !isToday && (dayOfWeek === 5 ? 'text-blue-400' : dayOfWeek === 6 ? 'text-red-400' : 'text-gray-400')
+                        !isToday && (dayOfWeek === 5 ? 'text-blue-600' : dayOfWeek === 6 ? 'text-red-600' : 'text-gray-400')
                       )}
                     >
                       {date.getDate()}
@@ -199,7 +199,7 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
                       <span className={clsx(
                         'text-[10px] font-bold px-1.5 py-0.5 rounded-full',
                         dayEvents.length >= 3 ? 'bg-violet-600 text-white' :
-                        dayEvents.length >= 2 ? 'bg-violet-500/30 text-violet-300' :
+                        dayEvents.length >= 2 ? 'bg-violet-500/30 text-violet-600' :
                         'text-gray-500'
                       )}>
                         {dayEvents.length}件
@@ -215,8 +215,8 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
                         className={clsx(
                           'w-full px-1.5 py-0.5 rounded text-[10px] font-medium truncate',
                           event.type === 'meeting'
-                            ? 'bg-violet-500/20 text-violet-300 border-l-2 border-violet-400'
-                            : 'bg-amber-500/15 text-amber-300 border-l-2 border-amber-400'
+                            ? 'bg-violet-500/20 text-violet-600 border-l-2 border-violet-400'
+                            : 'bg-amber-500/15 text-amber-600 border-l-2 border-amber-400'
                         )}
                       >
                         {event.deal.company_name}
@@ -246,9 +246,9 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
 
         {/* Selected date detail panel */}
         {selectedDate && (
-          <div className="w-72 shrink-0 bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col min-h-0">
+          <div className="w-72 shrink-0 bg-white border border-gray-200 rounded-xl p-4 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-3 shrink-0">
-              <h3 className="text-sm font-semibold text-white">
+              <h3 className="text-sm font-semibold text-gray-900">
                 {selectedDate.getMonth() + 1}/{selectedDate.getDate()}({WEEKDAYS[(() => {
                   let d = selectedDate.getDay() - 1
                   if (d < 0) d = 6
@@ -257,14 +257,14 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
               </h3>
               <button
                 onClick={() => setSelectedDate(null)}
-                className="p-1 rounded-lg text-gray-500 hover:text-white hover:bg-gray-800 transition-colors"
+                className="p-1 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
             {selectedEvents.length === 0 ? (
-              <p className="text-xs text-gray-600 text-center py-6">予定なし</p>
+              <p className="text-xs text-gray-400 text-center py-6">予定なし</p>
             ) : (
               <div className="overflow-y-auto flex-1 space-y-2">
                 {selectedEvents.map((event, i) => {
@@ -273,13 +273,13 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
                     <button
                       key={`${event.deal.id}-${event.type}-${i}`}
                       onClick={() => onDealClick(event.deal)}
-                      className="w-full text-left p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 transition-colors"
+                      className="w-full text-left p-3 rounded-lg bg-gray-50/50 hover:bg-gray-100 border border-gray-200/50 transition-colors"
                     >
                       <div className="flex items-center gap-2 mb-1">
                         {event.type === 'meeting' ? (
-                          <Video className="w-3 h-3 text-violet-400" />
+                          <Video className="w-3 h-3 text-violet-600" />
                         ) : (
-                          <Calendar className="w-3 h-3 text-amber-400" />
+                          <Calendar className="w-3 h-3 text-amber-600" />
                         )}
                         <span className="text-xs text-gray-400">
                           {event.type === 'meeting' ? 'ミーティング' : 'アクション期限'}
@@ -290,7 +290,7 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
                           </span>
                         )}
                       </div>
-                      <p className="text-sm font-medium text-white truncate">
+                      <p className="text-sm font-medium text-gray-900 truncate">
                         {event.deal.company_name}
                       </p>
                       <div className="flex items-center gap-2 mt-1.5">
@@ -308,7 +308,7 @@ export default function DealsCalendar({ deals, onDealClick }: DealsCalendarProps
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={e => e.stopPropagation()}
-                            className="text-[10px] text-violet-400 hover:text-violet-300 underline"
+                            className="text-[10px] text-violet-600 hover:text-violet-600 underline"
                           >
                             会議リンク
                           </a>

@@ -45,7 +45,7 @@ export const SENTIMENT_CONFIG: Record<
   興味あり: {
     label: '興味あり',
     emoji: '🔥',
-    color: 'text-emerald-400',
+    color: 'text-emerald-600',
     bg: 'bg-emerald-500/10',
     border: 'border-emerald-500/20',
     dot: 'bg-emerald-400',
@@ -54,7 +54,7 @@ export const SENTIMENT_CONFIG: Record<
   検討中: {
     label: '検討中',
     emoji: '🤔',
-    color: 'text-amber-400',
+    color: 'text-amber-600',
     bg: 'bg-amber-500/10',
     border: 'border-amber-500/20',
     dot: 'bg-amber-400',
@@ -63,7 +63,7 @@ export const SENTIMENT_CONFIG: Record<
   お断り: {
     label: 'お断り',
     emoji: '🚫',
-    color: 'text-red-400',
+    color: 'text-red-600',
     bg: 'bg-red-500/10',
     border: 'border-red-500/20',
     dot: 'bg-red-400',
@@ -72,7 +72,7 @@ export const SENTIMENT_CONFIG: Record<
   質問: {
     label: '質問',
     emoji: '❓',
-    color: 'text-violet-400',
+    color: 'text-violet-600',
     bg: 'bg-violet-500/10',
     border: 'border-violet-500/20',
     dot: 'bg-violet-400',

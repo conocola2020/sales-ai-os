@@ -37,7 +37,7 @@ export const STATUS_CONFIG: Record<
   'アプローチ中': {
     label: 'アプローチ中',
     emoji: '👋',
-    color: 'text-blue-400',
+    color: 'text-blue-600',
     bg: 'bg-blue-500/10',
     border: 'border-blue-500/20',
     dot: 'bg-blue-400',
@@ -45,7 +45,7 @@ export const STATUS_CONFIG: Record<
   'DM送信済み': {
     label: 'DM送信済み',
     emoji: '💬',
-    color: 'text-violet-400',
+    color: 'text-violet-600',
     bg: 'bg-violet-500/10',
     border: 'border-violet-500/20',
     dot: 'bg-violet-400',
@@ -53,7 +53,7 @@ export const STATUS_CONFIG: Record<
   '返信あり': {
     label: '返信あり',
     emoji: '💌',
-    color: 'text-amber-400',
+    color: 'text-amber-600',
     bg: 'bg-amber-500/10',
     border: 'border-amber-500/20',
     dot: 'bg-amber-400',
@@ -61,7 +61,7 @@ export const STATUS_CONFIG: Record<
   '成約': {
     label: '成約',
     emoji: '🎉',
-    color: 'text-emerald-400',
+    color: 'text-emerald-600',
     bg: 'bg-emerald-500/10',
     border: 'border-emerald-500/20',
     dot: 'bg-emerald-400',
@@ -69,7 +69,7 @@ export const STATUS_CONFIG: Record<
   'NG': {
     label: 'NG',
     emoji: '🚫',
-    color: 'text-red-400',
+    color: 'text-red-600',
     bg: 'bg-red-500/10',
     border: 'border-red-500/20',
     dot: 'bg-red-400',

@@ -13,21 +13,21 @@ export default function SafetyDashboard({ status, onRefresh }: SafetyDashboardPr
   const levelConfig = {
     safe: {
       icon: ShieldCheck,
-      color: 'text-emerald-400',
+      color: 'text-emerald-600',
       bg: 'bg-emerald-500/10',
       border: 'border-emerald-500/20',
       label: '安全',
     },
     caution: {
       icon: ShieldAlert,
-      color: 'text-amber-400',
+      color: 'text-amber-600',
       bg: 'bg-amber-500/10',
       border: 'border-amber-500/20',
       label: '注意',
     },
     danger: {
       icon: ShieldOff,
-      color: 'text-red-400',
+      color: 'text-red-600',
       bg: 'bg-red-500/10',
       border: 'border-red-500/20',
       label: '上限到達',
@@ -48,7 +48,7 @@ export default function SafetyDashboard({ status, onRefresh }: SafetyDashboardPr
         </div>
         <button
           onClick={onRefresh}
-          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
         </button>
@@ -56,22 +56,22 @@ export default function SafetyDashboard({ status, onRefresh }: SafetyDashboardPr
 
       <div className="grid grid-cols-3 gap-3 text-center">
         <div>
-          <p className="text-lg font-bold text-white">{status.todayDmCount}</p>
+          <p className="text-lg font-bold text-gray-900">{status.todayDmCount}</p>
           <p className="text-xs text-gray-500">本日送信</p>
         </div>
         <div>
-          <p className="text-lg font-bold text-white">{status.effectiveLimit}</p>
+          <p className="text-lg font-bold text-gray-900">{status.effectiveLimit}</p>
           <p className="text-xs text-gray-500">上限</p>
         </div>
         <div>
-          <p className="text-lg font-bold text-white">
+          <p className="text-lg font-bold text-gray-900">
             {status.waitSeconds > 0 ? `${Math.ceil(status.waitSeconds / 60)}分` : 'OK'}
           </p>
           <p className="text-xs text-gray-500">次まで</p>
         </div>
       </div>
 
-      <p className="mt-2 text-xs text-gray-600 text-center">{status.warmupPhase}</p>
+      <p className="mt-2 text-xs text-gray-400 text-center">{status.warmupPhase}</p>
     </div>
   )
 }

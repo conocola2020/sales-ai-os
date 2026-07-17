@@ -49,7 +49,7 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
   return (
     <div ref={containerRef} className="relative">
       <label className="block text-xs font-medium text-gray-400 mb-1.5">
-        対象リード <span className="text-red-400">*</span>
+        対象リード <span className="text-red-600">*</span>
       </label>
 
       <button
@@ -57,17 +57,17 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
         className={clsx(
           'w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all',
           open
-            ? 'bg-gray-800 border-violet-500 ring-1 ring-violet-500/30'
-            : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+            ? 'bg-gray-50 border-violet-500 ring-1 ring-violet-500/30'
+            : 'bg-gray-50 border-gray-200 hover:border-gray-300'
         )}
       >
         {selectedLead ? (
           <>
             <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-xs">{selectedLead.company_name[0]}</span>
+              <span className="text-gray-900 font-bold text-xs">{selectedLead.company_name[0]}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{selectedLead.company_name}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{selectedLead.company_name}</p>
               <p className="text-xs text-gray-500 truncate">
                 {selectedLead.contact_name ?? '担当者未登録'}{selectedLead.industry ? ` · ${selectedLead.industry}` : ''}
               </p>
@@ -83,7 +83,7 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
               <span
                 role="button"
                 onClick={(e) => { e.stopPropagation(); onSelect('') }}
-                className="text-gray-600 hover:text-gray-400 transition-colors cursor-pointer"
+                className="text-gray-400 hover:text-gray-400 transition-colors cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </span>
@@ -91,7 +91,7 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
           </>
         ) : (
           <>
-            <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
               <Building2 className="w-4 h-4 text-gray-500" />
             </div>
             <span className="text-sm text-gray-500 flex-1">リードを選択してください</span>
@@ -101,9 +101,9 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 overflow-hidden">
           {/* Search */}
-          <div className="p-3 border-b border-gray-800">
+          <div className="p-3 border-b border-gray-200">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
               <input
@@ -111,7 +111,7 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="会社名・担当者・業種で検索..."
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-transparent"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -128,15 +128,15 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
                   key={lead.id}
                   onClick={() => { onSelect(lead.id); setOpen(false); setQuery('') }}
                   className={clsx(
-                    'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-800',
+                    'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-100',
                     lead.id === selectedLeadId && 'bg-violet-500/10'
                   )}
                 >
                   <div className="w-7 h-7 bg-gradient-to-br from-violet-500/70 to-indigo-600/70 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold text-xs">{lead.company_name[0]}</span>
+                    <span className="text-gray-900 font-bold text-xs">{lead.company_name[0]}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{lead.company_name}</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">{lead.company_name}</p>
                     <p className="text-xs text-gray-500 truncate">
                       {lead.contact_name ?? '—'}{lead.industry ? ` · ${lead.industry}` : ''}
                     </p>
@@ -154,7 +154,7 @@ export default function LeadSelector({ leads, selectedLeadId, onSelect }: LeadSe
           </div>
 
           {leads.length > 0 && (
-            <div className="px-4 py-2 border-t border-gray-800 text-xs text-gray-600 text-right">
+            <div className="px-4 py-2 border-t border-gray-200 text-xs text-gray-400 text-right">
               {filtered.length} 件
             </div>
           )}

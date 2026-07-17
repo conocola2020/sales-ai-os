@@ -41,35 +41,35 @@ export const SEND_STATUS_CONFIG: Record<
 > = {
   確認待ち: {
     label: '確認待ち',
-    color: 'text-amber-400',
+    color: 'text-amber-600',
     bg: 'bg-amber-500/10',
     border: 'border-amber-500/20',
     dot: 'bg-amber-400',
   },
   送信承認済み: {
     label: '送信待機中',
-    color: 'text-violet-400',
+    color: 'text-violet-600',
     bg: 'bg-violet-500/10',
     border: 'border-violet-500/20',
     dot: 'bg-violet-400',
   },
   送信済み: {
     label: '送信済み',
-    color: 'text-emerald-400',
+    color: 'text-emerald-600',
     bg: 'bg-emerald-500/10',
     border: 'border-emerald-500/20',
     dot: 'bg-emerald-400',
   },
   失敗: {
     label: '失敗',
-    color: 'text-red-400',
+    color: 'text-red-600',
     bg: 'bg-red-500/10',
     border: 'border-red-500/20',
     dot: 'bg-red-400',
   },
   form_not_found: {
     label: 'フォーム未検出',
-    color: 'text-orange-400',
+    color: 'text-orange-600',
     bg: 'bg-orange-500/10',
     border: 'border-orange-500/20',
     dot: 'bg-orange-400',
@@ -96,13 +96,13 @@ export const SEND_METHOD_CONFIG: Record<
 > = {
   email: {
     label: 'メール',
-    color: 'text-blue-400',
+    color: 'text-blue-600',
     bg: 'bg-blue-500/10',
     border: 'border-blue-500/20',
   },
   form: {
     label: 'フォーム',
-    color: 'text-cyan-400',
+    color: 'text-cyan-600',
     bg: 'bg-cyan-500/10',
     border: 'border-cyan-500/20',
   },

@@ -64,13 +64,13 @@ interface StatCardProps {
   accent?: string
 }
 
-function StatCard({ icon, label, value, sub, accent = 'text-violet-400' }: StatCardProps) {
+function StatCard({ icon, label, value, sub, accent = 'text-violet-600' }: StatCardProps) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-start gap-3">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-start gap-3">
       <div className={clsx('mt-0.5', accent)}>{icon}</div>
       <div>
         <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-lg font-bold text-white mt-0.5">{value}</p>
+        <p className="text-lg font-bold text-gray-900 mt-0.5">{value}</p>
         {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
       </div>
     </div>
@@ -166,21 +166,21 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-white">商談管理</h1>
+          <h1 className="text-2xl font-bold text-gray-900">商談管理</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {stats.active}件のアクティブ商談 / 合計{stats.total}件
           </p>
         </div>
         <div className="flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex items-center bg-gray-900 border border-gray-800 rounded-lg p-1">
+          <div className="flex items-center bg-white border border-gray-200 rounded-lg p-1">
             <button
               onClick={() => setView('list')}
               className={clsx(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
                 view === 'list'
                   ? 'bg-violet-600 text-white'
-                  : 'text-gray-400 hover:text-white'
+                  : 'text-gray-400 hover:text-gray-900'
               )}
             >
               <LayoutList className="w-3.5 h-3.5" />
@@ -192,7 +192,7 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
                 view === 'kanban'
                   ? 'bg-violet-600 text-white'
-                  : 'text-gray-400 hover:text-white'
+                  : 'text-gray-400 hover:text-gray-900'
               )}
             >
               <Columns className="w-3.5 h-3.5" />
@@ -204,7 +204,7 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
                 view === 'calendar'
                   ? 'bg-violet-600 text-white'
-                  : 'text-gray-400 hover:text-white'
+                  : 'text-gray-400 hover:text-gray-900'
               )}
             >
               <CalendarDays className="w-3.5 h-3.5" />
@@ -229,27 +229,27 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
           icon={<TrendingUp className="w-5 h-5" />}
           label="アクティブ商談"
           value={`${stats.active}件`}
-          accent="text-violet-400"
+          accent="text-violet-600"
         />
         <StatCard
           icon={<DollarSign className="w-5 h-5" />}
           label="パイプライン"
           value={stats.pipelineAmount > 0 ? formatAmount(stats.pipelineAmount) : '—'}
           sub={stats.weightedAmount > 0 ? `加重: ${formatAmount(Math.round(stats.weightedAmount))}` : undefined}
-          accent="text-emerald-400"
+          accent="text-emerald-600"
         />
         <StatCard
           icon={<Trophy className="w-5 h-5" />}
           label="成約"
           value={`${stats.won}件`}
-          accent="text-amber-400"
+          accent="text-amber-600"
         />
         <StatCard
           icon={<Percent className="w-5 h-5" />}
           label="成約率"
           value={stats.winRate != null ? `${stats.winRate}%` : '—'}
           sub={stats.won + stats.lost > 0 ? `${stats.won}勝 ${stats.lost}敗` : undefined}
-          accent="text-blue-400"
+          accent="text-blue-600"
         />
       </div>
 
@@ -257,8 +257,8 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
       {reminderDeals.length > 0 && (
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 shrink-0">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span className="text-sm font-medium text-amber-400">
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+            <span className="text-sm font-medium text-amber-600">
               アクション期限あり ({reminderDeals.length}件)
             </span>
           </div>
@@ -274,13 +274,13 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
                   <div className="flex items-center gap-2 min-w-0">
                     <span
                       className={clsx('text-xs font-medium', {
-                        'text-red-400': status === 'overdue',
-                        'text-amber-400': status === 'today',
+                        'text-red-600': status === 'overdue',
+                        'text-amber-600': status === 'today',
                       })}
                     >
                       {status === 'overdue' ? '期限切れ' : '今日'}
                     </span>
-                    <span className="text-sm text-white truncate">{d.company_name}</span>
+                    <span className="text-sm text-gray-900 truncate">{d.company_name}</span>
                     {d.next_action && (
                       <span className="text-xs text-gray-500 truncate">— {d.next_action}</span>
                     )}
@@ -308,7 +308,7 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
                     'px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0',
                     stageFilter === tab.value
                       ? 'bg-violet-600 text-white'
-                      : 'bg-gray-900 text-gray-400 hover:text-white border border-gray-800 hover:border-gray-700'
+                      : 'bg-white text-gray-400 hover:text-gray-900 border border-gray-200 hover:border-gray-200'
                   )}
                 >
                   {tab.label}
@@ -324,7 +324,7 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="会社名・担当者で検索"
-                className="bg-gray-900 border border-gray-800 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors w-52"
+                className="bg-white border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-violet-500 transition-colors w-52"
               />
             </div>
           </div>
@@ -332,7 +332,7 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
           {/* Deal list */}
           <div className="flex-1 overflow-y-auto min-h-0">
             {filteredDeals.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-gray-600">
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                 <p className="text-4xl mb-3">🤝</p>
                 <p className="text-sm">
                   {search.trim() ? '検索結果なし' : '商談がありません'}
@@ -340,7 +340,7 @@ export default function DealsPage({ initialDeals, leads, initialLead }: DealsPag
                 {!search.trim() && (
                   <button
                     onClick={() => openCreate()}
-                    className="mt-4 text-sm text-violet-400 hover:text-violet-300 transition-colors"
+                    className="mt-4 text-sm text-violet-600 hover:text-violet-600 transition-colors"
                   >
                     最初の商談を追加する →
                   </button>

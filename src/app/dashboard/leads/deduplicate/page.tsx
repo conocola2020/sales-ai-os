@@ -31,8 +31,8 @@ export default function DeduplicatePage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-8">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full text-center space-y-6">
-        <h1 className="text-xl font-bold text-white">重複リード削除</h1>
+      <div className="bg-white border border-gray-200 rounded-2xl p-8 max-w-md w-full text-center space-y-6">
+        <h1 className="text-xl font-bold text-gray-900">重複リード削除</h1>
         <p className="text-sm text-gray-400">
           会社名が同じリードの重複を削除し、各会社1件のみ残します。
         </p>
@@ -49,27 +49,27 @@ export default function DeduplicatePage() {
 
         {status === 'running' && (
           <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
-            <p className="text-sm text-gray-300">重複を検出・削除中...</p>
+            <Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
+            <p className="text-sm text-gray-700">重複を検出・削除中...</p>
             <p className="text-xs text-gray-500">30,000件以上あるため数分かかる場合があります</p>
           </div>
         )}
 
         {status === 'done' && result && (
           <div className="space-y-4">
-            <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 space-y-2 text-sm">
+            <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
+            <div className="bg-gray-50/50 border border-gray-200 rounded-xl p-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-400">処理前</span>
-                <span className="text-white font-medium">{result.total?.toLocaleString()}件</span>
+                <span className="text-gray-900 font-medium">{result.total?.toLocaleString()}件</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">ユニーク（残存）</span>
-                <span className="text-emerald-400 font-medium">{result.unique?.toLocaleString()}件</span>
+                <span className="text-emerald-600 font-medium">{result.unique?.toLocaleString()}件</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">削除済み</span>
-                <span className="text-red-400 font-medium">{result.deleted?.toLocaleString()}件</span>
+                <span className="text-red-600 font-medium">{result.deleted?.toLocaleString()}件</span>
               </div>
             </div>
             <Link
@@ -84,10 +84,10 @@ export default function DeduplicatePage() {
 
         {status === 'error' && (
           <div className="space-y-4">
-            <p className="text-red-400 text-sm">{error}</p>
+            <p className="text-red-600 text-sm">{error}</p>
             <button
               onClick={() => setStatus('idle')}
-              className="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-colors"
+              className="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-xl transition-colors"
             >
               やり直す
             </button>
@@ -95,7 +95,7 @@ export default function DeduplicatePage() {
         )}
 
         {status === 'idle' && (
-          <Link href="/dashboard/leads" className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+          <Link href="/dashboard/leads" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
             ← リード一覧に戻る
           </Link>
         )}

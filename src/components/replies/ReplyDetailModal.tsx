@@ -280,17 +280,17 @@ export default function ReplyDetailModal({
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-2xl bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center text-sm font-bold text-gray-300 border border-gray-700 flex-shrink-0">
+            <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-sm font-bold text-gray-700 border border-gray-200 flex-shrink-0">
               {lead?.company_name?.charAt(0) ?? '?'}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-white truncate">
+                <h2 className="text-sm font-semibold text-gray-900 truncate">
                   {lead?.company_name ?? '不明な会社'}
                 </h2>
                 {lead?.website_url && (
@@ -298,7 +298,7 @@ export default function ReplyDetailModal({
                     href={lead.website_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-600 hover:text-gray-400 transition-colors flex-shrink-0"
+                    className="text-gray-400 hover:text-gray-400 transition-colors flex-shrink-0"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
@@ -322,7 +322,7 @@ export default function ReplyDetailModal({
                 </button>
                 <button
                   onClick={() => setConfirmDelete(false)}
-                  className="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs rounded-lg transition-colors"
+                  className="px-2.5 py-1 bg-gray-50 hover:bg-gray-200 text-gray-400 text-xs rounded-lg transition-colors"
                 >
                   キャンセル
                 </button>
@@ -330,14 +330,14 @@ export default function ReplyDetailModal({
             ) : (
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="p-1.5 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-500/10 rounded-lg transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
             <button
               onClick={onClose}
-              className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
+              className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -366,7 +366,7 @@ export default function ReplyDetailModal({
               </button>
 
               {showSentimentMenu && (
-                <div className="absolute top-full left-0 mt-1 w-44 bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-10 overflow-hidden">
+                <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-gray-200 rounded-xl shadow-xl z-10 overflow-hidden">
                   {SENTIMENTS.map(s => {
                     const c = SENTIMENT_CONFIG[s]
                     return (
@@ -377,12 +377,12 @@ export default function ReplyDetailModal({
                           'w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors',
                           s === sentiment
                             ? clsx(c.bg, c.color, 'font-semibold')
-                            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                            : 'text-gray-400 hover:bg-gray-100 hover:text-gray-900'
                         )}
                       >
                         <span>{c.emoji}</span>
                         <span>{c.label}</span>
-                        <span className="ml-auto text-[10px] text-gray-600">{c.description.slice(0, 10)}</span>
+                        <span className="ml-auto text-[10px] text-gray-400">{c.description.slice(0, 10)}</span>
                       </button>
                     )
                   })}
@@ -391,7 +391,7 @@ export default function ReplyDetailModal({
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-600">
+              <span className="text-xs text-gray-400">
                 {new Date(reply.created_at).toLocaleString('ja-JP', {
                   year: 'numeric', month: 'short', day: 'numeric',
                   hour: '2-digit', minute: '2-digit',
@@ -404,7 +404,7 @@ export default function ReplyDetailModal({
                     onClick={handleCreateDealAndGo}
                     disabled={isCreatingDeal || dealCreated}
                     className={clsx(
-                      'flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-semibold rounded-lg transition-colors',
+                      'flex items-center gap-1.5 px-3 py-1.5 text-gray-900 text-xs font-semibold rounded-lg transition-colors',
                       dealCreated
                         ? 'bg-emerald-600'
                         : 'bg-violet-600 hover:bg-violet-500'
@@ -434,7 +434,7 @@ export default function ReplyDetailModal({
                       リードに紐づけ
                     </button>
                     {showLeadSelector && (
-                      <div className="absolute top-full right-0 mt-1 w-64 max-h-60 overflow-y-auto bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-20">
+                      <div className="absolute top-full right-0 mt-1 w-64 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-xl z-20">
                         {leads.length === 0 ? (
                           <p className="px-3 py-2 text-xs text-gray-500">リードがありません</p>
                         ) : (
@@ -442,9 +442,9 @@ export default function ReplyDetailModal({
                             <button
                               key={l.id}
                               onClick={() => handleLinkLead(l)}
-                              className="w-full flex flex-col px-3 py-2 text-left hover:bg-gray-800 transition-colors border-b border-gray-800 last:border-0"
+                              className="w-full flex flex-col px-3 py-2 text-left hover:bg-gray-100 transition-colors border-b border-gray-200 last:border-0"
                             >
-                              <span className="text-xs font-semibold text-white">{l.company_name}</span>
+                              <span className="text-xs font-semibold text-gray-900">{l.company_name}</span>
                               {l.contact_name && (
                                 <span className="text-[10px] text-gray-500">{l.contact_name}</span>
                               )}
@@ -470,8 +470,8 @@ export default function ReplyDetailModal({
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
               返信内容
             </h3>
-            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
-              <pre className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed font-sans">
+            <div className="bg-gray-50/50 border border-gray-200/50 rounded-xl p-4">
+              <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">
                 {reply.content}
               </pre>
             </div>
@@ -479,7 +479,7 @@ export default function ReplyDetailModal({
 
           {/* Error */}
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-600">
               {error}
             </div>
           )}
@@ -502,12 +502,12 @@ export default function ReplyDetailModal({
                     </button>
                     <button
                       onClick={handleCopy}
-                      className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                      className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
                     >
                       {isCopied ? (
                         <>
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span className="text-emerald-400">コピー済み</span>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-600">コピー済み</span>
                         </>
                       ) : (
                         <>
@@ -524,7 +524,7 @@ export default function ReplyDetailModal({
                   className={clsx(
                     'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
                     aiResponse
-                      ? 'bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700'
+                      ? 'bg-gray-50 hover:bg-gray-200 text-gray-700 border border-gray-200'
                       : 'bg-violet-600 hover:bg-violet-500 text-white'
                   )}
                 >
@@ -547,9 +547,9 @@ export default function ReplyDetailModal({
                     value={aiResponse}
                     onChange={e => setAiResponse(e.target.value)}
                     rows={6}
-                    className="w-full bg-gray-800/60 border border-gray-700/50 rounded-xl px-4 py-3 text-sm text-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent leading-relaxed"
+                    className="w-full bg-gray-50/60 border border-gray-200/50 rounded-xl px-4 py-3 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent leading-relaxed"
                   />
-                  <div className="absolute bottom-2 right-2 flex items-center gap-1 text-gray-600">
+                  <div className="absolute bottom-2 right-2 flex items-center gap-1 text-gray-400">
                     <Pencil className="w-3 h-3" />
                     <span className="text-[10px]">編集可</span>
                   </div>
@@ -572,16 +572,16 @@ export default function ReplyDetailModal({
             ) : (
               <div
                 onClick={handleGenerateResponse}
-                className="flex flex-col items-center justify-center gap-3 py-8 bg-gray-800/30 border border-dashed border-gray-700 rounded-xl cursor-pointer hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group"
+                className="flex flex-col items-center justify-center gap-3 py-8 bg-gray-50/30 border border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group"
               >
                 {isGenerating ? (
                   <>
-                    <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
+                    <Loader2 className="w-6 h-6 text-violet-600 animate-spin" />
                     <p className="text-xs text-gray-500">AIが返信文案を生成しています...</p>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-6 h-6 text-gray-600 group-hover:text-violet-400 transition-colors" />
+                    <Sparkles className="w-6 h-6 text-gray-400 group-hover:text-violet-600 transition-colors" />
                     <p className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">
                       クリックしてAI返信文案を生成
                     </p>
