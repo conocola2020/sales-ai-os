@@ -42,7 +42,7 @@ export default function DashboardShell({ children, userName, userEmail }: Dashbo
           </div>
           <div className="h-10 w-10" aria-hidden="true" />
         </header>
-        <main className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,#0b0d10_0%,#08090b_36%,#08090b_100%)]">
+        <main className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f6f7f9_0%,#ffffff_36%,#ffffff_100%)]">
           {children}
         </main>
       </div>
