@@ -9,6 +9,7 @@ export interface Lead {
   phone: string | null
   website_url: string | null
   company_url: string | null
+  contact_url?: string | null
   instagram_url?: string | null
   contact_method?: 'form' | 'email' | 'instagram' | 'manual' | 'none' | null
   industry: string | null
