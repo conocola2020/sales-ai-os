@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { hasRequiredContact, splitByContactRule, LEAD_CONTACT_RULE_MESSAGE } from '@/lib/lead-rules'
 import type { Lead, LeadInsert, LeadUpdate } from '@/types/leads'
 
 // ──────────────────────────────────────────
@@ -145,6 +146,11 @@ export async function createLead(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { data: null, error: '認証が必要です' }
 
+  // 登録条件: メール or 問い合わせフォームURL（オーナー決定ルール）
+  if (!hasRequiredContact(lead)) {
+    return { data: null, error: LEAD_CONTACT_RULE_MESSAGE }
+  }
+
   const { data, error } = await supabase
     .from('leads')
     .insert({ ...lead, user_id: user.id })
@@ -166,7 +172,13 @@ export async function bulkCreateLeads(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { count: 0, error: '認証が必要です' }
 
-  const rows = leads.map((l) => ({ ...l, user_id: user.id }))
+  // 登録条件: メール or 問い合わせフォームURL（満たさない行はスキップ）
+  const { valid, skipped } = splitByContactRule(leads)
+  if (valid.length === 0) {
+    return { count: 0, error: `全${leads.length}件が条件不足のため取り込みませんでした。${LEAD_CONTACT_RULE_MESSAGE}` }
+  }
+
+  const rows = valid.map((l) => ({ ...l, user_id: user.id }))
 
   const CHUNK = 500
   let inserted = 0
@@ -177,7 +189,12 @@ export async function bulkCreateLeads(
   }
 
   revalidatePath('/dashboard/leads')
-  return { count: inserted, error: null }
+  return {
+    count: inserted,
+    error: skipped > 0
+      ? `${skipped}件はメール・問い合わせフォームURLが無いためスキップしました（${inserted}件は取り込み済み）`
+      : null,
+  }
 }
 
 // ──────────────────────────────────────────
