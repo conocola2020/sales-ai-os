@@ -208,13 +208,28 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
 
   // ── Add new lead ───────────────────────────────────────────
   const [newCompany, setNewCompany] = useState('')
+  const [newEmail, setNewEmail] = useState('')
+  const [newContactUrl, setNewContactUrl] = useState('')
   const handleQuickAdd = async () => {
     if (!newCompany.trim()) return
-    const { data, error } = await createLead({ company_name: newCompany.trim(), status: '未着手' })
+    // 登録条件: メール or 問い合わせフォームURL（サーバー側でも検証される）
+    if (!newEmail.trim() && !newContactUrl.trim()) {
+      showToast('メールアドレスか問い合わせフォームURLのどちらかを入力してください', 'error')
+      return
+    }
+    const { data, error } = await createLead({
+      company_name: newCompany.trim(),
+      status: '未着手',
+      email: newEmail.trim() || null,
+      contact_url: newContactUrl.trim() || null,
+      contact_method: newContactUrl.trim() ? 'form' : 'email',
+    })
     if (error) { showToast(error, 'error'); return }
     if (data) {
       setLeads((prev) => [data, ...prev])
       setNewCompany('')
+      setNewEmail('')
+      setNewContactUrl('')
       setShowAdd(false)
       showToast('リードを追加しました', 'success')
     }
@@ -319,22 +334,43 @@ export default function LeadsTable({ initialLeads, queueStatusMap = {} }: LeadsT
 
         {/* Quick add form */}
         {showAdd && (
-          <div className="flex items-center gap-3 mb-4 p-4 bg-white border border-gray-200 rounded-2xl">
-            <Building2 className="w-4 h-4 text-gray-500 flex-shrink-0" />
-            <input
-              autoFocus
-              value={newCompany}
-              onChange={(e) => setNewCompany(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleQuickAdd(); if (e.key === 'Escape') setShowAdd(false) }}
-              placeholder="会社名を入力して Enter"
-              className={clsx(inputCls, 'flex-1')}
-            />
-            <button onClick={handleQuickAdd} className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-colors">
-              追加
-            </button>
-            <button onClick={() => setShowAdd(false)} className="text-gray-500 hover:text-gray-700 transition-colors text-sm">
-              キャンセル
-            </button>
+          <div className="mb-4 p-4 bg-white border border-gray-200 rounded-2xl space-y-3">
+            <div className="flex items-center gap-3">
+              <Building2 className="w-4 h-4 text-gray-500 flex-shrink-0" />
+              <input
+                autoFocus
+                value={newCompany}
+                onChange={(e) => setNewCompany(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape') setShowAdd(false) }}
+                placeholder="会社名（必須）"
+                className={clsx(inputCls, 'flex-1')}
+              />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 sm:pl-7">
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="メールアドレス"
+                className={clsx(inputCls, 'flex-1')}
+              />
+              <input
+                type="url"
+                value={newContactUrl}
+                onChange={(e) => setNewContactUrl(e.target.value)}
+                placeholder="問い合わせフォームURL"
+                className={clsx(inputCls, 'flex-1')}
+              />
+            </div>
+            <div className="flex items-center gap-3 sm:pl-7">
+              <p className="flex-1 text-xs text-gray-500">メールか問い合わせフォームURLのどちらかが必須です</p>
+              <button onClick={handleQuickAdd} className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-colors">
+                追加
+              </button>
+              <button onClick={() => setShowAdd(false)} className="text-gray-500 hover:text-gray-700 transition-colors text-sm">
+                キャンセル
+              </button>
+            </div>
           </div>
         )}
 
