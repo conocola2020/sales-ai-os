@@ -46,7 +46,7 @@ export const INDUSTRIES = [
   'サウナ・温浴施設', 'カフェ', '美容サロン', '中華', '焼肉',
   'フレンチ', 'イタリアン', 'キッチンカー', '雑貨屋',
   'スーパーマーケット', '百貨店', '高級食品スーパー', 'お土産屋',
-  '飲食・食品', 'その他',
+  '高級レストラン', '飲食・食品', 'その他',
 ]
 
 export const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string; border: string; dot: string }> = {
