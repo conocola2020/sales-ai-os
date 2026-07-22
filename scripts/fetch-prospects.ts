@@ -225,6 +225,10 @@ function classifyPlace(place: RawPlace, config: IndustryConfig): { status: Prosp
       return { status: 'excluded', reason: 'not_target_type' }
     }
   }
+  // 価格帯フィルタ（高級業態: 明確に安い店を除外）
+  if (config.excludePriceLevels && place.priceLevel && config.excludePriceLevels.includes(place.priceLevel)) {
+    return { status: 'excluded', reason: 'price_level' }
+  }
   if (!isOperational(place.businessStatus)) {
     return { status: 'excluded', reason: 'closed' }
   }
@@ -549,7 +553,7 @@ async function main() {
         stats.uniqueCount++
 
         const classified = classifyPlace(place, config)
-        if (classified.reason === 'not_target_type') stats.notCafeTypeCount++
+        if (classified.reason === 'not_target_type' || classified.reason === 'price_level') stats.notCafeTypeCount++
         if (classified.reason === 'closed') stats.closedCount++
         if (classified.reason?.startsWith('blacklist:')) stats.blacklistedCount++
 

@@ -27,6 +27,11 @@ export interface IndustryConfig {
    * （例: お土産屋は gift_shop タイプだけでは雑貨屋と区別できない）
    */
   nameMustIncludeAny?: string[]
+  /**
+   * この価格帯（Google priceLevel）に該当する店を除外する。
+   * 高級業態向け。priceLevel が未設定の店はデータ欠損の可能性があるため除外しない
+   */
+  excludePriceLevels?: string[]
 }
 
 const chain = (id: string, ...patterns: string[]): BlacklistEntry => ({
@@ -180,6 +185,22 @@ INDUSTRY_CONFIGS['お土産屋'] = {
   // 「物産」単体は商社と衝突するため、店舗形態を表す複合語のみ許可
   nameMustIncludeAny: ['土産', 'みやげ', '物産店', '物産館', '物産センター', '名産', '特産', 'アンテナショップ', 'souvenir', 'キヨスク'],
   blacklist: [],
+}
+
+INDUSTRY_CONFIGS['高級レストラン'] = {
+  id: '高級レストラン',
+  searchKeywords: ['高級レストラン', 'フレンチ', '料亭'],
+  placesTypes: [
+    'restaurant', 'fine_dining_restaurant', 'french_restaurant',
+    'japanese_restaurant', 'sushi_restaurant', 'steak_house', 'italian_restaurant',
+  ],
+  // 「明確に安い店」だけ弾く。priceLevel欠損は高級店でも多いため通す
+  excludePriceLevels: ['PRICE_LEVEL_FREE', 'PRICE_LEVEL_INEXPENSIVE', 'PRICE_LEVEL_MODERATE'],
+  blacklist: [
+    chain('familyres', 'サイゼリヤ', 'ガスト', 'ジョナサン', 'デニーズ', 'ロイヤルホスト', 'びっくりドンキー'),
+    chain('kaiten', 'スシロー', 'くら寿司', 'はま寿司', 'かっぱ寿司'),
+    chain('fast', 'マクドナルド', '吉野家', 'すき家', '松屋'),
+  ],
 }
 
 export function getIndustryConfig(industry: string): IndustryConfig | null {
