@@ -12,6 +12,8 @@ import * as cheerio from 'cheerio'
 export interface SenderInfo {
   companyName: string
   name: string
+  /** 氏名フリガナ（カタカナ）。フリガナ必須フォーム対応 */
+  nameKana?: string
   email: string
   phone: string
 }
@@ -58,6 +60,17 @@ interface FormField {
   placeholder: string
   value: string      // hidden field の既存値
   required: boolean
+  /** select/radio の選択肢（value と表示ラベル） */
+  options?: { value: string; label: string }[]
+  /** このフィールドの近傍ラベルテキスト */
+  label?: string
+}
+
+/** 送信/確認/戻る等のボタン（input・button 両対応） */
+interface SubmitButton {
+  name: string
+  value: string
+  label: string
 }
 
 // ─── 定数 ────────────────────────────────────
@@ -118,21 +131,102 @@ const FIELD_PATTERNS: Record<FieldType, { namePatterns: string[]; labelPatterns:
 // company/mail/kana を含む name フィールドは除外する
 const NAME_EXCLUDE = ['company', 'corp', 'mail', 'email', 'kana', 'フリガナ', 'カナ', '会社']
 
-// ─── ユーティリティ ──────────────────────────
+// ─── Cookie 維持（多段フォーム対応の要）────────
+// MW WP Form 等は「入力→確認→完了」の各段階をサーバーのセッションCookieで
+// 紐付ける。fetch は Set-Cookie を自動保持しないので、1回の送信フロー全体で
+// 共有する Cookie ジャーを自前で持ち、リダイレクトも手動追跡して各hopの
+// Set-Cookie を確実に拾う（curl -L -c/-b 相当）。
 
-async function fetchHtml(url: string): Promise<{ html: string; finalUrl: string } | null> {
-  try {
+type CookieJar = Map<string, string>
+
+function readSetCookies(res: Response): string[] {
+  const h = res.headers as unknown as { getSetCookie?: () => string[] }
+  if (typeof h.getSetCookie === 'function') return h.getSetCookie()
+  const single = res.headers.get('set-cookie')
+  return single ? [single] : []
+}
+
+function storeCookies(jar: CookieJar, res: Response): void {
+  for (const c of readSetCookies(res)) {
+    const first = c.split(';')[0]
+    const eq = first.indexOf('=')
+    if (eq > 0) {
+      const name = first.slice(0, eq).trim()
+      const value = first.slice(eq + 1).trim()
+      if (name) jar.set(name, value)
+    }
+  }
+}
+
+function cookieHeader(jar: CookieJar): string {
+  return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ')
+}
+
+interface FetchResult {
+  res: Response
+  html: string
+  finalUrl: string
+}
+
+/** Cookie を維持しつつリダイレクトを手動追跡する fetch。各hopの Set-Cookie を jar に蓄積。 */
+async function fetchCookieAware(
+  url: string,
+  jar: CookieJar,
+  init: { method?: string; body?: string; referer?: string } = {},
+  maxRedirects = 6,
+): Promise<FetchResult> {
+  let currentUrl = url
+  let method = (init.method || 'GET').toUpperCase()
+  let body: string | undefined = init.body
+
+  for (let hop = 0; hop <= maxRedirects; hop++) {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
-    const res = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml' },
-      redirect: 'follow',
-      signal: controller.signal,
-    })
-    clearTimeout(timer)
-    if (!res.ok) return null
+    const cookie = cookieHeader(jar)
+    const headers: Record<string, string> = {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    }
+    if (cookie) headers['Cookie'] = cookie
+    if (init.referer) headers['Referer'] = init.referer
+    if (method === 'POST') headers['Content-Type'] = 'application/x-www-form-urlencoded'
+
+    let res: Response
+    try {
+      res = await fetch(currentUrl, { method, headers, body, redirect: 'manual', signal: controller.signal })
+    } finally {
+      clearTimeout(timer)
+    }
+    storeCookies(jar, res)
+
+    if ([301, 302, 303, 307, 308].includes(res.status)) {
+      const loc = res.headers.get('location')
+      if (!loc) return { res, html: await res.text().catch(() => ''), finalUrl: currentUrl }
+      const nextUrl = resolveUrl(currentUrl, loc)
+      // 303、および 301/302 の POST は GET に変わる（PRGパターン）
+      if (res.status === 303 || ((res.status === 301 || res.status === 302) && method === 'POST')) {
+        method = 'GET'
+        body = undefined
+      }
+      init.referer = currentUrl
+      currentUrl = nextUrl
+      continue
+    }
+
     const html = await res.text()
-    return { html, finalUrl: res.url }
+    return { res, html, finalUrl: currentUrl }
+  }
+  throw new Error('リダイレクトが多すぎます')
+}
+
+// ─── ユーティリティ ──────────────────────────
+
+async function fetchHtml(url: string, jar?: CookieJar): Promise<{ html: string; finalUrl: string } | null> {
+  try {
+    const j = jar ?? new Map()
+    const { res, html, finalUrl } = await fetchCookieAware(url, j, {})
+    if (!res.ok) return null
+    return { html, finalUrl }
   } catch {
     return null
   }
@@ -147,16 +241,19 @@ function resolveUrl(base: string, href: string): string {
 }
 
 function toKatakana(name: string): string {
-  // 簡易的なカタカナ変換（河野大地 → コウノダイチ は難しいのでスキップ）
-  return ''
+  // ひらがな→カタカナは変換できる。漢字は変換不能なので、
+  // 変換後にカタカナ/長音/空白のみになった場合だけ採用（それ以外は nameKana に委ねる）
+  const kata = name.replace(/[ぁ-ゖ]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60))
+  return /^[゠-ヿ　\s ー]+$/.test(kata) ? kata : ''
 }
 
 // ─── フォームページ探索 ──────────────────────
 
 async function findContactPageUrl(
-  baseUrl: string
+  baseUrl: string,
+  jar?: CookieJar,
 ): Promise<string | null> {
-  const page = await fetchHtml(baseUrl)
+  const page = await fetchHtml(baseUrl, jar)
   if (!page) return null
 
   const $ = cheerio.load(page.html)
@@ -211,36 +308,99 @@ function detectCF7(html: string): { isCF7: boolean; formId?: string } {
   return { isCF7: false }
 }
 
-function parseFormFields(html: string): { fields: FormField[]; action: string; method: string } {
+function parseFormFields(html: string): {
+  fields: FormField[]
+  submitButtons: SubmitButton[]
+  action: string
+  method: string
+} {
   const $ = cheerio.load(html)
 
   // メインのフォームを探す（複数ある場合、textarea を含むものを優先）
   let $form = $('form').filter((_, el) => $(el).find('textarea').length > 0).first()
   if ($form.length === 0) $form = $('form').first()
-  if ($form.length === 0) return { fields: [], action: '', method: 'POST' }
+  if ($form.length === 0) return { fields: [], submitButtons: [], action: '', method: 'POST' }
 
   const action = $form.attr('action') || ''
   const method = ($form.attr('method') || 'POST').toUpperCase()
 
   const fields: FormField[] = []
+  const submitButtons: SubmitButton[] = []
 
-  $form.find('input, textarea, select').each((_, el) => {
+  // radio は name ごとに選択肢をまとめる
+  const radioGroups = new Map<string, FormField>()
+
+  $form.find('input, textarea, select, button').each((_, el) => {
     const $el = $(el)
     const tag = el.tagName.toLowerCase()
-    const type = ($el.attr('type') || (tag === 'textarea' ? 'textarea' : 'text')).toLowerCase()
+    const type = ($el.attr('type') || (tag === 'textarea' ? 'textarea' : tag === 'select' ? 'select' : tag === 'button' ? 'submit' : 'text')).toLowerCase()
     const name = $el.attr('name') || ''
     const id = $el.attr('id') || ''
     const placeholder = $el.attr('placeholder') || ''
-    const value = $el.val() as string || ''
+    const value = ($el.attr('value') ?? ($el.val() as string) ?? '') || ''
     const required = $el.attr('required') !== undefined
 
-    // submit/button/image はスキップ
-    if (['submit', 'button', 'image', 'reset', 'file'].includes(type)) return
+    // 送信/ボタン系は submitButtons に回す（name 付きのみ有効）
+    if (['submit', 'image'].includes(type) || tag === 'button') {
+      if (type === 'reset') return
+      const label = ($el.text() || $el.attr('value') || '').trim()
+      if (name || value || label) submitButtons.push({ name, value, label })
+      return
+    }
+    if (type === 'button' || type === 'file') return
 
-    fields.push({ tag, type, name, id, placeholder, value, required })
+    // 近傍ラベル（同一idのlabel、または親labelのテキスト）
+    let label = ''
+    if (id) label = $(`label[for="${id}"]`).text().trim()
+    if (!label) label = $el.closest('label').text().trim()
+
+    if (type === 'radio') {
+      const g = radioGroups.get(name)
+      const opt = { value, label: label || value }
+      if (g) {
+        g.options!.push(opt)
+        if (required) g.required = true
+      } else {
+        const f: FormField = { tag, type, name, id, placeholder, value: '', required, options: [opt], label }
+        radioGroups.set(name, f)
+        fields.push(f)
+      }
+      return
+    }
+
+    if (tag === 'select') {
+      const options: { value: string; label: string }[] = []
+      $el.find('option').each((_, o) => {
+        const ov = $(o).attr('value')
+        const ol = $(o).text().trim()
+        options.push({ value: ov ?? ol, label: ol })
+      })
+      fields.push({ tag, type: 'select', name, id, placeholder, value, required, options, label })
+      return
+    }
+
+    fields.push({ tag, type, name, id, placeholder, value, required, label })
   })
 
-  return { fields, action, method }
+  return { fields, submitButtons, action, method }
+}
+
+/** 前進（確認/送信）ボタンを選ぶ。戻る/修正/リセットは除外。 */
+function pickForwardButton(buttons: SubmitButton[]): SubmitButton | null {
+  const back = ['戻る', '修正', 'back', 'reset', 'クリア', 'キャンセル', 'cancel']
+  const forward = ['確認', '送信', 'confirm', 'send', 'submit', 'next', '進む', '送る', 'go']
+  const isBack = (b: SubmitButton) => back.some(k => (b.value + b.label).toLowerCase().includes(k.toLowerCase()))
+  const isForward = (b: SubmitButton) => forward.some(k => (b.value + b.label).toLowerCase().includes(k.toLowerCase()))
+  return buttons.find(b => isForward(b) && !isBack(b)) ?? buttons.find(b => !isBack(b) && b.name) ?? null
+}
+
+/** 完了（送信）ボタンを選ぶ。確認/戻る系より「送信・完了」を優先。 */
+function pickSendButton(buttons: SubmitButton[]): SubmitButton | null {
+  const back = ['戻る', '修正', 'back', 'reset']
+  const send = ['送信する', '送信', 'send', '完了', 'submit', '申し込む', 'この内容で']
+  const isBack = (b: SubmitButton) => back.some(k => (b.value + b.label).toLowerCase().includes(k.toLowerCase()))
+  const isSend = (b: SubmitButton) => send.some(k => (b.value + b.label).toLowerCase().includes(k.toLowerCase()))
+  return buttons.find(b => isSend(b) && !isBack(b)) ?? buttons.find(b => !isBack(b) && b.name) ?? null
 }
 
 // ─── フィールドマッピング ────────────────────
@@ -292,8 +452,9 @@ function mapFieldsToValues(
     }
   }
 
-  // 各フィールドタイプに対してマッチング
-  const visibleFields = fields.filter(f => f.type !== 'hidden')
+  // 各フィールドタイプに対してマッチング（テキスト系のみ。radio/select/checkbox は別処理）
+  const TEXT_LIKE = new Set(['text', 'email', 'tel', 'textarea', 'search', 'url', 'number', 'password', ''])
+  const visibleFields = fields.filter(f => f.type !== 'hidden' && TEXT_LIKE.has(f.type))
   const matched = new Set<string>()
 
   // 姓名を分割（スペース区切り）
@@ -304,7 +465,7 @@ function mapFieldsToValues(
   const mapping: [FieldType, string][] = [
     ['company', sender.companyName],
     ['name', sender.name],
-    ['furigana', toKatakana(sender.name)],
+    ['furigana', sender.nameKana?.trim() || toKatakana(sender.name)],
     ['email', sender.email],
     ['email_confirm', sender.email],
     ['phone', sender.phone],
@@ -350,17 +511,46 @@ function mapFieldsToValues(
     }
   }
 
-  // checkbox で「同意」「プライバシー」が含まれるものはチェック
+  // 同意チェックボックス（name/id だけでなくラベルテキストも見る）
+  const CONSENT_KW = ['同意', '承諾', '承知', '規約', 'プライバシー', '個人情報', '保護方針', 'privacy', 'agree', 'consent', 'policy', 'terms']
   for (const f of fields) {
     if (f.type === 'checkbox') {
-      const lower = (f.name + f.id).toLowerCase()
-      if (lower.includes('agree') || lower.includes('同意') || lower.includes('privacy') || lower.includes('プライバシー')) {
+      const hay = `${f.name} ${f.id} ${f.placeholder} ${f.label ?? ''}`.toLowerCase()
+      if (CONSENT_KW.some(k => hay.includes(k.toLowerCase()))) {
         result[f.name] = f.value || 'on'
+        matched.add(f.name)
       }
     }
   }
 
+  // ラジオ必須（お問い合わせ項目など）: 未マッピングなら最適な選択肢を選ぶ
+  for (const f of fields) {
+    if (f.type !== 'radio' || matched.has(f.name) || !f.options?.length) continue
+    result[f.name] = pickBestOption(f.options)
+    matched.add(f.name)
+  }
+
+  // select 必須: プレースホルダ以外の選択肢を選ぶ
+  for (const f of fields) {
+    if (f.type !== 'select' || matched.has(f.name) || !f.options?.length) continue
+    // すでに body/subject 等でテキストが入っている select は上書きしない
+    if (result[f.name]) continue
+    const real = f.options.filter(o => o.value && !/選択|please|--|^$/.test(o.label))
+    result[f.name] = pickBestOption(real.length ? real : f.options)
+    matched.add(f.name)
+  }
+
   return result
+}
+
+/** 選択肢から営業文脈に最適なものを選ぶ（卸・取引・その他を優先、無ければ先頭） */
+function pickBestOption(options: { value: string; label: string }[]): string {
+  const prefer = ['卸', '取引', '仕入', '導入', 'ビジネス', '法人', 'business', 'その他', 'other', '一般']
+  for (const kw of prefer) {
+    const hit = options.find(o => (o.value + o.label).toLowerCase().includes(kw.toLowerCase()))
+    if (hit) return hit.value
+  }
+  return options[0]?.value ?? ''
 }
 
 // ─── フォーム送信 ────────────────────────────
@@ -370,6 +560,7 @@ async function submitCF7Form(
   formId: string,
   formData: Record<string, string>,
   html: string,
+  jar: CookieJar,
 ): Promise<FormSendResult> {
   const $ = cheerio.load(html)
 
@@ -392,15 +583,18 @@ async function submitCF7Form(
   const apiUrl = `${origin}/wp-json/contact-form-7/v1/contact-forms/${formId}/feedback`
 
   try {
+    const cookie = cookieHeader(jar)
     const res = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'User-Agent': USER_AGENT,
         'Referer': pageUrl,
         'Origin': origin,
+        ...(cookie ? { Cookie: cookie } : {}),
       },
       body: data,
     })
+    storeCookies(jar, res)
 
     const text = await res.text()
     let json: { status: string; message?: string; invalid_fields?: unknown[] }
@@ -413,14 +607,27 @@ async function submitCF7Form(
       }
     }
 
+    // CF7 は mail_sent のみ真の成功（mail_failed/validation_failed 等は成功にしない）
     if (json.status === 'mail_sent') {
       return {
         result: 'success',
         message: `CF7 送信成功: ${json.message || 'mail_sent'}`,
         contactUrl: pageUrl,
+        evidence: {
+          submittedTo: apiUrl,
+          finalUrl: apiUrl,
+          redirected: false,
+          httpStatus: res.status,
+          matchedKeywords: ['mail_sent'],
+          responseText: (json.message || 'mail_sent').slice(0, 600),
+        },
       }
     }
 
+    // 検証エラー等は failed、mail_failed（サーバー側メール障害）は手動確認へ
+    if (json.status === 'mail_failed') {
+      return { result: 'manual', message: `CF7 mail_failed（サーバー側メール送信失敗）: ${json.message || ''}` }
+    }
     return {
       result: 'failed',
       message: `CF7 送信失敗: ${json.status} — ${json.message || ''}`,
@@ -433,161 +640,151 @@ async function submitCF7Form(
   }
 }
 
+const SUCCESS_KEYWORDS = ['ありがとうございました', 'ありがとう', '送信完了', '送信いたしました', '送信しました', '受け付け', '受付けました', 'お問い合わせを受け', 'thank you', 'thankyou', '完了しました', '承りました', '承け', 'message sent', 'submission received']
+const CONFIRM_KEYWORDS = ['確認画面', '入力内容をご確認', '内容をご確認', '以下の内容で', 'この内容で送信', '確認する', 'confirm your']
+const ERROR_KEYWORDS = ['入力してください', '必須項目', '選択してください', 'エラーが', 'は必須です', 'invalid', 'required field']
+
+function findKeywords(html: string, kws: string[]): string[] {
+  const lower = html.toLowerCase()
+  return kws.filter(kw => lower.includes(kw.toLowerCase()))
+}
+
 async function submitHtmlForm(
   pageUrl: string,
   action: string,
   method: string,
   formData: Record<string, string>,
+  jar: CookieJar,
+  forwardButton: SubmitButton | null,
 ): Promise<FormSendResult> {
   const actionUrl = action ? resolveUrl(pageUrl, action) : pageUrl
 
+  // 前進ボタン（確認/送信）があれば name=value を含める
+  const payload = { ...formData }
+  if (forwardButton?.name) payload[forwardButton.name] = forwardButton.value
+
   try {
-    const body = new URLSearchParams(formData)
-    const res = await fetch(actionUrl, {
+    const { res, html, finalUrl } = await fetchCookieAware(actionUrl, jar, {
       method: method || 'POST',
-      headers: {
-        'User-Agent': USER_AGENT,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Referer': pageUrl,
-      },
-      body: body.toString(),
-      redirect: 'follow',
+      body: new URLSearchParams(payload).toString(),
+      referer: pageUrl,
     })
 
-    const responseHtml = await res.text()
-    const lower = responseHtml.toLowerCase()
+    const matchedSuccess = findKeywords(html, SUCCESS_KEYWORDS)
+    const matchedConfirm = findKeywords(html, CONFIRM_KEYWORDS)
+    const matchedError = findKeywords(html, ERROR_KEYWORDS)
 
-    // 成功判定
-    const successKeywords = ['ありがとう', '送信完了', '受け付け', 'thank', 'complete', '完了', '承り']
-    const matchedKeywords = successKeywords.filter(kw => lower.includes(kw))
-    const isSuccess = matchedKeywords.length > 0
-
-    // 確認画面判定（送信はまだ完了していない）
-    const confirmKeywords = ['確認', 'confirm', '入力内容']
-    const isConfirm = confirmKeywords.some(kw => lower.includes(kw)) && !isSuccess
-
-    if (isConfirm) {
-      // 確認画面の場合、submitボタンを探してもう一度POST
-      return await handleConfirmPage(res.url, responseHtml, formData)
+    const evidence = {
+      submittedTo: actionUrl,
+      finalUrl,
+      redirected: finalUrl !== actionUrl,
+      httpStatus: res.status,
+      matchedKeywords: matchedSuccess,
+      responseText: extractResponseText(html),
     }
 
-    if (isSuccess || res.redirected) {
-      return {
-        result: 'success',
-        message: `フォーム送信成功${res.redirected ? ` (リダイレクト: ${res.url})` : ''}`,
-        contactUrl: pageUrl,
-        evidence: {
-          submittedTo: actionUrl,
-          finalUrl: res.url,
-          redirected: res.redirected,
-          httpStatus: res.status,
-          matchedKeywords,
-          responseText: extractResponseText(responseHtml),
-        },
-      }
+    // 明示的な成功サイン → 成功
+    if (matchedSuccess.length > 0) {
+      return { result: 'success', message: `フォーム送信成功（${matchedSuccess[0]}）`, contactUrl: pageUrl, evidence }
     }
 
-    // エラー判定
-    const errorKeywords = ['エラー', 'error', '必須', 'required', '入力してください']
-    const hasError = errorKeywords.some(kw => lower.includes(kw))
-
-    if (hasError) {
-      return { result: 'failed', message: 'フォームバリデーションエラーが検出されました' }
+    // 確認画面 → 完了ステップへ（Cookie維持）
+    if (matchedConfirm.length > 0 && matchedSuccess.length === 0) {
+      return await handleConfirmPage(finalUrl, html, jar)
     }
 
-    // レスポンスコードで判定
-    if (res.ok) {
-      return {
-        result: 'success',
-        message: `HTTP ${res.status} — レスポンスから成功/失敗を判定できませんが、送信完了の可能性があります`,
-        contactUrl: pageUrl,
-        evidence: {
-          submittedTo: actionUrl,
-          finalUrl: res.url,
-          redirected: res.redirected,
-          httpStatus: res.status,
-          matchedKeywords: [],
-          responseText: extractResponseText(responseHtml),
-        },
-      }
+    // バリデーションエラー → 失敗
+    if (matchedError.length > 0) {
+      return { result: 'failed', message: `フォーム検証エラー（${matchedError[0]}）` }
     }
 
-    return { result: 'failed', message: `HTTP ${res.status}` }
-  } catch (err) {
+    // 成功サインが取れない → 「成功」と即断せず手動確認へ（誤検知防止の安全弁）
     return {
-      result: 'failed',
-      message: `送信エラー: ${err instanceof Error ? err.message : 'unknown'}`,
+      result: 'manual',
+      message: `送信は行われましたが完了サインを確認できませんでした。手動確認を推奨（HTTP ${res.status}）`,
+      contactUrl: pageUrl,
+      evidence,
     }
+  } catch (err) {
+    return { result: 'failed', message: `送信エラー: ${err instanceof Error ? err.message : 'unknown'}` }
   }
 }
 
 async function handleConfirmPage(
   confirmUrl: string,
   confirmHtml: string,
-  originalData: Record<string, string>,
+  jar: CookieJar,
 ): Promise<FormSendResult> {
-  // 確認ページのフォームを解析して送信ボタンを見つける
   const $ = cheerio.load(confirmHtml)
   const $form = $('form').first()
   if ($form.length === 0) {
-    return { result: 'failed', message: '確認画面のフォームが見つかりません' }
+    return { result: 'manual', message: '確認画面のフォームが見つかりません。手動確認を推奨' }
+  }
+
+  // 確認画面に captcha が挿入されている場合は手動へ
+  const lowerConfirm = confirmHtml.toLowerCase()
+  if (lowerConfirm.includes('recaptcha') || lowerConfirm.includes('h-captcha')) {
+    return { result: 'manual', message: '確認画面にCAPTCHAがあります。手動対応が必要です' }
   }
 
   const action = $form.attr('action') || ''
   const method = ($form.attr('method') || 'POST').toUpperCase()
 
-  // hidden フィールドから新しいデータを構築
+  // 確認画面が再埋め込みする hidden 項目を全て回収（MW WP Form 等はここに全データが入る）
   const data: Record<string, string> = {}
   $form.find('input[type="hidden"]').each((_, el) => {
     const name = $(el).attr('name') || ''
-    const value = $(el).val() as string || ''
+    const value = ($(el).attr('value') ?? ($(el).val() as string) ?? '') || ''
     if (name) data[name] = value
   })
 
-  // 送信ボタンの name/value を追加
-  $form.find('input[type="submit"]').each((_, el) => {
-    const name = $(el).attr('name') || ''
-    const value = $(el).val() as string || ''
-    const lowerValue = value.toLowerCase()
-    // 「送信」「送る」ボタンを選択（「戻る」「修正」は除外）
-    if (lowerValue.includes('送信') || lowerValue.includes('submit') || lowerValue.includes('send')) {
-      if (name) data[name] = value
-    }
+  // 完了（送信する）ボタンを input・button 両方から探す
+  const buttons: SubmitButton[] = []
+  $form.find('input[type="submit"], input[type="image"], button').each((_, el) => {
+    const $el = $(el)
+    if (($el.attr('type') || '').toLowerCase() === 'reset') return
+    const name = $el.attr('name') || ''
+    const value = ($el.attr('value') ?? ($el.val() as string) ?? '') || ''
+    const label = ($el.text() || value || '').trim()
+    if (name || value || label) buttons.push({ name, value, label })
   })
+  const sendBtn = pickSendButton(buttons)
+  if (sendBtn?.name) data[sendBtn.name] = sendBtn.value
 
   const actionUrl = action ? resolveUrl(confirmUrl, action) : confirmUrl
 
   try {
-    const body = new URLSearchParams(data)
-    const res = await fetch(actionUrl, {
+    const { res, html, finalUrl } = await fetchCookieAware(actionUrl, jar, {
       method,
-      headers: {
-        'User-Agent': USER_AGENT,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Referer': confirmUrl,
-      },
-      body: body.toString(),
-      redirect: 'follow',
+      body: new URLSearchParams(data).toString(),
+      referer: confirmUrl,
     })
 
-    const html = await res.text()
-    const lower = html.toLowerCase()
-    const successKeywords = ['ありがとう', '送信完了', '受け付け', 'thank', 'complete', '完了', '承り']
-
-    if (successKeywords.some(kw => lower.includes(kw)) || res.redirected) {
-      return {
-        result: 'success',
-        message: `確認画面経由で送信成功${res.redirected ? ` (${res.url})` : ''}`,
-        contactUrl: confirmUrl,
-      }
+    const matchedSuccess = findKeywords(html, SUCCESS_KEYWORDS)
+    const stillConfirm = findKeywords(html, CONFIRM_KEYWORDS)
+    const evidence = {
+      submittedTo: actionUrl,
+      finalUrl,
+      redirected: finalUrl !== actionUrl,
+      httpStatus: res.status,
+      matchedKeywords: matchedSuccess,
+      responseText: extractResponseText(html),
     }
 
-    return { result: 'failed', message: '確認画面からの送信結果を判定できませんでした' }
-  } catch (err) {
+    // 明示的な完了サイン & まだ確認画面ではない → 成功
+    if (matchedSuccess.length > 0 && stillConfirm.length === 0) {
+      return { result: 'success', message: `確認画面経由で送信成功（${matchedSuccess[0]}）`, contactUrl: confirmUrl, evidence }
+    }
+
+    // 完了サインが取れない（＝メール未送信の恐れ）→ 手動確認へ倒す
     return {
-      result: 'failed',
-      message: `確認画面送信エラー: ${err instanceof Error ? err.message : 'unknown'}`,
+      result: 'manual',
+      message: '確認画面からの完了を確認できませんでした。手動確認を推奨',
+      contactUrl: confirmUrl,
+      evidence,
     }
+  } catch (err) {
+    return { result: 'failed', message: `確認画面送信エラー: ${err instanceof Error ? err.message : 'unknown'}` }
   }
 }
 
@@ -600,18 +797,21 @@ export async function sendForm(
   messageContent: string,
   subject?: string,
 ): Promise<FormSendResult> {
+  // 送信フロー全体で共有する Cookie ジャー（多段フォームのセッション維持）
+  const jar: CookieJar = new Map()
+
   // 1. フォームページを探す
   let formPageUrl = contactUrl || null
   if (!formPageUrl) {
-    formPageUrl = await findContactPageUrl(companyUrl)
+    formPageUrl = await findContactPageUrl(companyUrl, jar)
   }
 
   if (!formPageUrl) {
     return { result: 'form_not_found', message: 'お問い合わせフォームが見つかりませんでした' }
   }
 
-  // 2. フォームページのHTMLを取得
-  const formPage = await fetchHtml(formPageUrl)
+  // 2. フォームページのHTMLを取得（GETのSet-Cookie=セッションをjarに保存）
+  const formPage = await fetchHtml(formPageUrl, jar)
   if (!formPage) {
     return { result: 'failed', message: `フォームページの取得に失敗しました: ${formPageUrl}` }
   }
@@ -626,7 +826,7 @@ export async function sendForm(
   const cf7 = detectCF7(formPage.html)
 
   // 5. フォームフィールド解析
-  const { fields, action, method } = parseFormFields(formPage.html)
+  const { fields, submitButtons, action, method } = parseFormFields(formPage.html)
 
   if (fields.length === 0) {
     return { result: 'form_not_found', message: 'フォームフィールドが検出されませんでした' }
@@ -643,8 +843,9 @@ export async function sendForm(
 
   // 7. 送信
   if (cf7.isCF7 && cf7.formId) {
-    return await submitCF7Form(formPage.finalUrl, cf7.formId, formData, formPage.html)
+    return await submitCF7Form(formPage.finalUrl, cf7.formId, formData, formPage.html, jar)
   }
 
-  return await submitHtmlForm(formPage.finalUrl, action, method, formData)
+  const forwardButton = pickForwardButton(submitButtons)
+  return await submitHtmlForm(formPage.finalUrl, action, method, formData, jar, forwardButton)
 }

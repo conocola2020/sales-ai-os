@@ -74,7 +74,7 @@ async function main() {
   // 1. 送信者プロフィール取得
   const { data: settings, error: settingsErr } = await supabase
     .from('user_settings')
-    .select('company_name, representative, company_email, company_phone')
+    .select('company_name, representative, representative_kana, company_email, company_phone')
     .limit(1)
     .single()
 
@@ -86,6 +86,7 @@ async function main() {
   const sender: SenderInfo = {
     companyName: settings.company_name,
     name: settings.representative,
+    nameKana: settings.representative_kana || undefined,
     email: settings.company_email,
     phone: settings.company_phone || '',
   }
