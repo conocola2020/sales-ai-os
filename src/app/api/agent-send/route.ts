@@ -16,6 +16,7 @@ export const maxDuration = 120
 interface UserSettings {
   company_name: string
   representative: string
+  representative_kana?: string
   company_email: string
   company_phone: string
 }
@@ -150,7 +151,7 @@ export async function POST(req: NextRequest) {
     // ユーザー設定（送信者プロフィール）を取得
     const { data: settings } = await supabase
       .from('user_settings')
-      .select('company_name, representative, company_email, company_phone')
+      .select('company_name, representative, representative_kana, company_email, company_phone')
       .eq('user_id', user.id)
       .single()
 
@@ -206,6 +207,7 @@ export async function POST(req: NextRequest) {
       {
         companyName: userSettings.company_name,
         name: userSettings.representative,
+        nameKana: userSettings.representative_kana || undefined,
         email: userSettings.company_email,
         phone: userSettings.company_phone || '',
       },

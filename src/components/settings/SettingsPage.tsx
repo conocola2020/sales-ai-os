@@ -20,6 +20,7 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
   const defaults = initialSettings ?? { ...DEFAULT_USER_SETTINGS } as unknown as UserSettings
   const [companyName, setCompanyName] = useState(defaults.company_name)
   const [representative, setRepresentative] = useState(defaults.representative)
+  const [representativeKana, setRepresentativeKana] = useState(defaults.representative_kana ?? '')
   const [representativeTitle, setRepresentativeTitle] = useState(defaults.representative_title)
   const [companyEmail, setCompanyEmail] = useState(defaults.company_email)
   const [companyPhone, setCompanyPhone] = useState(defaults.company_phone)
@@ -67,6 +68,7 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
     const { error: err } = await upsertSettings({
       company_name: companyName,
       representative,
+      representative_kana: representativeKana,
       representative_title: representativeTitle,
       company_email: companyEmail,
       company_phone: companyPhone,
@@ -85,7 +87,7 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     }
-  }, [companyName, representative, representativeTitle, companyEmail, companyPhone, companyWebsite, companyLocation, companyDescription, products, valuePropositions, socialProof, ctaText])
+  }, [companyName, representative, representativeKana, representativeTitle, companyEmail, companyPhone, companyWebsite, companyLocation, companyDescription, products, valuePropositions, socialProof, ctaText])
 
   // ------- Field component -------
   const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -211,6 +213,15 @@ export default function SettingsPage({ initialSettings, templates }: SettingsPag
                   value={representative}
                   onChange={e => setRepresentative(e.target.value)}
                   placeholder="田中太郎"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="担当者名（フリガナ）">
+                <input
+                  type="text"
+                  value={representativeKana}
+                  onChange={e => setRepresentativeKana(e.target.value)}
+                  placeholder="タナカタロウ"
                   className={inputCls}
                 />
               </Field>

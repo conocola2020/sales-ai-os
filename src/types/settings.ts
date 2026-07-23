@@ -13,6 +13,7 @@ export interface UserSettings {
   user_id: string
   company_name: string
   representative: string
+  representative_kana: string
   representative_title: string
   company_email: string
   company_phone: string
@@ -101,6 +102,7 @@ export const DEFAULT_TEMPLATES: Omit<MessageTemplateInsert, 'sort_order'>[] = [
 export const DEFAULT_USER_SETTINGS: UserSettingsInsert = {
   company_name: '株式会社CONOCOLA',
   representative: '河野大地',
+  representative_kana: 'コウノダイチ',
   representative_title: '代表取締役',
   company_email: 'daichi@conocola.com',
   company_phone: '',
