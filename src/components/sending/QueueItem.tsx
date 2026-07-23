@@ -56,6 +56,81 @@ function timeAgo(dateStr: string): string {
   return `${days}日前`
 }
 
+// フォーム送信エンジンの証拠（送信完了ページのスナップショット）を表示する
+interface FormEngineEvidenceData {
+  message?: string
+  contactUrl?: string
+  evidence?: {
+    submittedTo?: string
+    finalUrl?: string
+    redirected?: boolean
+    httpStatus?: number
+    matchedKeywords?: string[]
+    responseText?: string
+  }
+}
+
+function FormEngineEvidence({ raw, sentAt, company }: { raw: string; sentAt: string | null; company: string }) {
+  let data: FormEngineEvidenceData = {}
+  try { data = JSON.parse(raw) } catch { /* 旧形式はそのまま下で表示 */ }
+  const ev = data.evidence
+  const finalUrl = ev?.finalUrl || data.contactUrl
+
+  // 証拠カードだけを新しいタブに開いて印刷（画像/PDF保存）する
+  const saveAsImage = () => {
+    const sentLabel = sentAt ? new Date(sentAt).toLocaleString('ja-JP') : '—'
+    const esc = (s: string) => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string))
+    const html = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>送信証跡 ${esc(company)}</title>
+<style>body{font-family:system-ui,-apple-system,sans-serif;color:#16181c;max-width:680px;margin:32px auto;padding:0 20px;line-height:1.7}
+h1{font-size:18px;border-bottom:2px solid #14b8a6;padding-bottom:8px}
+.row{display:flex;gap:10px;margin:6px 0;font-size:13px}.k{color:#6b7280;min-width:120px}.v{word-break:break-all}
+.ok{color:#0d9488;font-weight:700}.snip{background:#f6f7f9;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:12px;color:#374151;white-space:pre-wrap;margin-top:8px}
+@media print{button{display:none}}</style></head><body>
+<h1>フォーム送信 証跡</h1>
+<div class="row"><span class="k">送信先企業</span><span class="v">${esc(company)}</span></div>
+<div class="row"><span class="k">送信日時</span><span class="v">${esc(sentLabel)}</span></div>
+<div class="row"><span class="k">判定</span><span class="v ok">送信成功</span></div>
+<div class="row"><span class="k">送信POST先</span><span class="v">${esc(ev?.submittedTo || '—')}</span></div>
+<div class="row"><span class="k">到達URL</span><span class="v">${esc(finalUrl || '—')}</span></div>
+<div class="row"><span class="k">HTTP</span><span class="v">${ev?.httpStatus ?? '—'}${ev?.redirected ? '（リダイレクトあり）' : ''}</span></div>
+<div class="row"><span class="k">成功キーワード</span><span class="v">${esc((ev?.matchedKeywords || []).join('、') || '—')}</span></div>
+${ev?.responseText ? `<div class="k" style="margin-top:12px">送信完了ページ本文（抜粋）</div><div class="snip">${esc(ev.responseText)}</div>` : ''}
+<button onclick="window.print()" style="margin-top:20px;padding:8px 16px;background:#14b8a6;color:#fff;border:0;border-radius:8px;cursor:pointer">🖼 画像/PDFとして保存（印刷）</button>
+</body></html>`
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close() }
+  }
+
+  return (
+    <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3 space-y-1.5">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-emerald-600 font-medium">✅ 送信成功（フォームエンジン）</p>
+        <button onClick={saveAsImage} className="text-[10px] px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium">
+          🖼 画像で保存
+        </button>
+      </div>
+      {ev ? (
+        <>
+          {finalUrl && (
+            <p className="text-xs text-gray-600 break-all">
+              到達URL: <a href={finalUrl} target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:underline">{finalUrl}</a>
+            </p>
+          )}
+          <p className="text-[11px] text-gray-500">
+            HTTP {ev.httpStatus}{ev.redirected ? '・リダイレクトあり' : ''}
+            {ev.matchedKeywords && ev.matchedKeywords.length > 0 ? `・検出: ${ev.matchedKeywords.join('、')}` : ''}
+          </p>
+          {ev.responseText && (
+            <p className="text-[11px] text-gray-500 bg-white/60 border border-gray-200 rounded p-2 line-clamp-3">{ev.responseText}</p>
+          )}
+        </>
+      ) : (
+        <p className="text-xs text-gray-500">{data.message || raw}</p>
+      )}
+    </div>
+  )
+}
+
 export default function QueueItem({
   item,
   onSendClick,
@@ -442,6 +517,8 @@ export default function QueueItem({
                 <a href={item.screenshot_url} target="_blank" rel="noopener noreferrer">
                   <img src={item.screenshot_url} alt="送信結果" className="rounded-lg border border-gray-200 max-h-48 object-contain" />
                 </a>
+              ) : item.screenshot_url.startsWith('form_engine:') ? (
+                <FormEngineEvidence raw={item.screenshot_url.replace('form_engine:', '')} sentAt={item.sent_at} company={lead?.company_name ?? ''} />
               ) : (
                 <p className="text-xs text-gray-400">{item.screenshot_url}</p>
               )}
