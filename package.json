@@ -13,7 +13,8 @@
     "fetch:prospects": "node --env-file=.env.local --import tsx scripts/fetch-prospects.ts",
     "enrich:prospects": "node --env-file=.env.local --import tsx scripts/enrich-prospects.ts",
     "promote:prospects": "node --env-file=.env.local --import tsx scripts/promote-prospects.ts",
-    "bridge:instagram": "node --env-file=.env.local --import tsx scripts/bridge-instagram-targets.ts"
+    "bridge:instagram": "node --env-file=.env.local --import tsx scripts/bridge-instagram-targets.ts",
+    "reverify:leads": "node --env-file=.env.local --import tsx scripts/reverify-form-leads.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

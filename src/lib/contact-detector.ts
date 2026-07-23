@@ -31,6 +31,47 @@ const NOISE_EMAIL_DOMAINS = [
   'noreply', 'no-reply', 'donotreply',
 ]
 
+// 自社ドメイン外でも問い合わせフォームとして信頼できる既知サービス
+const FORM_SERVICE_HOSTS = [
+  'docs.google.com', 'forms.gle', 'formrun.com', 'form.run',
+  'formzu.net', 'ssl.formman.com', 'form-mailer.jp', 'formok.com',
+  'jotform.com', 'typeform.com', 'kintoneapp.com',
+]
+
+/** eTLD+1相当の登録ドメインを取る（co.jp等の属性型JPドメイン対応の簡易版） */
+export function registrableDomain(hostname: string): string {
+  const labels = hostname.toLowerCase().replace(/^www\./, '').split('.')
+  if (labels.length <= 2) return labels.join('.')
+  const lastTwo = labels.slice(-2).join('.')
+  const jpAttr = new Set(['co.jp', 'or.jp', 'ne.jp', 'ac.jp', 'go.jp', 'gr.jp', 'ed.jp', 'lg.jp'])
+  return jpAttr.has(lastTwo) ? labels.slice(-3).join('.') : lastTwo
+}
+
+/** フォームURLとして採用してよいか（自社ドメイン or 既知フォームサービスのみ） */
+export function isTrustedFormHost(formUrl: string, baseUrl: string): boolean {
+  try {
+    const formHost = new URL(formUrl).hostname.toLowerCase()
+    const baseHost = new URL(baseUrl).hostname.toLowerCase()
+    if (registrableDomain(formHost) === registrableDomain(baseHost)) return true
+    return FORM_SERVICE_HOSTS.some(h => formHost === h || formHost.endsWith(`.${h}`))
+  } catch {
+    return false
+  }
+}
+
+/**
+ * ページ内に「本物の問い合わせフォーム」があるか。
+ * 検索ボックス等の誤検出を防ぐため、メッセージ入力欄（textarea）を持つ form を必須にする
+ * （検索フォームは textarea を持たない）。
+ */
+function hasRealContactForm($: cheerio.CheerioAPI): boolean {
+  let found = false
+  $('form').each((_, el) => {
+    if ($(el).find('textarea').length > 0) found = true
+  })
+  return found
+}
+
 // ─── 型定義 ─────────────────────────────────
 
 export interface ContactDetectionResult {
@@ -127,11 +168,14 @@ async function findContactFormUrl(baseUrl: string): Promise<{
   })
 
   // リンク先にフォームがあるか確認
+  // （自社ドメイン外のリンクはポータル/SNSのフォームを誤検出しやすいため、既知サービス以外は追わない）
   for (const link of candidateLinks) {
+    if (!isTrustedFormHost(link, baseUrl)) continue
     const linkPage = await fetchHtml(link)
     if (!linkPage) continue
+    if (!isTrustedFormHost(linkPage.finalUrl, baseUrl)) continue
     const $link = cheerio.load(linkPage.html)
-    if ($link('form').length > 0 || $link('textarea').length > 0) {
+    if (hasRealContactForm($link)) {
       const hasRecaptcha = linkPage.html.toLowerCase().includes('recaptcha') ||
         linkPage.html.toLowerCase().includes('g-recaptcha') ||
         linkPage.html.toLowerCase().includes('h-captcha')
@@ -145,8 +189,9 @@ async function findContactFormUrl(baseUrl: string): Promise<{
     const url = `${origin}${path}`
     const pathPage = await fetchHtml(url)
     if (!pathPage) continue
+    if (!isTrustedFormHost(pathPage.finalUrl, baseUrl)) continue
     const $path = cheerio.load(pathPage.html)
-    if ($path('form').length > 0 || $path('textarea').length > 0) {
+    if (hasRealContactForm($path)) {
       const hasRecaptcha = pathPage.html.toLowerCase().includes('recaptcha') ||
         pathPage.html.toLowerCase().includes('g-recaptcha')
       return { url: pathPage.finalUrl, hasRecaptcha }
