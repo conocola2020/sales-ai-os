@@ -459,10 +459,11 @@ function generateIndustryMessage(
     companyIntro,
     '',
     profile.proposalSentence,
-    profile.productDetail,
-    '',
-    profile.proofLine,
   ]
+  if (profile.productDetail?.trim()) {
+    proposal.push(profile.productDetail)
+  }
+  proposal.push('', profile.proofLine)
   if (profile.secondProposal) {
     proposal.push('', profile.secondProposal)
   }
