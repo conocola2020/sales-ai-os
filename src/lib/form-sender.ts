@@ -20,6 +20,34 @@ export interface FormSendResult {
   result: 'success' | 'failed' | 'form_not_found' | 'manual'
   message: string
   contactUrl?: string
+  /** 送信証拠（送信完了/リダイレクト先のスナップショット） */
+  evidence?: SendEvidence
+}
+
+export interface SendEvidence {
+  /** 送信POST先 */
+  submittedTo: string
+  /** 送信後に到達した最終URL（サンクスページ等） */
+  finalUrl: string
+  /** リダイレクトが発生したか */
+  redirected: boolean
+  /** HTTPステータス */
+  httpStatus: number
+  /** 成功判定の根拠キーワード（本文から検出したもの） */
+  matchedKeywords: string[]
+  /** 送信完了ページの本文抜粋（タグ除去・先頭600字） */
+  responseText: string
+}
+
+/** レスポンスHTMLから証拠用のテキスト抜粋を作る */
+function extractResponseText(html: string): string {
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return text.slice(0, 600)
 }
 
 interface FormField {
@@ -431,7 +459,8 @@ async function submitHtmlForm(
 
     // 成功判定
     const successKeywords = ['ありがとう', '送信完了', '受け付け', 'thank', 'complete', '完了', '承り']
-    const isSuccess = successKeywords.some(kw => lower.includes(kw))
+    const matchedKeywords = successKeywords.filter(kw => lower.includes(kw))
+    const isSuccess = matchedKeywords.length > 0
 
     // 確認画面判定（送信はまだ完了していない）
     const confirmKeywords = ['確認', 'confirm', '入力内容']
@@ -447,6 +476,14 @@ async function submitHtmlForm(
         result: 'success',
         message: `フォーム送信成功${res.redirected ? ` (リダイレクト: ${res.url})` : ''}`,
         contactUrl: pageUrl,
+        evidence: {
+          submittedTo: actionUrl,
+          finalUrl: res.url,
+          redirected: res.redirected,
+          httpStatus: res.status,
+          matchedKeywords,
+          responseText: extractResponseText(responseHtml),
+        },
       }
     }
 
@@ -464,6 +501,14 @@ async function submitHtmlForm(
         result: 'success',
         message: `HTTP ${res.status} — レスポンスから成功/失敗を判定できませんが、送信完了の可能性があります`,
         contactUrl: pageUrl,
+        evidence: {
+          submittedTo: actionUrl,
+          finalUrl: res.url,
+          redirected: res.redirected,
+          httpStatus: res.status,
+          matchedKeywords: [],
+          responseText: extractResponseText(responseHtml),
+        },
       }
     }
 
