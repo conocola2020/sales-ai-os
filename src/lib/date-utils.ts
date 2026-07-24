@@ -22,56 +22,54 @@ const JAPANESE_HOLIDAYS: Set<string> = new Set([
   '2027-11-03', '2027-11-23',
 ])
 
-function isBusinessDay(date: Date): boolean {
-  const day = date.getDay()
-  if (day === 0 || day === 6) return false // 土日
-
+/** Date → 'YYYY-MM-DD'（ローカル日付） */
+export function toDateKey(date: Date): string {
   const yyyy = date.getFullYear()
   const mm = String(date.getMonth() + 1).padStart(2, '0')
   const dd = String(date.getDate()).padStart(2, '0')
-  const dateStr = `${yyyy}-${mm}-${dd}`
+  return `${yyyy}-${mm}-${dd}`
+}
 
-  return !JAPANESE_HOLIDAYS.has(dateStr)
+function isBusinessDay(date: Date): boolean {
+  const day = date.getDay()
+  if (day === 0 || day === 6) return false // 土日
+  return !JAPANESE_HOLIDAYS.has(toDateKey(date)) // 祝日
 }
 
 /**
- * 指定営業日先から候補日を生成
- * @param count 候補日の数（デフォルト3）
- * @param skipBusinessDays 何営業日先から開始するか（デフォルト10）
- * @returns 候補日の配列 [{ date: Date, formatted: string }]
+ * 商談提示日の候補を生成する。
+ * ルール（オーナー決定 2026-07-24）:
+ *  - 作成日から minLeadDays 日後以降（既定7日）
+ *  - 土日・祝日を除く
+ *  - blockedDates（終日イベントのある日 'YYYY-MM-DD'）を除く
+ *  - その中から count 日（既定3）
+ *
+ * @param blockedDates カレンダーの終日イベント日。アプリUI生成時は空（＝土日祝のみ考慮）。
+ *   バッチ準備時に Google カレンダーの終日イベントを渡すと除外される。
  */
-export function getNextBusinessDays(count: number = 3, skipBusinessDays: number = 10): { date: Date; formatted: string }[] {
+export function getNextBusinessDays(
+  count: number = 3,
+  minLeadDays: number = 7,
+  blockedDates: Set<string> = new Set(),
+): { date: Date; formatted: string }[] {
   const now = new Date()
-  // 日本時間に変換
   const jstOffset = 9 * 60 * 60 * 1000
   const jstNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + jstOffset)
 
   const current = new Date(jstNow)
-  current.setDate(current.getDate() + 1) // 翌日から
+  current.setDate(current.getDate() + minLeadDays) // 作成日から minLeadDays 日後以降
 
-  // まず skipBusinessDays 分の営業日をスキップ
-  let skipped = 0
-  while (skipped < skipBusinessDays) {
-    if (isBusinessDay(current)) {
-      skipped++
-    }
-    if (skipped < skipBusinessDays) {
-      current.setDate(current.getDate() + 1)
-    }
-  }
-
-  // スキップ後の営業日から count 日分を取得
   const results: { date: Date; formatted: string }[] = []
-  while (results.length < count) {
-    if (isBusinessDay(current)) {
+  let guard = 0
+  while (results.length < count && guard < 400) {
+    guard++
+    if (isBusinessDay(current) && !blockedDates.has(toDateKey(current))) {
       const month = current.getMonth() + 1
       const day = current.getDate()
       const dayNames = ['日', '月', '火', '水', '木', '金', '土']
-      const dayName = dayNames[current.getDay()]
-
       results.push({
         date: new Date(current),
-        formatted: `${month}月${day}日（${dayName}）`,
+        formatted: `${month}月${day}日（${dayNames[current.getDay()]}）`,
       })
     }
     current.setDate(current.getDate() + 1)
@@ -87,8 +85,11 @@ export function getNextBusinessDays(count: number = 3, skipBusinessDays: number 
  * ・3月20日（木）9:00〜19:00
  * ・3月21日（金）9:00〜19:00
  */
-export function generateCandidateDatesText(timeRange: string = '9:00〜19:00'): string {
-  const days = getNextBusinessDays(3)
+export function generateCandidateDatesText(
+  timeRange: string = '9:00〜19:00',
+  blockedDates: Set<string> = new Set(),
+): string {
+  const days = getNextBusinessDays(3, 7, blockedDates)
   return days.map(d => `・${d.formatted} ${timeRange}`).join('\n')
 }
 
@@ -98,8 +99,9 @@ export function generateCandidateDatesText(timeRange: string = '9:00〜19:00'): 
 export function generateCtaWithDates(
   bookingUrl: string = 'https://timerex.net/s/daichi_3022_c34c/a78a4d68',
   timeRange: string = '9:00〜19:00',
+  blockedDates: Set<string> = new Set(),
 ): string {
-  const dates = generateCandidateDatesText(timeRange)
+  const dates = generateCandidateDatesText(timeRange, blockedDates)
   return [
     'ぜひ一度、15分ほどオンラインでお話しさせていただけないでしょうか。',
     '下記の日程でご都合いかがでしょうか。',
