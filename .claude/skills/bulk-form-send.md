@@ -62,6 +62,20 @@ LIMIT 1;
 - データが空（rows: 0 または全カラムが空文字）の場合：
   - ユーザーに「設定ページ（/dashboard/settings）で送信者情報（氏名・メールアドレス・会社名）を入力してください。フォームの差出人欄に使用します。」と伝えて停止する。
 
+取得したら、以下の変数として必ずメモしてから次に進む（後のステップで参照するため）：
+
+| 変数名 | SQLの列 |
+|--------|---------|
+| `SENDER_NAME` | `representative` |
+| `SENDER_COMPANY` | `company_name` |
+| `SENDER_EMAIL` | `company_email` |
+| `SENDER_PHONE` | `company_phone` |
+| `SENDER_LOCATION` | `company_location`（例: `〒454-0824 愛知県名古屋市中川区蔦元町2-5-2`） |
+| `SENDER_ZIPCODE` | `company_location` の `〒` 以降の7桁数字（ハイフンあり: `454-0824`）。`〒` がない場合は `company_location` 冒頭の数字7桁 |
+
+> ⚠️ **住所・郵便番号は上記の値のみを使用すること。決して推測・補完・生成しないこと。**
+> `SENDER_LOCATION` が空欄の場合、住所・郵便番号フィールドは必ずスキップする（空欄のまま送信する）。
+
 ---
 
 ## Step 2: 確認待ちアイテム取得
@@ -196,20 +210,24 @@ CF7（multi-stepあり・なし共通）は確認画面フローを使わず、R
 
 フィールドのラベルと `ref_id` のマッピングを行う：
 
+> ⛔ **フィールド入力の鉄則**: 以下の表にない値は絶対に生成・推測しない。値が不明・空欄の場合はそのフィールドをスキップする。
+
 | フォームのラベル | 入力する値 |
 |---|---|
-| 名前・お名前・姓名・氏名・担当者名 | `representative`（姓名）または姓/名に分割 |
-| 姓・苗字・last name | `representative` の姓部分（スペース前） |
-| 名・first name | `representative` の名部分（スペース後） |
-| 会社名・法人名・御社名 | `company_name` |
-| メールアドレス・email・メール | `company_email` |
-| メールアドレス（確認）・確認用メール | `company_email`（同じ値） |
-| 電話番号・TEL・tel | `company_phone` |
-| 郵便番号 | `company_location` の郵便番号部分（あれば）。なければスキップ |
-| 住所・ご住所 | `company_location`（あれば）。なければスキップ |
+| 名前・お名前・姓名・氏名・担当者名 | `SENDER_NAME`（姓名）または姓/名に分割 |
+| 姓・苗字・last name | `SENDER_NAME` の姓部分（スペース前） |
+| 名・first name | `SENDER_NAME` の名部分（スペース後） |
+| 会社名・法人名・御社名 | `SENDER_COMPANY` |
+| メールアドレス・email・メール | `SENDER_EMAIL` |
+| メールアドレス（確認）・確認用メール | `SENDER_EMAIL`（同じ値） |
+| 電話番号・TEL・tel | `SENDER_PHONE` |
+| 郵便番号 | `SENDER_ZIPCODE`（Step 1 で取得した値のみ。空なら**スキップ**） |
+| 住所・ご住所・住所（都道府県以降） | `SENDER_LOCATION`（Step 1 で取得した値のみ。空なら**スキップ**） |
 | 件名・タイトル・subject | `subject`（あれば）。なければ会社名を使った件名 |
 | メッセージ・お問い合わせ内容・本文・備考・ご要望 | `message_content` |
 | 性別 | スキップ（選択不要）またはデフォルトのまま |
+
+> ⚠️ 住所・郵便番号について: `SENDER_LOCATION` または `SENDER_ZIPCODE` が空の場合、そのフィールドは**必ず空欄のままにする**。Claudeが住所を補完・生成することは絶対に禁止。
 
 ### 4-3. フィールド入力
 

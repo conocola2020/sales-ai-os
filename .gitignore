@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 scripts/test-form-queue.mjs
+
+.claude/worktrees/
+.claude/settings.local.json
