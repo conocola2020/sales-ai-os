@@ -33,6 +33,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# テンプレートのみ追跡する（実際のキーは絶対にコミットしないこと）
+!.env.example
+
+# 認証情報・セッションCookie
+scripts/.sauna-cookies.json
 
 # vercel
 .vercel
